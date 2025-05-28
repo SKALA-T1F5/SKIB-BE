@@ -2,6 +2,8 @@ package com.t1f5.skib.project.domain;
 
 import java.util.List;
 
+import org.hibernate.annotations.Where;
+
 import com.t1f5.skib.global.domain.BaseTimeEntity;
 
 import jakarta.persistence.Column;
@@ -23,6 +25,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Where(clause = "is_deleted = false")
 @Table(name = "PROJECT")
 public class Project extends BaseTimeEntity{
     @Id
