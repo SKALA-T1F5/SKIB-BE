@@ -21,7 +21,7 @@ import com.t1f5.skib.project.service.ProjectService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@RequestMapping("/api/projects")
+@RequestMapping("/api/project")
 @Tag(name = "Project API", description = "프로젝트 관련 API")
 @RequiredArgsConstructor
 public class ProjectController {
