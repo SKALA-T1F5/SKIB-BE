@@ -20,15 +20,14 @@ public class ResultDto<T> {
     }
 
     public static <T> ResultDto<T> res(final HttpStatus statusCode, final String resultMsg) {
-        return res(statusCode, resultMsg, null);
+        return ResultDto.<T>builder()
+                .statusCode(statusCode)
+                .resultMsg(resultMsg)
+                .resultData(null)
+                .build();
     }
 
     public static <T> ResultDto<T> res(final HttpStatus statusCode, final String resultMsg, final T t) {
-        return res(statusCode, resultMsg, t);
-    }
-
-    public static <T> ResultDto<T> res(final HttpStatus statusCode, final String resultMsg, final String resultDetail,
-            final T t) {
         return ResultDto.<T>builder()
                 .statusCode(statusCode)
                 .resultMsg(resultMsg)
@@ -36,3 +35,4 @@ public class ResultDto<T> {
                 .build();
     }
 }
+
