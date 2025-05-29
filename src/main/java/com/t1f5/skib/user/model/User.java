@@ -1,6 +1,8 @@
 package com.t1f5.skib.user.model;
 
 import com.t1f5.skib.global.domain.BaseTimeEntity;
+import com.t1f5.skib.global.enums.UserType;
+
 import jakarta.persistence.*;
 import lombok.*;
 
