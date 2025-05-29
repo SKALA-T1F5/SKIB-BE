@@ -11,7 +11,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.t1f5.skib.global.customAnnotations.SwaggerApiNotFoundError;
 import com.t1f5.skib.global.customAnnotations.SwaggerApiSuccess;
+import com.t1f5.skib.global.customAnnotations.SwaggerInternetServerError;
 import com.t1f5.skib.global.dtos.ResultDto;
 import com.t1f5.skib.project.dto.RequestCreateProjectDto;
 import com.t1f5.skib.project.dto.ResponseProjectDto;
@@ -28,6 +30,8 @@ public class ProjectController {
     private final ProjectService projectService;
 
     @SwaggerApiSuccess(summary = "프로젝트 생성", description = "새로운 프로젝트를 생성합니다.")
+    @SwaggerApiNotFoundError
+    @SwaggerInternetServerError
     @PostMapping
     public ResponseEntity<?> saveProject(@RequestBody RequestCreateProjectDto dto){
         projectService.saveProject(dto);
@@ -36,6 +40,8 @@ public class ProjectController {
     }
 
     @SwaggerApiSuccess(summary = "프로젝트 조회", description = "특정 프로젝트의 정보를 조회합니다.")
+    @SwaggerApiNotFoundError
+    @SwaggerInternetServerError
     @GetMapping("/getProject")
     public ResponseEntity<?> getOneProject(Integer projectId) {
         ResponseProjectDto result = projectService.getOneProject(projectId);
@@ -43,6 +49,8 @@ public class ProjectController {
     }
 
     @SwaggerApiSuccess(summary = "모든 프로젝트 조회", description = "모든 프로젝트의 정보를 조회합니다.")   
+    @SwaggerApiNotFoundError
+    @SwaggerInternetServerError
     @GetMapping("/getAllProjects")
     public ResponseEntity<?> getAllProjects() {
     ResponseProjectListDto result = projectService.getAllProjects();
@@ -51,6 +59,8 @@ public class ProjectController {
     }
 
     @SwaggerApiSuccess(summary = "프로젝트 삭제", description = "특정 프로젝트를 삭제합니다.")
+    @SwaggerApiNotFoundError
+    @SwaggerInternetServerError
     @DeleteMapping("/deleteProject")
     public ResponseEntity<?> deleteProject(Integer projectId) {
         projectService.deleteProject(projectId);
