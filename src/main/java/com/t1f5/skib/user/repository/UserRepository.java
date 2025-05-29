@@ -16,7 +16,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
      * @param type 사용자 타입 (TRAINER or TRAINEE)
      * @return Optional<User>
      */
-    Optional<User> findByIdAndTypeAndIsDeletedFalse(Integer id, UserType type);
+    Optional<User> findByUserIdAndTypeAndIsDeletedFalse(Integer userId, UserType type);
     
     /**
      * 삭제되지 않은 특정 타입(UserType)의 모든 사용자 리스트를 조회합니다.
