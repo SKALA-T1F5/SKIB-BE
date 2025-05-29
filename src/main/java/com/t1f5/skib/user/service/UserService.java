@@ -65,7 +65,7 @@ public class UserService {
      * @param dto 수정할 유저의 정보가 담긴 DTO
      */
     public void updateUser(Integer userId, RequestUpdateUserDto dto) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
 
         user.setName(dto.getName());
