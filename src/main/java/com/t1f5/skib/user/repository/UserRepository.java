@@ -9,6 +9,15 @@ import java.util.List;
 
 public interface UserRepository extends JpaRepository<User, Integer> {
     /**
+     * 삭제되지 않은 사용자 중,
+     * 주어진 ID를 가진 사용자를 조회합니다.
+     *
+     * @param id 사용자 ID
+     * @return Optional<User>
+     */
+    Optional<User> findByIdAndIsDeletedFalse(Integer id);
+
+    /**
      * 삭제되지 않은 특정 타입(UserType)의 사용자 중,
      * 주어진 ID를 가진 사용자를 조회합니다.
      *

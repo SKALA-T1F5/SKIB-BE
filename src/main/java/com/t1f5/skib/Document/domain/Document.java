@@ -1,4 +1,4 @@
-package com.t1f5.skib.Document.domain;
+package com.t1f5.skib.document.domain;
 
 import java.util.List;
 
