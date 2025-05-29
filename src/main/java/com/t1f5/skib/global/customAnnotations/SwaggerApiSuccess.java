@@ -18,7 +18,5 @@ public @interface SwaggerApiSuccess {
         String summary() default "";
 
         String description();
-
-        String value();
 }
 
