@@ -3,14 +3,11 @@ package com.t1f5.skib.user.dto.requestdto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-
-import com.t1f5.skib.global.enums.UserType;
 
 @Data
 @NoArgsConstructor
@@ -21,9 +18,6 @@ public class RequestCreateUserDto {
 
     @NotBlank(message = "비밀번호는 공백일 수 없습니다.")
     private String password;
-
-    @NotNull(message = "유저 타입은 필수입니다.")
-    private UserType type; // TRAINEE
 }
 
 

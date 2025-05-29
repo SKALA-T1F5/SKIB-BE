@@ -34,24 +34,17 @@ public class UserService {
     public void createUsers(RequestCreateUserDto dto) {
         List<String> emails = dto.getEmails();
         String password = dto.getPassword();
-        UserType type = dto.getType();
 
         for (String email : emails) {
             // 이메일 중복 여부 체크
             if (userRepository.existsByEmail(email)) {
                 throw new UserAlreadyExistsException(email);
             }
-            
-            // // 예외를 던지지 않고 중복된 이메일은 건너뛰기
-            // if (userRepository.existsByEmail(email)) {
-            //     System.out.println("중복된 이메일: " + email + ", 생성을 건너뜁니다.");
-            //     continue;
-            // }
 
             User user = User.builder()
                     .email(email)
                     .password(password) // TODO: 추후 암호화
-                    .type(type)
+                    .type(UserType.TRAINEE)
                     .isDeleted(false)
                     .build();
             userRepository.save(user);
@@ -95,7 +88,7 @@ public class UserService {
      * @return ResponseUserDto 단일 trainer의 정보가 담긴 DTO
      */
     public ResponseUserDto getOneTrainer(Integer userId) {
-        User user = userRepository.findByIdAndTypeAndIsDeletedFalse(userId, UserType.TRAINER)
+        User user = userRepository.findByUserIdAndTypeAndIsDeletedFalse(userId, UserType.TRAINER)
                 .orElseThrow(() -> new IllegalArgumentException("Trainer not found with id: " + userId));
         DtoConverter<User, ResponseUserDto> converter = new UserDtoConverter();
         return converter.convert(user);
@@ -108,7 +101,7 @@ public class UserService {
      * @return ResponseUserDto 단일 trainee의 정보가 담긴 DTO
      */
     public ResponseUserDto getOneTrainee(Integer userId) {
-        User user = userRepository.findByIdAndTypeAndIsDeletedFalse(userId, UserType.TRAINEE)
+        User user = userRepository.findByUserIdAndTypeAndIsDeletedFalse(userId, UserType.TRAINEE)
                 .orElseThrow(() -> new IllegalArgumentException("Trainee not found with id: " + userId));
         DtoConverter<User, ResponseUserDto> converter = new UserDtoConverter();
         return converter.convert(user);
