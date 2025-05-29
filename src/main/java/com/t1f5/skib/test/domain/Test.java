@@ -1,0 +1,69 @@
+package com.t1f5.skib.test.domain;
+
+import java.util.List;
+
+import org.hibernate.annotations.Where;
+
+import com.t1f5.skib.global.domain.BaseTimeEntity;
+import com.t1f5.skib.global.enums.DifficultyLevel;
+import com.t1f5.skib.project.domain.Project;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@Where(clause = "is_deleted = false")
+@Table(name = "TEST")
+public class Test extends BaseTimeEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer testId;
+
+    @Column(name = "name", nullable = false, length = 40)
+    private String name;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "difficulty_level", nullable = false)
+    private DifficultyLevel difficultyLevel;
+
+    @Column(name = "limited_time_m", nullable = false)
+    private Integer limitedTime;
+
+    @Column(name = "pass_score", nullable = false)
+    private Integer passScore;
+
+    @Column(name = "is_retaken", nullable = false)
+    private Boolean isRetaken;
+
+    @Column(name = "is_deleted", nullable = false)
+    private Boolean isDeleted;
+
+    @ManyToOne
+    @JoinColumn(name = "project_id", nullable = false)
+    private Project project;
+
+    @OneToMany(mappedBy = "test", orphanRemoval = true)
+    private List<UserTest> userTests;
+
+    @OneToMany(mappedBy = "test", orphanRemoval = true)
+    private List<TestDocumentConfig> testDocumentConfigs;
+}
