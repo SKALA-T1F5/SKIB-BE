@@ -2,8 +2,8 @@ package com.t1f5.skib.test.service;
 
 import org.springframework.stereotype.Service;
 
-import com.t1f5.skib.Document.domain.Document;
-import com.t1f5.skib.Document.repository.DocumentRepository;
+import com.t1f5.skib.document.domain.Document;
+import com.t1f5.skib.document.repository.DocumentRepository;
 import com.t1f5.skib.project.repository.ProjectJpaRepository;
 import com.t1f5.skib.test.domain.Test;
 import com.t1f5.skib.test.domain.TestDocumentConfig;

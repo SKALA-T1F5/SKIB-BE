@@ -2,7 +2,7 @@ package com.t1f5.skib.test.domain;
 
 import org.hibernate.annotations.Where;
 
-import com.t1f5.skib.Document.domain.Document;
+import com.t1f5.skib.document.domain.Document;
 import com.t1f5.skib.global.domain.BaseTimeEntity;
 
 import jakarta.persistence.Column;
