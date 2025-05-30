@@ -4,12 +4,16 @@ import org.springframework.stereotype.Service;
 
 import com.t1f5.skib.document.domain.Document;
 import com.t1f5.skib.document.repository.DocumentRepository;
+import com.t1f5.skib.global.dtos.DtoConverter;
 import com.t1f5.skib.project.repository.ProjectJpaRepository;
 import com.t1f5.skib.test.domain.InviteLink;
 import com.t1f5.skib.test.domain.Test;
 import com.t1f5.skib.test.domain.TestDocumentConfig;
 import com.t1f5.skib.test.dto.RequestCreateTestDto;
+import com.t1f5.skib.test.dto.ResponseTestDto;
+import com.t1f5.skib.test.dto.ResponseTestListDto;
 import com.t1f5.skib.test.dto.TestDocumentConfigDto;
+import com.t1f5.skib.test.dto.TestDtoConverter;
 import com.t1f5.skib.test.repository.InviteLinkRepository;
 import com.t1f5.skib.test.repository.TestDocumentConfigRepository;
 import com.t1f5.skib.test.repository.TestRepository;
@@ -30,6 +34,12 @@ public class TestService {
     private final TestDocumentConfigRepository testDocumentConfigRepository;
     private final InviteLinkRepository inviteLinkRepository; 
 
+    /**
+     * 테스트를 저장하고 초대 링크를 생성합니다.
+     * @param projectId
+     * @param requestCreateTestDto
+     * @return
+     */
     public String saveTest(Integer projectId, RequestCreateTestDto requestCreateTestDto) {
         log.info("Saving test with name: {}", requestCreateTestDto.getName());
 
@@ -75,4 +85,46 @@ public class TestService {
         // 4. 초대링크 URL 리턴
         return "https://localhost:8080/invite/" + token;
     }
+
+        /**
+         * 테스트 ID로 테스트를 조회합니다.
+         * @param testId
+         * @return
+         */
+        public ResponseTestDto getTestById(Integer testId) {
+            log.info("Fetching test with ID: {}", testId);
+            Test test = testRepository.findById(testId)
+                    .orElseThrow(() -> new IllegalArgumentException("해당 테스트를 찾을 수 없습니다: " + testId));
+                    
+            DtoConverter<Test, ResponseTestDto> converter = new TestDtoConverter();
+            
+            return converter.convert(test);      
+        }
+
+        public ResponseTestListDto getAllTests(Integer projectId) {
+            log.info("Fetching all tests for project ID: {}", projectId);
+            var tests = testRepository.findByProject_ProjectId(projectId);
+            
+            DtoConverter<Test, ResponseTestDto> converter = new TestDtoConverter();
+            
+            var resultList = tests.stream()
+                    .map(converter::convert)
+                    .toList();
+                    
+            return new ResponseTestListDto(resultList.size(), resultList);
+        }
+
+        /**
+         * 테스트 ID로 테스트를 삭제합니다.
+         * @param testId
+         */
+        public void deleteTest(Integer testId) {
+            log.info("Deleting test with ID: {}", testId);
+            Test test = testRepository.findById(testId)
+                    .orElseThrow(() -> new IllegalArgumentException("해당 테스트를 찾을 수 없습니다: " + testId));
+                    
+            test.setIsDeleted(true);
+            testRepository.save(test);
+            log.info("Test deleted successfully: {}", test.getName());
+        }
 }
