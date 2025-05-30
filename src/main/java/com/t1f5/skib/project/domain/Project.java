@@ -44,7 +44,7 @@ public class Project extends BaseTimeEntity{
     private Boolean isDeleted;
 
     @OneToMany(mappedBy = "project", orphanRemoval = true)
-    private List<ProjectTrainer> projectTrainers;
+    private List<ProjectUser> projectTrainers;
 
     @OneToMany(mappedBy = "project", orphanRemoval = true)
     private List<Test> tests;

@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.t1f5.skib.global.domain.BaseTimeEntity;
 import com.t1f5.skib.global.enums.UserType;
-import com.t1f5.skib.project.domain.ProjectTrainer;
+import com.t1f5.skib.project.domain.ProjectUser;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -43,7 +43,7 @@ public class User extends BaseTimeEntity {
     private Boolean isDeleted;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProjectTrainer> projectTrainers;
+    private List<ProjectUser> projectTrainers;
 
     // // 🔗 관계 설정
 

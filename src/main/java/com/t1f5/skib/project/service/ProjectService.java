@@ -6,11 +6,18 @@ import org.springframework.stereotype.Service;
 
 import com.t1f5.skib.global.dtos.DtoConverter;
 import com.t1f5.skib.project.domain.Project;
+import com.t1f5.skib.project.domain.ProjectUser;
 import com.t1f5.skib.project.dto.RequestCreateProjectDto;
 import com.t1f5.skib.project.dto.ResponseProjectDto;
 import com.t1f5.skib.project.dto.ResponseProjectListDto;
+import com.t1f5.skib.project.dto.ResponseProjectUserDto;
 import com.t1f5.skib.project.repository.ProjectJpaRepository;
+import com.t1f5.skib.project.repository.ProjectTrainerRepository;
+import com.t1f5.skib.user.dto.responsedto.UserDtoConverter;
+import com.t1f5.skib.user.model.User;
+import com.t1f5.skib.user.repository.UserRepository;
 import com.t1f5.skib.project.dto.ProjectDtoConverter;
+import com.t1f5.skib.project.dto.ProjectUserDtoConverter;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,13 +27,15 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class ProjectService {
     private final ProjectJpaRepository projectJpaRepository;
+    private final ProjectTrainerRepository projectTrainerRepository;
+    private final UserRepository userRepository;
 
     /**
      * 프로젝트를 생성하는 메서드
      *
      * @param requestCreateProjectDto 프로젝트 생성 요청 DTO
      */
-    public void saveProject(RequestCreateProjectDto requestCreateProjectDto) {
+    public void saveProject(Integer userId, RequestCreateProjectDto requestCreateProjectDto) {
         
         Project project = Project.builder()
                 .projectName(requestCreateProjectDto.getProjectName())
@@ -35,6 +44,21 @@ public class ProjectService {
                 .build();
         
         projectJpaRepository.save(project);
+
+        //추후에 @getUserId로 변경 예정
+        if (userId != null) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+        
+        ProjectUser projectUser = ProjectUser.builder()
+                .type(user.getType()) 
+                .project(project)
+                .user(user)
+                .isDeleted(false)
+                .build();
+
+        projectTrainerRepository.save(projectUser);
+    }
         log.info("Project created successfully: {}", project.getProjectName());
     }
 
@@ -82,5 +106,25 @@ public class ProjectService {
         projectJpaRepository.save(project);
         log.info("Project deleted successfully: {}", project.getProjectName());
     }
+
+    /**
+     * 프로젝트에 속한 트레이너와 수강생을 조회하는 메서드
+     *
+     * @param projectId 조회할 프로젝트의 ID
+     * @return ResponseProjectUserDto 프로젝트 사용자 정보 DTO
+     */
+    public ResponseProjectUserDto getProjectUsers(Integer projectId) {
+        Project project = projectJpaRepository.findById(projectId)
+                .orElseThrow(() -> new IllegalArgumentException("Project not found with id: " + projectId));
+
+        List<ProjectUser> projectUsers = projectTrainerRepository.findByProjectAndIsDeletedFalse(project);
+
+        // userDtoConverter는 DI 받거나 수동 생성
+        UserDtoConverter userDtoConverter = new UserDtoConverter();
+        DtoConverter<Project, ResponseProjectUserDto> converter = new ProjectUserDtoConverter(projectUsers, userDtoConverter);
+        
+        return converter.convert(project);
+    }
+
 }
 
