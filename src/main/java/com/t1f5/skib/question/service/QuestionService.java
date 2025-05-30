@@ -11,8 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import com.t1f5.skib.question.domain.Question;
-import com.t1f5.skib.question.dto.QuestionDto;
 import com.t1f5.skib.question.dto.DocumentQuestionRequest;
+import com.t1f5.skib.question.dto.QuestionDto;
 import com.t1f5.skib.question.dto.QuestionDtoConverter;
 import com.t1f5.skib.question.repository.QuestionMongoRepository;
 
@@ -29,7 +29,7 @@ public class QuestionService {
     private final QuestionDtoConverter questionDtoConverter;
 
     public void generateQuestions(List<DocumentQuestionRequest> requests) {
-        String url = "http://172.20.10.3:8000/api/question"; 
+        String url = "http://10.250.73.103:8000/api/question"; 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
