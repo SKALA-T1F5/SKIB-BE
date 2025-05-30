@@ -1,0 +1,47 @@
+package com.t1f5.skib.auth.service;
+
+import org.springframework.stereotype.Service;
+
+import com.t1f5.skib.admin.model.Admin;
+import com.t1f5.skib.admin.repository.AdminRepository;
+import com.t1f5.skib.auth.dto.requestdto.AdminLoginRequestDto;
+import com.t1f5.skib.auth.dto.responsedto.LoginResponseDto;
+import com.t1f5.skib.auth.dto.responsedto.LogoutResponseDto;
+import com.t1f5.skib.auth.exception.AuthenticationException;
+import com.t1f5.skib.auth.util.JwtTokenProvider;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Service
+@Slf4j
+@RequiredArgsConstructor
+public class AuthAdminService {
+    private final AdminRepository adminRepository;
+    private final JwtTokenProvider jwtTokenProvider;
+
+    public LoginResponseDto login(AdminLoginRequestDto request) {
+        Admin admin = adminRepository.findByIdAndIsDeletedFalse(request.getId())
+                .orElseThrow(() -> new AuthenticationException("존재하지 않는 관리자입니다."));
+    
+        if (!admin.getPassword().equals(request.getPassword())) {
+            throw new AuthenticationException("비밀번호가 일치하지 않습니다.");
+        }
+
+        String token = jwtTokenProvider.createToken(admin.getId(), "ADMIN");
+
+        return LoginResponseDto.builder()
+                .token(token)
+                .role("ADMIN")
+                .build();
+    }
+
+    public LogoutResponseDto logout(String token) {
+        String adminId = jwtTokenProvider.getIdentifier(token);
+        String role = jwtTokenProvider.getRole(token);
+
+        return LogoutResponseDto.builder()
+                .message("Admin(" + adminId + ") with role [" + role + "] logged out.")
+                .build();
+    }
+}

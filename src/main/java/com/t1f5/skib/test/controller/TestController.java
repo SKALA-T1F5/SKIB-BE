@@ -3,9 +3,9 @@ package com.t1f5.skib.test.controller;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import com.t1f5.skib.global.customAnnotations.SwaggerApiNotFoundError;
 import com.t1f5.skib.global.customAnnotations.SwaggerApiSuccess;
@@ -28,9 +28,9 @@ public class TestController {
     @SwaggerApiNotFoundError
     @SwaggerInternetServerError
     @PostMapping
-    public ResponseEntity<?> saveTest(@RequestBody RequestCreateTestDto requestCreateTestDto, Integer projectId) {
-        testService.saveTest(projectId, requestCreateTestDto);
+    public ResponseEntity<ResultDto<String>> saveTest(@RequestBody RequestCreateTestDto requestCreateTestDto, Integer projectId) {
+        String inviteLink = testService.saveTest(projectId, requestCreateTestDto);
 
-        return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "테스트가 성공적으로 생성되었습니다."));
+        return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", inviteLink));
     }
 }

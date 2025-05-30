@@ -42,5 +42,13 @@ public interface UserRepository extends JpaRepository<User, Integer> {
      * @return boolean
      */
     boolean existsByEmail(String email);
+
+    /**
+     * 삭제되지 않은 사용자의 이메일로 사용자를 조회합니다.
+     *
+     * @param email 사용자 이메일
+     * @return Optional<User>
+     */
+    Optional<User> findByEmailAndIsDeletedFalse(String email);
 }
 
