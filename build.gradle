@@ -52,6 +52,13 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
     implementation 'io.jsonwebtoken:jjwt-impl:0.11.5'
     implementation 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+
+	// ** MongoDB
+	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+
+	// ** env
+	implementation 'io.github.cdimascio:java-dotenv:5.1.1'
+	
 }
 
 tasks.named('test') {

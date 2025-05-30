@@ -66,4 +66,7 @@ public class Test extends BaseTimeEntity {
 
     @OneToMany(mappedBy = "test", orphanRemoval = true)
     private List<TestDocumentConfig> testDocumentConfigs;
+
+    @OneToMany(mappedBy = "test", orphanRemoval = true)
+    private List<InviteLink> inviteLinks;
 }
