@@ -1,5 +1,7 @@
 package com.t1f5.skib.project.domain;
 
+import com.t1f5.skib.user.model.User;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -21,7 +23,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 @Table(name = "PROJECT_TRAINER")
-public class Project_Trainer {
+public class ProjectTrainer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer projectTrainerId;
@@ -33,5 +35,7 @@ public class Project_Trainer {
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
 
-    //user랑 연결
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 }
