@@ -2,6 +2,8 @@ package com.t1f5.skib.project.controller;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -35,11 +37,12 @@ public class ProjectController {
     @SwaggerApiNotFoundError
     @SwaggerInternetServerError
     @PostMapping
-    public ResponseEntity<?> saveProject(@RequestBody RequestCreateProjectDto dto, Integer userId) {
-        projectService.saveProject(userId, dto);
-
+    public ResponseEntity<?> saveProject(@RequestBody RequestCreateProjectDto dto,
+                                        @RequestParam List<Integer> userIds) {
+        projectService.saveProject(userIds, dto);
         return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "프로젝트가 성공적으로 생성되었습니다."));
     }
+
 
     @SwaggerApiSuccess(summary = "프로젝트 조회", description = "특정 프로젝트의 정보를 조회합니다.")
     @SwaggerApiNotFoundError

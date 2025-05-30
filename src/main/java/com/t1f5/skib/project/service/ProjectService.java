@@ -35,30 +35,30 @@ public class ProjectService {
      *
      * @param requestCreateProjectDto 프로젝트 생성 요청 DTO
      */
-    public void saveProject(Integer userId, RequestCreateProjectDto requestCreateProjectDto) {
-        
+    public void saveProject(List<Integer> userIds, RequestCreateProjectDto requestCreateProjectDto) {
+
         Project project = Project.builder()
                 .projectName(requestCreateProjectDto.getProjectName())
                 .projectDescription(requestCreateProjectDto.getProjectDescription())
-                .isDeleted(false) 
-                .build();
-        
-        projectJpaRepository.save(project);
-
-        //추후에 @getUserId로 변경 예정
-        if (userId != null) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
-        
-        ProjectUser projectUser = ProjectUser.builder()
-                .type(user.getType()) 
-                .project(project)
-                .user(user)
                 .isDeleted(false)
                 .build();
 
-        projectTrainerRepository.save(projectUser);
-    }
+        projectJpaRepository.save(project);
+
+        for (Integer userId : userIds) {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+
+            ProjectUser projectUser = ProjectUser.builder()
+                    .type(user.getType())  // TRAINER, TRAINEE
+                    .project(project)
+                    .user(user)
+                    .isDeleted(false)
+                    .build();
+
+            projectTrainerRepository.save(projectUser);
+        }
+
         log.info("Project created successfully: {}", project.getProjectName());
     }
 
