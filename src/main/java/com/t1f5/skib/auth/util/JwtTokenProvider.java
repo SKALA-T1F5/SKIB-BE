@@ -43,6 +43,20 @@ public class JwtTokenProvider {
         return getClaims(token).get("role", String.class);
     }
 
+    public boolean validateToken(String token) {
+        try {
+            Jwts.parserBuilder()
+                .setSigningKey(Keys.hmacShaKeyFor(secretKey.getBytes()))
+                .build()
+                .parseClaimsJws(token.replace("Bearer ", ""));
+            return true;
+        } catch (ExpiredJwtException e) {
+            throw new InvalidTokenException("Token has expired");
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new InvalidTokenException("Invalid JWT token");
+        }
+    }
+
     private Claims getClaims(String token) {
         try {
             return Jwts
