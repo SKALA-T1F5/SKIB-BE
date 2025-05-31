@@ -3,8 +3,8 @@ spring:
     name: skib
 
   config:
-    import: optional:file:.env[.properties]
-
+    import: optional:file:./.env.properties
+    
   datasource:
     url: jdbc:mariadb://localhost:3306/SKIB
     username: root
@@ -24,6 +24,5 @@ spring:
       uri: mongodb+srv://yoonalim2003:${MONGO_PASSWORD}@cluster0.9asfqrd.mongodb.net/SKIB?retryWrites=true&w=majority
       database: SKIB
 
-app:
-  jwt:
-    secret-key: ${JWT_SECRET_KEY}
+jwt:
+  secret-key: ${JWT_SECRET_KEY}

@@ -22,6 +22,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@SuppressWarnings("deprecation") // Hibernate 6.3 이후 @Where 경고 무시
 @Where(clause = "is_deleted = false")
 @Table(name = "ADMIN")
 public class Admin extends BaseTimeEntity{
