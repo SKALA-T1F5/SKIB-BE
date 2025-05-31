@@ -1,6 +1,7 @@
 package com.t1f5.skib.auth.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.t1f5.skib.auth.dto.requestdto.UserLoginRequestDto;
 import com.t1f5.skib.auth.dto.responsedto.LoginResponseDto;
@@ -20,24 +21,31 @@ public class AuthUserService {
 
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final PasswordEncoder passwordEncoder;
 
     public LoginResponseDto login(UserLoginRequestDto request) {
         User user = userRepository.findByEmailAndIsDeletedFalse(request.getEmail())
                 .orElseThrow(() -> new AuthenticationException("존재하지 않는 이메일입니다."));
 
-            if (!user.getPassword().equals(request.getPassword())) {
+            if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
                 throw new AuthenticationException("비밀번호가 일치하지 않습니다.");
             }
 
-            String token = jwtTokenProvider.createToken(user.getEmail(), user.getType().name());
+            String role = user.getType().name();
+            String token = jwtTokenProvider.createToken(user.getEmail(), role);
+
             return LoginResponseDto.builder()
                     .token(token)
-                    .role(user.getType().name())
+                    .role(role)
                     .build();
     }
 
     public LogoutResponseDto logout(String token) {
-        // 유효성 검사만 수행
+        // 유효성 검사
+        if (!jwtTokenProvider.validateToken(token)) {
+            throw new AuthenticationException("유효하지 않은 토큰입니다.");
+        }
+
         String email = jwtTokenProvider.getIdentifier(token);
         String role = jwtTokenProvider.getRole(token);
 
