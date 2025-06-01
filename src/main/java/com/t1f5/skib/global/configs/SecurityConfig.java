@@ -32,9 +32,11 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests((authz) -> authz
-                .requestMatchers("/api/auth/**").permitAll()  // 로그인은 누구나 접근 가능
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/user/**").hasAnyRole("TRAINER", "TRAINEE","ADMIN")
+
+            requestMatchers(    
+                                "/api/auth/**",
+                                "/swagger-ui/**",)
+                        .permitAll()
                 .anyRequest().authenticated()  // 그 외는 인증 필요
             )
             .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService),
