@@ -30,7 +30,12 @@ public class SecurityConfig {
         .authorizeHttpRequests(
             authz ->
                 authz
-                    .requestMatchers("/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**")
+                    .requestMatchers(
+                        "/api/auth/admin/login",
+                        "/api/auth/user/login",
+                        "/swagger-ui/**",
+                        "/v3/api-docs/**",
+                        "api/admin")
                     .permitAll()
                     .anyRequest()
                     .authenticated())
