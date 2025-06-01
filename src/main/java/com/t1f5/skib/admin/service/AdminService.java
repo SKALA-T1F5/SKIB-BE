@@ -1,5 +1,6 @@
 package com.t1f5.skib.admin.service;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.t1f5.skib.admin.dto.RequestCreateAdminDto;
@@ -15,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 public class AdminService {
 
     private final AdminRepository adminRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public void createAdmin(RequestCreateAdminDto dto) {
         if (adminRepository.existsById(dto.getId())) {
@@ -23,7 +25,7 @@ public class AdminService {
 
         Admin admin = Admin.builder()
                 .id(dto.getId())
-                .password(dto.getPassword()) // TODO: 추후 비밀번호 암호화
+                .password(passwordEncoder.encode(dto.getPassword())) 
                 .isDeleted(false)
                 .build();
         adminRepository.save(admin);

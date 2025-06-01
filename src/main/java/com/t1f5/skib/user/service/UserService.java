@@ -1,5 +1,6 @@
 package com.t1f5.skib.user.service;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     /**
      * 여러 명의 유저(Trainer 또는 Trainee)를 한 번에 생성
@@ -33,7 +35,8 @@ public class UserService {
      */
     public void createUsers(RequestCreateUserDto dto) {
         List<String> emails = dto.getEmails();
-        String password = dto.getPassword();
+        String password = passwordEncoder.encode(dto.getPassword());
+
 
         for (String email : emails) {
             // 이메일 중복 여부 체크
@@ -43,7 +46,7 @@ public class UserService {
 
             User user = User.builder()
                     .email(email)
-                    .password(password) // TODO: 추후 암호화
+                    .password(password) 
                     .type(UserType.TRAINEE)
                     .isDeleted(false)
                     .build();
@@ -63,7 +66,10 @@ public class UserService {
 
         user.setName(dto.getName());
         user.setDepartment(dto.getDepartment());
-        user.setPassword(dto.getPassword()); // TODO: 추후 암호화
+        // null이거나 빈 값이면 암호화도 하지 않고 기존 비밀번호 유지
+        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        }
 
         userRepository.save(user);
     }

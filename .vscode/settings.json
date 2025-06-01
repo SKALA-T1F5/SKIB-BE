@@ -1,3 +1,6 @@
 {
-  "java.configuration.updateBuildConfiguration": "interactive"
+  "editor.formatOnSave": true,
+  "[java]": {
+    "editor.defaultFormatter": "ilkka.google-java-format"
+  }
 }
