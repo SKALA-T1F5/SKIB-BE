@@ -1,15 +1,6 @@
-// {
-//   "java.configuration.updateBuildConfiguration": "interactive"
-// }
 {
-  "java.configuration.runtimes": [
-    {
-      "name": "JavaSE-17",
-      "path": "C:\\Program Files\\Java\\jdk-17",
-      "default": true
-    }
-  ],
-  "java.jdt.ls.java.home": "C:\\Program Files\\Java\\jdk-17"
+  "editor.formatOnSave": true,
+  "[java]": {
+    "editor.defaultFormatter": "ilkka.google-java-format"
+  }
 }
-
-
