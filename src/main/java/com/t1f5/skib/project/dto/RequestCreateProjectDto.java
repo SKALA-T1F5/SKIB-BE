@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RequestCreateProjectDto {
-    private String projectName;
-    private String projectDescription;
+  private String projectName;
+  private String projectDescription;
 }
-

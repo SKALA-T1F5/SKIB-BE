@@ -10,10 +10,17 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target({ ElementType.METHOD })
+@Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Operation()
-@ApiResponses(value = @ApiResponse(responseCode = "500", description = "서버 오류가 발생했습니다..", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"message\":\"서버 오류가 발생했습니다.\",\"status\":500}"))))
-public @interface SwaggerInternetServerError {
-}
-
+@ApiResponses(
+    value =
+        @ApiResponse(
+            responseCode = "500",
+            description = "서버 오류가 발생했습니다..",
+            content =
+                @Content(
+                    mediaType = "application/json",
+                    examples =
+                        @ExampleObject(value = "{\"message\":\"서버 오류가 발생했습니다.\",\"status\":500}"))))
+public @interface SwaggerInternetServerError {}

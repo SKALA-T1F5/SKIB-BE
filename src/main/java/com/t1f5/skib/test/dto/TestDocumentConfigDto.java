@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TestDocumentConfigDto {
-    private Integer documentId;
-    private int configuredObjectiveCount;
-    private int configuredSubjectiveCount;
+  private Integer documentId;
+  private int configuredObjectiveCount;
+  private int configuredSubjectiveCount;
 }

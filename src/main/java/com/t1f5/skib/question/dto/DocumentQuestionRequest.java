@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DocumentQuestionRequest {
-    private Integer documentId;
-    private Integer configuredObjectiveCount;
-    private Integer configuredSubjectiveCount;
+  private Integer documentId;
+  private Integer configuredObjectiveCount;
+  private Integer configuredSubjectiveCount;
 }

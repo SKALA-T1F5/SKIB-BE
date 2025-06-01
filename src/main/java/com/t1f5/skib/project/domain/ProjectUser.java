@@ -2,7 +2,6 @@ package com.t1f5.skib.project.domain;
 
 import com.t1f5.skib.global.enums.UserType;
 import com.t1f5.skib.user.model.User;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -27,22 +26,22 @@ import lombok.Setter;
 @Builder
 @Table(name = "PROJECT_TRAINER")
 public class ProjectUser {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer projectUserId;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Integer projectUserId;
 
-    @Column(name = "is_deleted", nullable = false)
-    private Boolean isDeleted;
+  @Column(name = "is_deleted", nullable = false)
+  private Boolean isDeleted;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UserType type;
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private UserType type;
 
-    @ManyToOne
-    @JoinColumn(name = "project_id", nullable = false)
-    private Project project;
+  @ManyToOne
+  @JoinColumn(name = "project_id", nullable = false)
+  private Project project;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+  @ManyToOne
+  @JoinColumn(name = "user_id", nullable = false)
+  private User user;
 }

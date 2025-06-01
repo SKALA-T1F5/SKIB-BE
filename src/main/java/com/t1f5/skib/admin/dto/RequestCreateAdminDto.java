@@ -9,9 +9,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RequestCreateAdminDto {
-    @NotBlank(message = "아이디는 공백일 수 없습니다.")
-    private String id;
+  @NotBlank(message = "아이디는 공백일 수 없습니다.")
+  private String id;
 
-    @NotBlank(message = "비밀번호는 공백일 수 없습니다.")
-    private String password;
+  @NotBlank(message = "비밀번호는 공백일 수 없습니다.")
+  private String password;
 }

@@ -10,9 +10,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ResponseProjectDto {
-    private Integer projectId;
-    private String projectName;
-    private String projectDescription;
-    private String createdAt;
-    // 테스트 리스트 추가
+  private Integer projectId;
+  private String projectName;
+  private String projectDescription;
+  private String createdAt;
+  // 테스트 리스트 추가
 }

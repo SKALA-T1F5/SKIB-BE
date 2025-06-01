@@ -1,12 +1,12 @@
 package com.t1f5.skib.test.dto;
 
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import java.util.List;
 
 @Data
 @AllArgsConstructor
 public class ResponseTestListDto {
-     private int count;
-    private List<ResponseTestDto> projects;
+  private int count;
+  private List<ResponseTestDto> projects;
 }

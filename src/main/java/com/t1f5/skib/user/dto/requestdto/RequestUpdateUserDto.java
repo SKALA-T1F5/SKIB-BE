@@ -6,19 +6,18 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class RequestUpdateUserDto {
-    private Integer userId;
+  private Integer userId;
 
-    @NotBlank(message = "이름은 공백일 수 없습니다.")
-    private String name;
+  @NotBlank(message = "이름은 공백일 수 없습니다.")
+  private String name;
 
-    @NotBlank(message = "부서는 공백일 수 없습니다.")
-    private String department;
+  @NotBlank(message = "부서는 공백일 수 없습니다.")
+  private String department;
 
-    @NotBlank(message = "비밀번호는 공백일 수 없습니다.")
-    private String password;
+  @NotBlank(message = "비밀번호는 공백일 수 없습니다.")
+  private String password;
 }

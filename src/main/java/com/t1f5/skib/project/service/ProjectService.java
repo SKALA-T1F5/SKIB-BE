@@ -1,12 +1,10 @@
 package com.t1f5.skib.project.service;
 
-import java.util.List;
-
-import org.springframework.stereotype.Service;
-
 import com.t1f5.skib.global.dtos.DtoConverter;
 import com.t1f5.skib.project.domain.Project;
 import com.t1f5.skib.project.domain.ProjectUser;
+import com.t1f5.skib.project.dto.ProjectDtoConverter;
+import com.t1f5.skib.project.dto.ProjectUserDtoConverter;
 import com.t1f5.skib.project.dto.RequestCreateProjectDto;
 import com.t1f5.skib.project.dto.ResponseProjectDto;
 import com.t1f5.skib.project.dto.ResponseProjectListDto;
@@ -16,115 +14,125 @@ import com.t1f5.skib.project.repository.ProjectTrainerRepository;
 import com.t1f5.skib.user.dto.responsedto.UserDtoConverter;
 import com.t1f5.skib.user.model.User;
 import com.t1f5.skib.user.repository.UserRepository;
-import com.t1f5.skib.project.dto.ProjectDtoConverter;
-import com.t1f5.skib.project.dto.ProjectUserDtoConverter;
-
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
 @Slf4j
 @Service
 public class ProjectService {
-    private final ProjectJpaRepository projectJpaRepository;
-    private final ProjectTrainerRepository projectTrainerRepository;
-    private final UserRepository userRepository;
+  private final ProjectJpaRepository projectJpaRepository;
+  private final ProjectTrainerRepository projectTrainerRepository;
+  private final UserRepository userRepository;
 
-    /**
-     * 프로젝트를 생성하는 메서드
-     *
-     * @param requestCreateProjectDto 프로젝트 생성 요청 DTO
-     */
-    public void saveProject(List<Integer> userIds, RequestCreateProjectDto requestCreateProjectDto) {
+  /**
+   * 프로젝트를 생성하는 메서드
+   *
+   * @param requestCreateProjectDto 프로젝트 생성 요청 DTO
+   */
+  public void saveProject(List<Integer> userIds, RequestCreateProjectDto requestCreateProjectDto) {
 
-        Project project = Project.builder()
-                .projectName(requestCreateProjectDto.getProjectName())
-                .projectDescription(requestCreateProjectDto.getProjectDescription())
-                .isDeleted(false)
-                .build();
+    Project project =
+        Project.builder()
+            .projectName(requestCreateProjectDto.getProjectName())
+            .projectDescription(requestCreateProjectDto.getProjectDescription())
+            .isDeleted(false)
+            .build();
 
-        projectJpaRepository.save(project);
+    projectJpaRepository.save(project);
 
-        for (Integer userId : userIds) {
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+    for (Integer userId : userIds) {
+      User user =
+          userRepository
+              .findById(userId)
+              .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
 
-            ProjectUser projectUser = ProjectUser.builder()
-                    .type(user.getType())  // TRAINER, TRAINEE
-                    .project(project)
-                    .user(user)
-                    .isDeleted(false)
-                    .build();
+      ProjectUser projectUser =
+          ProjectUser.builder()
+              .type(user.getType()) // TRAINER, TRAINEE
+              .project(project)
+              .user(user)
+              .isDeleted(false)
+              .build();
 
-            projectTrainerRepository.save(projectUser);
-        }
-
-        log.info("Project created successfully: {}", project.getProjectName());
+      projectTrainerRepository.save(projectUser);
     }
 
-    /**
-     * 단일 프로젝트를 조회하는 메서드
-     *
-     * @param projectId 조회할 프로젝트의 ID
-     * @return ResponseProjectDto 단일 프로젝트 정보 DTO
-     */
-    public ResponseProjectDto getOneProject(Integer projectId) {
-        Project project = projectJpaRepository.findById(projectId)
-                .orElseThrow(() -> new IllegalArgumentException("Project not found with id: " + projectId));
+    log.info("Project created successfully: {}", project.getProjectName());
+  }
 
-        DtoConverter<Project, ResponseProjectDto> converter = new ProjectDtoConverter();
+  /**
+   * 단일 프로젝트를 조회하는 메서드
+   *
+   * @param projectId 조회할 프로젝트의 ID
+   * @return ResponseProjectDto 단일 프로젝트 정보 DTO
+   */
+  public ResponseProjectDto getOneProject(Integer projectId) {
+    Project project =
+        projectJpaRepository
+            .findById(projectId)
+            .orElseThrow(
+                () -> new IllegalArgumentException("Project not found with id: " + projectId));
 
-        return converter.convert(project);
-    }
+    DtoConverter<Project, ResponseProjectDto> converter = new ProjectDtoConverter();
 
-    /**
-     * 모든 프로젝트를 조회하는 메서드
-     *
-     * @return List<ResponseProjectDto> 모든 프로젝트 정보 DTO 리스트
-     */
-    public ResponseProjectListDto getAllProjects() {
+    return converter.convert(project);
+  }
+
+  /**
+   * 모든 프로젝트를 조회하는 메서드
+   *
+   * @return List<ResponseProjectDto> 모든 프로젝트 정보 DTO 리스트
+   */
+  public ResponseProjectListDto getAllProjects() {
     List<Project> projects = projectJpaRepository.findAll();
     DtoConverter<Project, ResponseProjectDto> converter = new ProjectDtoConverter();
 
-    List<ResponseProjectDto> resultList = projects.stream()
-            .map(converter::convert)
-            .toList();
+    List<ResponseProjectDto> resultList = projects.stream().map(converter::convert).toList();
 
     return new ResponseProjectListDto(resultList.size(), resultList);
-    }
+  }
 
-    /**
-     * 프로젝트를 삭제하는 메서드
-     *
-     * @param projectId 삭제할 프로젝트의 ID
-     */
-    public void deleteProject(Integer projectId) {
-        Project project = projectJpaRepository.findById(projectId)
-                .orElseThrow(() -> new IllegalArgumentException("Project not found with id: " + projectId));
+  /**
+   * 프로젝트를 삭제하는 메서드
+   *
+   * @param projectId 삭제할 프로젝트의 ID
+   */
+  public void deleteProject(Integer projectId) {
+    Project project =
+        projectJpaRepository
+            .findById(projectId)
+            .orElseThrow(
+                () -> new IllegalArgumentException("Project not found with id: " + projectId));
 
-        project.setIsDeleted(true);
-        projectJpaRepository.save(project);
-        log.info("Project deleted successfully: {}", project.getProjectName());
-    }
+    project.setIsDeleted(true);
+    projectJpaRepository.save(project);
+    log.info("Project deleted successfully: {}", project.getProjectName());
+  }
 
-    /**
-     * 프로젝트에 속한 트레이너와 수강생을 조회하는 메서드
-     *
-     * @param projectId 조회할 프로젝트의 ID
-     * @return ResponseProjectUserDto 프로젝트 사용자 정보 DTO
-     */
-    public ResponseProjectUserDto getProjectUsers(Integer projectId) {
-        Project project = projectJpaRepository.findById(projectId)
-                .orElseThrow(() -> new IllegalArgumentException("Project not found with id: " + projectId));
+  /**
+   * 프로젝트에 속한 트레이너와 수강생을 조회하는 메서드
+   *
+   * @param projectId 조회할 프로젝트의 ID
+   * @return ResponseProjectUserDto 프로젝트 사용자 정보 DTO
+   */
+  public ResponseProjectUserDto getProjectUsers(Integer projectId) {
+    Project project =
+        projectJpaRepository
+            .findById(projectId)
+            .orElseThrow(
+                () -> new IllegalArgumentException("Project not found with id: " + projectId));
 
-        List<ProjectUser> projectUsers = projectTrainerRepository.findByProjectAndIsDeletedFalse(project);
+    List<ProjectUser> projectUsers =
+        projectTrainerRepository.findByProjectAndIsDeletedFalse(project);
 
-        // userDtoConverter는 DI 받거나 수동 생성
-        UserDtoConverter userDtoConverter = new UserDtoConverter();
-        DtoConverter<Project, ResponseProjectUserDto> converter = new ProjectUserDtoConverter(projectUsers, userDtoConverter);
-        
-        return converter.convert(project);
-    }
+    // userDtoConverter는 DI 받거나 수동 생성
+    UserDtoConverter userDtoConverter = new UserDtoConverter();
+    DtoConverter<Project, ResponseProjectUserDto> converter =
+        new ProjectUserDtoConverter(projectUsers, userDtoConverter);
 
+    return converter.convert(project);
+  }
 }
-

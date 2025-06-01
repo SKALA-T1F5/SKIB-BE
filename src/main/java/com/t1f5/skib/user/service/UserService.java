@@ -1,147 +1,148 @@
 package com.t1f5.skib.user.service;
 
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-
+import com.t1f5.skib.global.dtos.DtoConverter;
 import com.t1f5.skib.global.enums.UserType;
 import com.t1f5.skib.user.dto.requestdto.RequestCreateUserDto;
 import com.t1f5.skib.user.dto.requestdto.RequestUpdateUserDto;
 import com.t1f5.skib.user.dto.responsedto.ResponseUserDto;
 import com.t1f5.skib.user.dto.responsedto.ResponseUserListDto;
-import com.t1f5.skib.global.dtos.DtoConverter;
 import com.t1f5.skib.user.dto.responsedto.UserDtoConverter;
+import com.t1f5.skib.user.exception.UserAlreadyExistsException;
 import com.t1f5.skib.user.model.User;
 import com.t1f5.skib.user.repository.UserRepository;
-import com.t1f5.skib.user.exception.UserAlreadyExistsException;
-
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class UserService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+  private final UserRepository userRepository;
+  private final PasswordEncoder passwordEncoder;
 
-    /**
-     * 여러 명의 유저(Trainer 또는 Trainee)를 한 번에 생성
-     * 
-     * @param dto 유저 생성 요청 DTO
-     * @throws UserAlreadyExistsException 이메일 중복 시 예외 발생
-     */
-    public void createUsers(RequestCreateUserDto dto) {
-        List<String> emails = dto.getEmails();
-        String password = passwordEncoder.encode(dto.getPassword());
+  /**
+   * 여러 명의 유저(Trainer 또는 Trainee)를 한 번에 생성
+   *
+   * @param dto 유저 생성 요청 DTO
+   * @throws UserAlreadyExistsException 이메일 중복 시 예외 발생
+   */
+  public void createUsers(RequestCreateUserDto dto) {
+    List<String> emails = dto.getEmails();
+    String password = passwordEncoder.encode(dto.getPassword());
 
+    for (String email : emails) {
+      // 이메일 중복 여부 체크
+      if (userRepository.existsByEmail(email)) {
+        throw new UserAlreadyExistsException(email);
+      }
 
-        for (String email : emails) {
-            // 이메일 중복 여부 체크
-            if (userRepository.existsByEmail(email)) {
-                throw new UserAlreadyExistsException(email);
-            }
+      User user =
+          User.builder()
+              .email(email)
+              .password(password)
+              .type(UserType.TRAINEE)
+              .isDeleted(false)
+              .build();
+      userRepository.save(user);
+    }
+  }
 
-            User user = User.builder()
-                    .email(email)
-                    .password(password) 
-                    .type(UserType.TRAINEE)
-                    .isDeleted(false)
-                    .build();
-            userRepository.save(user);
-        }
+  /**
+   * 유저 정보 수정
+   *
+   * @param userId 수정할 유저의 ID
+   * @param dto 수정할 유저의 정보가 담긴 DTO
+   */
+  public void updateUser(Integer userId, RequestUpdateUserDto dto) {
+    User user =
+        userRepository
+            .findByUserIdAndIsDeletedFalse(userId)
+            .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
+
+    user.setName(dto.getName());
+    user.setDepartment(dto.getDepartment());
+    // null이거나 빈 값이면 암호화도 하지 않고 기존 비밀번호 유지
+    if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+      user.setPassword(passwordEncoder.encode(dto.getPassword()));
     }
 
-    /**
-     * 유저 정보 수정
-     * 
-     * @param userId 수정할 유저의 ID
-     * @param dto 수정할 유저의 정보가 담긴 DTO
-     */
-    public void updateUser(Integer userId, RequestUpdateUserDto dto) {
-        User user = userRepository.findByUserIdAndIsDeletedFalse(userId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
+    userRepository.save(user);
+  }
 
-        user.setName(dto.getName());
-        user.setDepartment(dto.getDepartment());
-        // null이거나 빈 값이면 암호화도 하지 않고 기존 비밀번호 유지
-        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
-            user.setPassword(passwordEncoder.encode(dto.getPassword()));
-        }
+  /**
+   * 유저 삭제 (Soft Delete)
+   *
+   * @param userId 삭제할 유저의 ID
+   */
+  public void deleteUser(Integer userId) {
+    User user =
+        userRepository.findById(userId).orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
 
-        userRepository.save(user);
-    }
+    user.setIsDeleted(true);
+    userRepository.save(user);
+  }
 
-    /**
-     * 유저 삭제 (Soft Delete)
-     * 
-     * @param userId 삭제할 유저의 ID
-     */
-    public void deleteUser(Integer userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
+  /**
+   * 단일 trainer 조회
+   *
+   * @param userId 조회할 trainer의 ID
+   * @return ResponseUserDto 단일 trainer의 정보가 담긴 DTO
+   */
+  public ResponseUserDto getOneTrainer(Integer userId) {
+    User user =
+        userRepository
+            .findByUserIdAndTypeAndIsDeletedFalse(userId, UserType.TRAINER)
+            .orElseThrow(
+                () -> new IllegalArgumentException("Trainer not found with id: " + userId));
+    DtoConverter<User, ResponseUserDto> converter = new UserDtoConverter();
+    return converter.convert(user);
+  }
 
-        user.setIsDeleted(true);
-        userRepository.save(user);
-    }
+  /**
+   * 단일 trainee 조회
+   *
+   * @param userId 조회할 trainee의 ID
+   * @return ResponseUserDto 단일 trainee의 정보가 담긴 DTO
+   */
+  public ResponseUserDto getOneTrainee(Integer userId) {
+    User user =
+        userRepository
+            .findByUserIdAndTypeAndIsDeletedFalse(userId, UserType.TRAINEE)
+            .orElseThrow(
+                () -> new IllegalArgumentException("Trainee not found with id: " + userId));
+    DtoConverter<User, ResponseUserDto> converter = new UserDtoConverter();
+    return converter.convert(user);
+  }
 
-    /**
-     * 단일 trainer 조회 
-     *  
-     * @param userId 조회할 trainer의 ID
-     * @return ResponseUserDto 단일 trainer의 정보가 담긴 DTO
-     */
-    public ResponseUserDto getOneTrainer(Integer userId) {
-        User user = userRepository.findByUserIdAndTypeAndIsDeletedFalse(userId, UserType.TRAINER)
-                .orElseThrow(() -> new IllegalArgumentException("Trainer not found with id: " + userId));
-        DtoConverter<User, ResponseUserDto> converter = new UserDtoConverter();
-        return converter.convert(user);
-    }
+  /**
+   * 전체 trainer 조회
+   *
+   * @return ResponseUserListDto 전체 trainer의 정보가 담긴 DTO
+   */
+  public ResponseUserListDto getAllTrainers() {
+    List<User> trainers = userRepository.findAllByTypeAndIsDeletedFalse(UserType.TRAINER);
+    UserDtoConverter converter = new UserDtoConverter();
 
-    /**
-     * 단일 trainee 조회 
-     * 
-     * @param userId 조회할 trainee의 ID
-     * @return ResponseUserDto 단일 trainee의 정보가 담긴 DTO
-     */
-    public ResponseUserDto getOneTrainee(Integer userId) {
-        User user = userRepository.findByUserIdAndTypeAndIsDeletedFalse(userId, UserType.TRAINEE)
-                .orElseThrow(() -> new IllegalArgumentException("Trainee not found with id: " + userId));
-        DtoConverter<User, ResponseUserDto> converter = new UserDtoConverter();
-        return converter.convert(user);
-    }
-   
-    /**
-     * 전체 trainer 조회
-     * 
-     * @return ResponseUserListDto 전체 trainer의 정보가 담긴 DTO
-     */
-    public ResponseUserListDto getAllTrainers() {
-        List<User> trainers = userRepository.findAllByTypeAndIsDeletedFalse(UserType.TRAINER);
-        UserDtoConverter converter = new UserDtoConverter();
+    List<ResponseUserDto> resultList = trainers.stream().map(converter::convert).toList();
 
-        List<ResponseUserDto> resultList = trainers.stream()
-                .map(converter::convert)
-                .toList();
+    return new ResponseUserListDto(resultList.size(), resultList);
+  }
 
-        return new ResponseUserListDto(resultList.size(), resultList);
-    }
-    
-    /**
-     * 전체 trainee 조회 
-     * 
-     * @return ResponseUserListDto 전체 trainee의 정보가 담긴 DTO
-     */
-    public ResponseUserListDto getAllTrainees() {
-        List<User> trainees = userRepository.findAllByTypeAndIsDeletedFalse(UserType.TRAINEE);
-        UserDtoConverter converter = new UserDtoConverter();
+  /**
+   * 전체 trainee 조회
+   *
+   * @return ResponseUserListDto 전체 trainee의 정보가 담긴 DTO
+   */
+  public ResponseUserListDto getAllTrainees() {
+    List<User> trainees = userRepository.findAllByTypeAndIsDeletedFalse(UserType.TRAINEE);
+    UserDtoConverter converter = new UserDtoConverter();
 
-        List<ResponseUserDto> resultList = trainees.stream()
-                .map(converter::convert)
-                .toList();
+    List<ResponseUserDto> resultList = trainees.stream().map(converter::convert).toList();
 
-        return new ResponseUserListDto(resultList.size(), resultList);
-    }
+    return new ResponseUserListDto(resultList.size(), resultList);
+  }
 }
