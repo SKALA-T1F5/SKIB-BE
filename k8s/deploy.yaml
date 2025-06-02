@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sk-team-09-backend
+  namespace: sk-team-09
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sk-team-09-backend
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8081"
+        prometheus.io/path: "/actuator/prometheus"
+      labels:
+        app: sk-team-09-backend
+    spec:
+      serviceAccountName: default
+      containers:
+        - name: sk-team-09-backend
+          image: amdp-registry.skala-ai.com/skala25a/sk-team-09-backend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: prod
+            - name: MONGO_URI_PROD
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secret
+                  key: mongo-uri-prod
+            - name: MONGO_DB
+              value: sk-team-09
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: jwt-secret-key
+            - name: LOGGING_LEVEL
+              value: DEBUG
