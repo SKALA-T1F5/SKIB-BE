@@ -20,7 +20,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: sk-team-09-backend
-          image: amdp-registry.skala-ai.com/skala25a/sk-team-09-backend:latest # ✅ 초기 기본값 (Jenkins가 이 줄을 sed로 교체함)
+
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
