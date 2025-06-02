@@ -10,7 +10,7 @@ pipeline {
         IMAGE_REGISTRY = 'amdp-registry.skala-ai.com/skala25a'
         IMAGE_NAME = 'sk-team-09-backend'
         IMAGE_TAG = '1.0.0'
-        DOCKER_CREDENTIAL_ID = 'skala-image-registry'
+        DOCKER_CREDENTIAL_ID = 'skala-image-registry-id'
     }
 
     stages {
