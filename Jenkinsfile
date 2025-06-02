@@ -83,5 +83,16 @@ pipeline {
                 }
             }
         }
+
+        stage('Apply to Kubernetes') {
+            steps {
+                script {
+                    withKubeConfig([credentialsId: 'k8s-access-token']) {
+                        sh "kubectl apply -f ./k8s/deploy.yaml -n sk-team-09"
+                    }
+                }
+            }
+        }
+
     }
 }
