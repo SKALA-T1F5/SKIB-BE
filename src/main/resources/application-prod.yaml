@@ -2,9 +2,6 @@ spring:
   application:
     name: skib
 
-  config:
-    import: optional:file:./.env.properties
-
   datasource:
     url: jdbc:mariadb://${DB_HOST}:3306/${DB_NAME}
     username: ${DB_USERNAME}
