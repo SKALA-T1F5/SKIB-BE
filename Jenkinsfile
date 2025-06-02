@@ -69,6 +69,7 @@ pipeline {
                     sh """
                         git config user.name "$GIT_USER_NAME"
                         git config user.email "$GIT_USER_EMAIL"
+                        git pull --rebase origin ${env.GIT_BRANCH} 
                         git add ./k8s/deploy.yaml || true
                     """
 
@@ -86,5 +87,16 @@ pipeline {
                 }
             }
         }
+
+        stage('Apply to Kubernetes') {
+            steps {
+                script {
+                    withKubeConfig([credentialsId: 'k8s-access-token']) {
+                        sh "kubectl apply -f ./k8s/deploy.yaml -n sk-team-09"
+                    }
+                }
+            }
+        }
+
     }
 }
