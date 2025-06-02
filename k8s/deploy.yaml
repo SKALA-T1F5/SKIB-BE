@@ -20,13 +20,39 @@ spec:
       serviceAccountName: default
       containers:
         - name: sk-team-09-backend
-          image: amdp-registry.skala-ai.com/skala25a/sk-team-09-backend:latest
+          image: amdp-registry.skala-ai.com/skala25a/sk-team-09-backend:1.0.0-x
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:
-            - name: SPRING_PROFILES_ACTIVE
-              value: prod
+            # MariaDB
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: mariadb-secret
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: mariadb-secret
+                  key: DB_PORT
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: mariadb-secret
+                  key: DB_NAME
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mariadb-secret
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mariadb-secret
+                  key: DB_PASSWORD
+
+            # MongoDB
             - name: MONGO_URI_PROD
               valueFrom:
                 secretKeyRef:
@@ -34,10 +60,18 @@ spec:
                   key: mongo-uri-prod
             - name: MONGO_DB
               value: sk-team-09
+
+            # JWT
             - name: JWT_SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: jwt-secret
                   key: jwt-secret-key
+
+            # Logging
             - name: LOGGING_LEVEL
               value: DEBUG
+
+            # Spring Profile
+            - name: SPRING_PROFILES_ACTIVE
+              value: prod
