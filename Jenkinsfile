@@ -69,7 +69,6 @@ pipeline {
                     sh """
                         git config user.name "$GIT_USER_NAME"
                         git config user.email "$GIT_USER_EMAIL"
-                        git pull --rebase origin ${env.GIT_BRANCH} 
                         git add ./k8s/deploy.yaml || true
                     """
 
