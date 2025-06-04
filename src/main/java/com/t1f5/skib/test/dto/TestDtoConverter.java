@@ -16,6 +16,7 @@ public class TestDtoConverter implements DtoConverter<Test, ResponseTestDto> {
     return ResponseTestDto.builder()
         .testId(test.getTestId())
         .name(test.getName())
+        .limitedTime(test.getLimitedTime())
         .createdAt(test.getCreatedDate())
         .build();
   }

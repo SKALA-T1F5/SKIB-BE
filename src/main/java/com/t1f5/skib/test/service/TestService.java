@@ -101,15 +101,20 @@ public class TestService {
   /**
    * 테스트 ID로 테스트를 조회합니다.
    *
-   * @param testId
-   * @return
+   * @param userTestId 유저 테스트 ID
+   * @return ResponseTestDto
    */
-  public ResponseTestDto getTestById(Integer testId) {
-    log.info("Fetching test with ID: {}", testId);
+  public ResponseTestDto getTestById(Integer userTestId) {
+    log.info("Fetching test with ID: {}", userTestId);
+    UserTest userTest =
+        userTestRepository
+            .findById(userTestId)
+            .orElseThrow(() -> new IllegalArgumentException("해당 유저테스트를 찾을 수 없습니다: " + userTestId));
+
     Test test =
         testRepository
-            .findById(testId)
-            .orElseThrow(() -> new IllegalArgumentException("해당 테스트를 찾을 수 없습니다: " + testId));
+            .findById(userTest.getTest().getTestId())
+            .orElseThrow(() -> new IllegalArgumentException("해당 테스트를 찾을 수 없습니다: " + userTest.getTest().getTestId()));
 
     DtoConverter<Test, ResponseTestDto> converter = new TestDtoConverter();
 
