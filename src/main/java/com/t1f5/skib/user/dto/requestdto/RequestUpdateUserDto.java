@@ -15,9 +15,6 @@ public class RequestUpdateUserDto {
   @NotBlank(message = "이름은 공백일 수 없습니다.")
   private String name;
 
-  @NotBlank(message = "부서는 공백일 수 없습니다.")
-  private String department;
-
   @NotBlank(message = "비밀번호는 공백일 수 없습니다.")
   private String password;
 }

@@ -48,8 +48,8 @@ public class Test extends BaseTimeEntity {
   @Column(name = "pass_score", nullable = false)
   private Integer passScore;
 
-  @Column(name = "is_retaken", nullable = false)
-  private Boolean isRetaken;
+  @Column(name = "is_retake", nullable = false)
+  private Boolean isRetake;
 
   @Column(name = "is_deleted", nullable = false)
   private Boolean isDeleted;

@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 public class ResponseTestDto {
   private Integer testId;
   private String name;
+  private Integer limitedTime;
   private LocalDateTime createdAt;
 
   // 추가 필드 : 테스트의 문제들
