@@ -1,6 +1,7 @@
 package com.t1f5.skib.question.domain;
 
 import com.t1f5.skib.global.enums.DifficultyLevel;
+import com.t1f5.skib.global.enums.QuestionType;
 import java.util.List;
 import lombok.*;
 import org.springframework.data.annotation.Id;
@@ -15,7 +16,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class Question {
   @Id private String id;
 
-  private String type; // 객관식(MULTIPLE_CHOICE), 서술형(SUBJECTIVE)
+  private QuestionType type; // 객관식(MULTIPLE_CHOICE), 서술형(SUBJECTIVE)
   private DifficultyLevel difficultyLevel; // 난이도 (예: EASY, MEDIUM, HARD)
   private String question; // 문제 본문
   private List<String> options; // 객관식 선택지 (nullable)

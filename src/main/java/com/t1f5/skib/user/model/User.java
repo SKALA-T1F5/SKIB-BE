@@ -3,6 +3,7 @@ package com.t1f5.skib.user.model;
 import com.t1f5.skib.global.domain.BaseTimeEntity;
 import com.t1f5.skib.global.enums.UserType;
 import com.t1f5.skib.project.domain.ProjectUser;
+import com.t1f5.skib.test.domain.UserTest;
 import jakarta.persistence.*;
 import java.util.List;
 import lombok.*;
@@ -42,6 +43,9 @@ public class User extends BaseTimeEntity {
 
   @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<ProjectUser> projectTrainers;
+
+  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<UserTest> userTests;
 
   // // 🔗 관계 설정
 

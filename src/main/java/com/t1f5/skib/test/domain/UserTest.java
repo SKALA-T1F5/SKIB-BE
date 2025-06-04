@@ -1,5 +1,6 @@
 package com.t1f5.skib.test.domain;
 
+import com.t1f5.skib.user.model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -51,5 +52,7 @@ public class UserTest {
   @JoinColumn(name = "test_id", nullable = false)
   private Test test;
 
-  // 유저랑 연동 추가
+  @ManyToOne
+  @JoinColumn(name = "user_id", nullable = false)
+  private User user;
 }
