@@ -1,6 +1,7 @@
 package com.t1f5.skib.question.dto;
 
 import com.t1f5.skib.global.dtos.DtoConverter;
+import com.t1f5.skib.global.enums.QuestionType;
 import com.t1f5.skib.question.domain.Question;
 import org.springframework.stereotype.Component;
 
@@ -10,7 +11,7 @@ public class QuestionDtoConverter implements DtoConverter<QuestionDto, Question>
   @Override
   public Question convert(QuestionDto dto) {
     return Question.builder()
-        .type(dto.getType())
+        .type(QuestionType.valueOf(dto.getType()))
         .difficultyLevel(dto.getDifficulty_level())
         .question(dto.getQuestion())
         .options(dto.getOptions())
