@@ -53,10 +53,6 @@ public class User extends BaseTimeEntity {
   // @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
   // private List<ProjectTrainer> projectTrainers = new ArrayList<>();
 
-  // // UserTest: 유저가 응시한 테스트들
-  // @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-  // private List<UserTest> userTests = new ArrayList<>();
-
   // // UserAnswer: 유저가 작성한 답변들
   // @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
   // private List<UserAnswer> userAnswers = new ArrayList<>();
