@@ -1,5 +1,6 @@
 package com.t1f5.skib.test.domain;
 
+import com.t1f5.skib.global.domain.BaseTimeEntity;
 import com.t1f5.skib.user.model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -25,7 +26,7 @@ import org.hibernate.annotations.Where;
 @Builder
 @Where(clause = "is_deleted = false")
 @Table(name = "USER_TEST")
-public class UserTest {
+public class UserTest extends BaseTimeEntity {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Integer userTestId;
@@ -36,8 +37,8 @@ public class UserTest {
   @Column(name = "is_taken", nullable = false)
   private Boolean isTaken;
 
-  @Column(name = "is_retaken", nullable = false)
-  private Boolean isRetaken;
+  @Column(name = "retake", nullable = false)
+  private Boolean retake;
 
   @Column(name = "taken_date", nullable = false)
   private LocalDateTime takenDate;

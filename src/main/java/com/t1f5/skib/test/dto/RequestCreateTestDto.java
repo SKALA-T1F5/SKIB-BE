@@ -15,7 +15,7 @@ public class RequestCreateTestDto {
   private DifficultyLevel difficultyLevel;
   private Integer limitedTime;
   private Integer passScore;
-  private Boolean isRetaken;
+  private Boolean isRetake;
 
   @Valid private List<TestDocumentConfigDto> documentConfigs;
 }
