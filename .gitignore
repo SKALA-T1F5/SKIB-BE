@@ -37,3 +37,7 @@ out/
 ### VS Code ###
 /vscode/
 
+### Secretes ###
+k8s/jwt-secret.yaml
+k8s/mariadb-secret.yaml
+k8s/mongo-secret.yaml
