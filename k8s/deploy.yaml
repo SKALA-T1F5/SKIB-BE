@@ -65,9 +65,6 @@ spec:
                   name: jwt-secret
                   key: jwt-secret-key
 
-            - name: LOGGING_LEVEL
-              value: DEBUG
-
             - name: SPRING_PROFILES_ACTIVE
               value: prod
       imagePullSecrets:
