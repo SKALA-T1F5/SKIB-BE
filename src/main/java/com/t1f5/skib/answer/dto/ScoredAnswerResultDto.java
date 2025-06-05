@@ -15,5 +15,6 @@ public class ScoredAnswerResultDto {
   private String explanation; // 정답 해설
   private String response; // 사용자의 응답 (객관식 선택지 또는 서술형 답변)
   private String answer; // 정답
+  private int score; // 주관식 채점 점수
   private boolean isCorrect; // 정답 여부
 }
