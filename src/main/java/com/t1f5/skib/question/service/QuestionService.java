@@ -25,7 +25,7 @@ public class QuestionService {
   private final QuestionMongoRepository questionMongoRepository;
   private final QuestionDtoConverter questionDtoConverter;
 
-  public void generateQuestions(List<DocumentQuestionRequest> requests) {
+  public void generateQuestions(List<DocumentQuestionRequest> requests, Integer projectId) {
     String url = "http://10.250.73.103:8000/api/question";
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
@@ -37,7 +37,9 @@ public class QuestionService {
           restTemplate.postForEntity(url, entity, QuestionDto[].class);
 
       List<Question> questions =
-          Arrays.stream(response.getBody()).map(questionDtoConverter::convert).toList();
+          Arrays.stream(response.getBody())
+              .map(dto -> questionDtoConverter.convert(dto, projectId))
+              .toList();
 
       questionMongoRepository.saveAll(questions);
     }

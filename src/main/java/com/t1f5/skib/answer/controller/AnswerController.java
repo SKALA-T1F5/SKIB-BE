@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/answers")
+@RequestMapping("/api/answer")
 public class AnswerController {
 
   private final AnswerService answerService;
@@ -29,5 +29,14 @@ public class AnswerController {
 
     answerService.saveAnswer(dto, userTestId);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "답변이 성공적으로 저장되었습니다."));
+  }
+
+  @SwaggerApiSuccess(summary = "채점 결과 조회", description = "사용자의 채점결과를 반환합니다.")
+  @SwaggerApiNotFoundError
+  @SwaggerInternetServerError
+  @GetMapping("/getResult")
+  public ResponseEntity<ResultDto<?>> getScoredAnswersByUserTestId(Integer userTestId) {
+    answerService.getScoredAnswersByUserTestId(userTestId);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "답변을 성공적으로 조회했습니다."));
   }
 }

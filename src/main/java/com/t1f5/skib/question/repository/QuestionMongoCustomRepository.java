@@ -6,5 +6,5 @@ import java.util.List;
 
 public interface QuestionMongoCustomRepository {
   List<Question> findRandomQuestionsByTypeAndDocumentId(
-      String documentId, QuestionType type, int limit);
+      String documentId, QuestionType type, int limit, Integer projectId);
 }

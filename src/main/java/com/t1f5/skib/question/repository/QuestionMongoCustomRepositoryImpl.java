@@ -22,9 +22,15 @@ public class QuestionMongoCustomRepositoryImpl implements QuestionMongoCustomRep
 
   @Override
   public List<Question> findRandomQuestionsByTypeAndDocumentId(
-      String documentId, QuestionType type, int limit) {
+      String documentId, QuestionType type, int limit, Integer projectId) {
     MatchOperation match =
-        Aggregation.match(Criteria.where("documentId").is(documentId).and("type").is(type));
+        Aggregation.match(
+            Criteria.where("projectId")
+                .is(projectId)
+                .and("documentId")
+                .in(documentId)
+                .and("type")
+                .is(type));
     SampleOperation sample = Aggregation.sample(limit);
     Aggregation aggregation = Aggregation.newAggregation(match, sample);
     AggregationResults<Question> result =

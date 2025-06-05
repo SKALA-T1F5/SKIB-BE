@@ -10,6 +10,7 @@ import com.t1f5.skib.question.domain.Question;
 import com.t1f5.skib.question.repository.QuestionMongoRepository;
 import com.t1f5.skib.test.domain.UserTest;
 import com.t1f5.skib.test.repository.UserTestRepository;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -91,6 +92,58 @@ public class AnswerService {
         log.info("주관식 DTO 변환 결과: {}", dtoResult);
       }
     }
+  }
+
+  /**
+   * 채점 결과를 조회합니다.
+   *
+   * @param userTestId 사용자 테스트 ID
+   * @return 사용자가 제출한 답변 목록
+   */
+  public List<ScoredAnswerResultDto> getScoredAnswersByUserTestId(Integer userTestId) {
+    List<Answer> answers = answerRepository.findByUserTest_UserTestId(userTestId);
+
+    List<ScoredAnswerResultDto> results = new ArrayList<>();
+
+    for (Answer answer : answers) {
+      String questionId = answer.getQuestionId();
+
+      Question question =
+          questionMongoRepository
+              .findById(questionId)
+              .orElseThrow(() -> new IllegalArgumentException("해당 문제를 찾을 수 없습니다: " + questionId));
+
+      SubjectiveAnswer subjectiveAnswer = null;
+      Integer score = 0;
+
+      if (answer.getType() == QuestionType.SUBJECTIVE) {
+        subjectiveAnswer =
+            subjectiveAnswerRepository
+                .findByUserAnswerId(String.valueOf(answer.getUserAnswerId()))
+                .orElse(null);
+
+        if (subjectiveAnswer != null) {
+          score = subjectiveAnswer.getScore();
+        }
+      }
+
+      ScoredAnswerResultDto dto =
+          ScoredAnswerResultDto.builder()
+              .questionId(answer.getQuestionId())
+              .type(answer.getType())
+              .question(question.getQuestion())
+              .options(question.getOptions())
+              .explanation(question.getExplanation())
+              .response(answer.getResponse())
+              .answer(question.getAnswer())
+              .isCorrect(Boolean.TRUE.equals(answer.getIsCorrect()))
+              .score(score)
+              .build();
+
+      results.add(dto);
+    }
+
+    return results;
   }
 
   private Boolean getIsCorrectForMultipleChoice(String questionId, String userResponse) {

@@ -25,8 +25,8 @@ public class QuestionController {
   @SwaggerInternetServerError
   @PostMapping
   public ResponseEntity<ResultDto<?>> generateQuestions(
-      @RequestBody RequestCreateQuestionDto request) {
-    questionService.generateQuestions(request.getDocuments());
+      @RequestBody RequestCreateQuestionDto request, Integer projectId) {
+    questionService.generateQuestions(request.getDocuments(), projectId);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "문제 생성 및 저장 완료"));
   }
 }

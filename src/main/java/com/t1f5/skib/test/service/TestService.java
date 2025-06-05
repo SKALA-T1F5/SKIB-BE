@@ -101,13 +101,15 @@ public class TestService {
           questionMongoRepository.findRandomQuestionsByTypeAndDocumentId(
               String.valueOf(configDto.getDocumentId()),
               QuestionType.OBJECTIVE,
-              configDto.getConfiguredObjectiveCount());
+              configDto.getConfiguredObjectiveCount(),
+              projectId);
 
       List<Question> subjectiveQuestions =
           questionMongoRepository.findRandomQuestionsByTypeAndDocumentId(
               String.valueOf(configDto.getDocumentId()),
               QuestionType.SUBJECTIVE,
-              configDto.getConfiguredSubjectiveCount());
+              configDto.getConfiguredSubjectiveCount(),
+              projectId);
 
       // 2-3. 추출된 문제들을 TestQuestion 테이블에 저장
       Stream.concat(objectiveQuestions.stream(), subjectiveQuestions.stream())

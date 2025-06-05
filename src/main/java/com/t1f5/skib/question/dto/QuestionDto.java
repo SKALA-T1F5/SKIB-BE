@@ -18,6 +18,8 @@ public class QuestionDto {
   private List<String> options;
   private String answer;
   private String explanation;
+  private Integer projectId;
+  private List<String> grading_criteria;
   private String document_id;
   private List<String> tags;
 }
