@@ -23,6 +23,7 @@ public class Question {
   private String answer; // 정답
   private List<String> grading_criteria; // 채점 기준 (nullable)
   private String explanation; // 해설
+  private Integer projectId; // 프로젝트 ID (nullable)
   private String documentId; // 문서 ID
   private List<String> tags; // 태그 목록 (예: 문해력, 논리력 등)
 }
