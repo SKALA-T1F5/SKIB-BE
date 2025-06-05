@@ -71,4 +71,4 @@ spec:
             - name: SPRING_PROFILES_ACTIVE
               value: prod
       imagePullSecrets:
-        - name: skala-image-registry-id
+        - name: amdp-registry
