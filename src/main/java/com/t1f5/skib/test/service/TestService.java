@@ -135,7 +135,13 @@ public class TestService {
     return "https://localhost:8080/invite/" + token;
   }
 
-  public ResponseTestDto getTestById(Integer userTestId) {
+  /**
+   * 유저 테스트 ID로 테스트 정보를 조회합니다.
+   *
+   * @param userTestId
+   * @return
+   */
+  public ResponseTestDto getTestByUserTestId(Integer userTestId) {
     log.info("Fetching test with ID: {}", userTestId);
 
     UserTest userTest =
@@ -150,6 +156,32 @@ public class TestService {
                 () ->
                     new IllegalArgumentException(
                         "해당 테스트를 찾을 수 없습니다: " + userTest.getTest().getTestId()));
+
+    // 1. TestQuestion → questionId 수집
+    List<TestQuestion> testQuestions = testQuestionRepository.findByTest(test);
+    List<String> questionIds =
+        testQuestions.stream().map(TestQuestion::getQuestionId).collect(Collectors.toList());
+
+    // 2. MongoDB에서 실제 문제 조회
+    List<Question> questions = questionMongoRepository.findAllById(questionIds);
+
+    // 3. Question → QuestionDto 변환
+    List<QuestionDto> questionDtos =
+        questions.stream().map(questionDtoConverter::convert).collect(Collectors.toList());
+
+    // 4. Test → ResponseTestDto 변환
+    ResponseTestDto responseDto = testDtoConverter.convert(test); // 기존 converter 사용
+    responseDto.setQuestions(questionDtos); // 문제 리스트 추가
+
+    return responseDto;
+  }
+
+  public ResponseTestDto getTestById(Integer testId) {
+    log.info("Fetching test with ID: {}", testId);
+    Test test =
+        testRepository
+            .findById(testId)
+            .orElseThrow(() -> new IllegalArgumentException("해당 테스트를 찾을 수 없습니다: " + testId));
 
     // 1. TestQuestion → questionId 수집
     List<TestQuestion> testQuestions = testQuestionRepository.findByTest(test);

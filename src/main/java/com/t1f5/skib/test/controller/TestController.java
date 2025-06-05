@@ -47,6 +47,16 @@ public class TestController {
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", result));
   }
 
+  @SwaggerApiSuccess(summary = "유저 테스트 단일 조회", description = "유저 테스트 ID로 테스트를 조회합니다.")
+  @SwaggerApiNotFoundError
+  @SwaggerInternetServerError
+  @GetMapping("/getUserTest")
+  public ResponseEntity<ResultDto<ResponseTestDto>> getTestByUserTestId(
+      @RequestParam Integer userTestId) {
+    ResponseTestDto result = testService.getTestByUserTestId(userTestId);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", result));
+  }
+
   @SwaggerApiSuccess(summary = "테스트 전체 조회", description = "특정 프로젝트의 모든 테스트 목록을 조회합니다.")
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError

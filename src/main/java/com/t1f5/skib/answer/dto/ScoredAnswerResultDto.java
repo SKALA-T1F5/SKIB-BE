@@ -8,13 +8,12 @@ import lombok.Data;
 @Data
 @Builder
 public class ScoredAnswerResultDto {
-  private String questionId;
-  private QuestionType questionType;
-  private String questionText;
-  private List<String> choices; // 객관식 선지
-  private String solution; // 정답 해설
-  private List<String> gradingCriteria; // 주관식 채점 기준
-  private String userResponse;
-  private String correctAnswer;
-  private boolean isCorrect;
+  private String questionId; // 문제 ID
+  private QuestionType type; // 문제 유형 (객관식, 서술형 등)
+  private String question; // 문제 본문
+  private List<String> options; // 객관식 선지
+  private String explanation; // 정답 해설
+  private String response; // 사용자의 응답 (객관식 선택지 또는 서술형 답변)
+  private String answer; // 정답
+  private boolean isCorrect; // 정답 여부
 }

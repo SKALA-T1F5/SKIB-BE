@@ -4,7 +4,7 @@ spring:
 
   config:
     import: optional:file:./.env.properties
-    
+
   datasource:
     url: jdbc:mariadb://localhost:3306/SKIB
     username: root
@@ -21,7 +21,7 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb+srv://yoonalim2003:${MONGO_PASSWORD}@cluster0.9asfqrd.mongodb.net/SKIB?retryWrites=true&w=majority
+      uri: mongodb+srv://yoonalim2003:${MONGO_PASSWORD_LOCAL}@cluster0.9asfqrd.mongodb.net/SKIB?retryWrites=true&w=majority
       database: SKIB
 
 jwt:
