@@ -3,7 +3,9 @@ package com.t1f5.skib.test.dto;
 import com.t1f5.skib.global.dtos.DtoConverter;
 import com.t1f5.skib.test.domain.Test;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
+@Component
 @RequiredArgsConstructor
 public class TestDtoConverter implements DtoConverter<Test, ResponseTestDto> {
 

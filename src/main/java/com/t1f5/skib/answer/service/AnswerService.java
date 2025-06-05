@@ -47,7 +47,6 @@ public class AnswerService {
     for (AnswerRequest item : dto.getAnswers()) {
       Boolean isCorrect = null;
       int score = 0;
-      String feedback = null;
 
       if (item.getQuestionType() == QuestionType.OBJECTIVE) {
         isCorrect = getIsCorrectForMultipleChoice(item.getId(), item.getResponse());
