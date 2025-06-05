@@ -70,11 +70,3 @@ clean {
 	delete file('src/main/generated')
 }
 
-bootJar {
-    archiveFileName = 'app.jar'
-    manifest {
-        attributes(
-            'Main-Class': 'com.t1f5.skib.SkibApplication'
-        )
-    }
-}
