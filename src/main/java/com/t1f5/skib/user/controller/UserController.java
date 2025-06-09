@@ -24,14 +24,14 @@ public class UserController {
 
   private final UserService userService;
 
-  // 1. 유저 생성 (여러 명을 한꺼번에)
+  // 1. 유저(trainer/trainee) 생성 (여러 명을 한꺼번에)
   @SwaggerApiSuccess(summary = "유저 생성", description = "새로운 유저를 생성합니다.")
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
   @PostMapping
   public ResponseEntity<?> createUsers(@Valid @RequestBody RequestCreateUserDto dto) {
-    userService.createUsers(dto);
-    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "유저 생성 완료"));
+    userService.createUsers(dto, dto.getType()); //
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", dto.getType() + " 생성 완료"));
   }
 
   // 2. 유저 정보 수정
