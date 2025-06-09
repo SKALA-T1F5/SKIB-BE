@@ -20,7 +20,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: sk-team-09-backend
-          image: amdp-registry.skala-ai.com/skala25a/sk-team-09-backend:1.0.0-x
+          image: amdp-registry.skala-ai.com/skala25a/sk-team-09-backend:1.0.0-29-7e700b41edca
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -65,10 +65,7 @@ spec:
                   name: jwt-secret
                   key: jwt-secret-key
 
-            - name: LOGGING_LEVEL
-              value: DEBUG
-
             - name: SPRING_PROFILES_ACTIVE
               value: prod
       imagePullSecrets:
-        - name: skala-image-registry-id
+        - name: amdp-registry

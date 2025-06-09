@@ -70,6 +70,3 @@ clean {
 	delete file('src/main/generated')
 }
 
-bootJar {
-    archiveFileName = 'app.jar'
-}
