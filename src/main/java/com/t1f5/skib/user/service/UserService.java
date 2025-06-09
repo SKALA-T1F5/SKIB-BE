@@ -25,18 +25,18 @@ public class UserService {
   private final PasswordEncoder passwordEncoder;
 
   /**
-   * 여러 명의 유저를 한 번에 생성
+   * 여러 명의 유저(TRAINER or TRAINEE)를 한 번에 생성
    *
    * @param dto 유저 생성 요청 DTO
+   * @param userType 생성할 유저의 타입 (TRAINER or TRAINEE)
    * @throws UserAlreadyExistsException 이메일 중복 시 예외 발생
    */
-  public void createUsers(RequestCreateUserDto dto) {
+  public void createUsers(RequestCreateUserDto dto, UserType userType) {
     List<String> emails = dto.getEmails();
     String password = passwordEncoder.encode(dto.getPassword());
     String department = dto.getDepartment();
 
     for (String email : emails) {
-      // 이메일 중복 여부 체크
       if (userRepository.existsByEmail(email)) {
         throw new UserAlreadyExistsException(email);
       }
@@ -46,9 +46,10 @@ public class UserService {
               .email(email)
               .password(password)
               .department(department)
-              .type(UserType.TRAINEE)
+              .type(userType)
               .isDeleted(false)
               .build();
+
       userRepository.save(user);
     }
   }
