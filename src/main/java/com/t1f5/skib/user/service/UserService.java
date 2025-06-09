@@ -25,7 +25,7 @@ public class UserService {
   private final PasswordEncoder passwordEncoder;
 
   /**
-   * 여러 명의 유저(Trainer 또는 Trainee)를 한 번에 생성
+   * 여러 명의 유저를 한 번에 생성
    *
    * @param dto 유저 생성 요청 DTO
    * @throws UserAlreadyExistsException 이메일 중복 시 예외 발생
@@ -33,6 +33,7 @@ public class UserService {
   public void createUsers(RequestCreateUserDto dto) {
     List<String> emails = dto.getEmails();
     String password = passwordEncoder.encode(dto.getPassword());
+    String department = dto.getDepartment();
 
     for (String email : emails) {
       // 이메일 중복 여부 체크
@@ -44,6 +45,7 @@ public class UserService {
           User.builder()
               .email(email)
               .password(password)
+              .department(department)
               .type(UserType.TRAINEE)
               .isDeleted(false)
               .build();
@@ -64,7 +66,7 @@ public class UserService {
             .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
 
     user.setName(dto.getName());
-    user.setDepartment(dto.getDepartment());
+
     // null이거나 빈 값이면 암호화도 하지 않고 기존 비밀번호 유지
     if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
       user.setPassword(passwordEncoder.encode(dto.getPassword()));

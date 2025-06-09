@@ -1,7 +1,6 @@
 package com.t1f5.skib.test.domain;
 
 import com.t1f5.skib.global.domain.BaseTimeEntity;
-import com.t1f5.skib.user.model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -10,7 +9,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,26 +23,11 @@ import org.hibernate.annotations.Where;
 @AllArgsConstructor
 @Builder
 @Where(clause = "is_deleted = false")
-@Table(name = "USER_TEST")
-public class UserTest extends BaseTimeEntity {
+@Table(name = "TEST_QUESTION")
+public class TestQuestion extends BaseTimeEntity {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Integer userTestId;
-
-  @Column(name = "is_passed", nullable = false)
-  private Boolean isPassed;
-
-  @Column(name = "is_taken", nullable = false)
-  private Boolean isTaken;
-
-  @Column(name = "retake", nullable = false)
-  private Boolean retake;
-
-  @Column(name = "taken_date", nullable = false)
-  private LocalDateTime takenDate;
-
-  @Column(name = "score", nullable = false)
-  private Integer score;
+  private Integer testQuestionId;
 
   @Column(name = "is_deleted", nullable = false)
   private Boolean isDeleted;
@@ -53,7 +36,6 @@ public class UserTest extends BaseTimeEntity {
   @JoinColumn(name = "test_id", nullable = false)
   private Test test;
 
-  @ManyToOne
-  @JoinColumn(name = "user_id", nullable = false)
-  private User user;
+  @Column(name = "question_id", nullable = false, length = 100)
+  private String questionId; // MongoDB question _id
 }

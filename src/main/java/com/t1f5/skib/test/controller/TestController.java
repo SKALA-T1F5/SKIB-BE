@@ -47,6 +47,16 @@ public class TestController {
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", result));
   }
 
+  @SwaggerApiSuccess(summary = "유저 테스트 단일 조회", description = "유저 테스트 ID로 테스트를 조회합니다.")
+  @SwaggerApiNotFoundError
+  @SwaggerInternetServerError
+  @GetMapping("/getUserTest")
+  public ResponseEntity<ResultDto<ResponseTestDto>> getTestByUserTestId(
+      @RequestParam Integer userTestId) {
+    ResponseTestDto result = testService.getTestByUserTestId(userTestId);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", result));
+  }
+
   @SwaggerApiSuccess(summary = "테스트 전체 조회", description = "특정 프로젝트의 모든 테스트 목록을 조회합니다.")
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
@@ -64,5 +74,16 @@ public class TestController {
   public ResponseEntity<ResultDto<String>> deleteTest(@RequestParam Integer testId) {
     testService.deleteTest(testId);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "테스트가 성공적으로 삭제되었습니다."));
+  }
+
+  @SwaggerApiSuccess(summary = "초대링크로 유저 등록", description = "초대링크와 이메일을 기반으로 유저를 유저테스트에 등록합니다.")
+  @SwaggerApiNotFoundError
+  @SwaggerInternetServerError
+  @PostMapping("/invite/register")
+  public ResponseEntity<ResultDto<String>> registerUserToTest(
+      @RequestParam String token, Integer userId) {
+
+    testService.registerUserToTest(token, userId);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "유저가 테스트에 등록되었습니다."));
   }
 }
