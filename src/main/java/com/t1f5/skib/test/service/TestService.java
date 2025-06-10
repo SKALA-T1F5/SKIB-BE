@@ -1,50 +1,51 @@
 package com.t1f5.skib.test.service;
 
-import com.t1f5.skib.document.domain.Document;
-import com.t1f5.skib.document.repository.DocumentRepository;
 import com.t1f5.skib.global.dtos.DtoConverter;
-import com.t1f5.skib.global.enums.QuestionType;
 import com.t1f5.skib.project.repository.ProjectJpaRepository;
 import com.t1f5.skib.question.domain.Question;
 import com.t1f5.skib.question.dto.QuestionDto;
+import com.t1f5.skib.question.dto.RequestCreateQuestionDto;
 import com.t1f5.skib.question.dto.ResponseQuestionDtoConverter;
 import com.t1f5.skib.question.repository.QuestionMongoRepository;
+import com.t1f5.skib.question.service.QuestionService;
 import com.t1f5.skib.test.domain.InviteLink;
 import com.t1f5.skib.test.domain.Test;
-import com.t1f5.skib.test.domain.TestDocumentConfig;
 import com.t1f5.skib.test.domain.TestQuestion;
 import com.t1f5.skib.test.domain.UserTest;
+import com.t1f5.skib.test.dto.RequestCreateTestByLLMDto;
 import com.t1f5.skib.test.dto.RequestCreateTestDto;
 import com.t1f5.skib.test.dto.ResponseTestDto;
 import com.t1f5.skib.test.dto.ResponseTestListDto;
 import com.t1f5.skib.test.dto.TestDocumentConfigDto;
 import com.t1f5.skib.test.dto.TestDtoConverter;
 import com.t1f5.skib.test.repository.InviteLinkRepository;
-import com.t1f5.skib.test.repository.TestDocumentConfigRepository;
 import com.t1f5.skib.test.repository.TestQuestionRepository;
 import com.t1f5.skib.test.repository.TestRepository;
 import com.t1f5.skib.test.repository.UserTestRepository;
 import com.t1f5.skib.user.model.User;
 import com.t1f5.skib.user.repository.UserRepository;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 
 @RequiredArgsConstructor
 @Slf4j
 @Service
 public class TestService {
-  // 기존 필드
   private final TestRepository testRepository;
-  private final DocumentRepository documentRepository;
   private final ProjectJpaRepository projectRepository;
-  private final TestDocumentConfigRepository testDocumentConfigRepository;
   private final InviteLinkRepository inviteLinkRepository;
   private final UserRepository userRepository;
   private final UserTestRepository userTestRepository;
@@ -52,6 +53,37 @@ public class TestService {
   private final TestQuestionRepository testQuestionRepository;
   private final TestDtoConverter testDtoConverter;
   private final ResponseQuestionDtoConverter questionDtoConverter;
+  private final WebClient webClient;
+  private final QuestionService questionService;
+
+  /**
+   * LLM을 사용하여 테스트를 생성합니다.
+   *
+   * @param projectId 프로젝트 ID
+   * @param dto LLM 요청 DTO
+   * @return 생성된 테스트의 응답
+   */
+  public String makeTest(Integer projectId, RequestCreateTestByLLMDto dto) {
+    log.info("Creating test by LLM for project ID: {}", projectId);
+
+    if (!projectRepository.existsById(projectId)) {
+      throw new IllegalArgumentException("해당 프로젝트가 존재하지 않습니다: " + projectId);
+    }
+
+    String response =
+        webClient
+            .post()
+            .uri("http://fastapi-service:8000/api/test/generate")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(dto)
+            .retrieve()
+            .bodyToMono(String.class)
+            .block();
+
+    log.info("FastAPI 응답: {}", response);
+
+    return response;
+  }
 
   /**
    * 테스트를 저장하고 초대 링크를 생성합니다.
@@ -60,7 +92,7 @@ public class TestService {
    * @param requestCreateTestDto
    * @return
    */
-  public String saveTest(Integer projectId, RequestCreateTestDto requestCreateTestDto) {
+  public void saveTest(Integer projectId, RequestCreateTestDto requestCreateTestDto) {
     log.info("Saving test with name: {}", requestCreateTestDto.getName());
 
     // 1. 테스트 저장
@@ -76,66 +108,41 @@ public class TestService {
             .build();
     testRepository.save(test);
 
-    // 2. 문서별 구성 저장 + 문제 랜덤 선택 및 저장
-    for (TestDocumentConfigDto configDto : requestCreateTestDto.getDocumentConfigs()) {
-      Document document =
-          documentRepository
-              .findById(configDto.getDocumentId())
-              .orElseThrow(
-                  () ->
-                      new IllegalArgumentException(
-                          "해당 문서를 찾을 수 없습니다: " + configDto.getDocumentId()));
+    // 2. 병렬로 문제 생성 및 TestQuestion 저장
+    generateAndSaveQuestionsInParallel(test, requestCreateTestDto, projectId);
 
-      TestDocumentConfig config =
-          TestDocumentConfig.builder()
-              .test(test)
-              .document(document)
-              .configuredObjectiveCount(configDto.getConfiguredObjectiveCount())
-              .configuredSubjectiveCount(configDto.getConfiguredSubjectiveCount())
-              .isDeleted(false)
-              .build();
-      testDocumentConfigRepository.save(config);
-
-      // 2-1. 객관식 문제 MongoDB에서 랜덤 추출
-      List<Question> objectiveQuestions =
-          questionMongoRepository.findRandomQuestionsByTypeAndDocumentId(
-              String.valueOf(configDto.getDocumentId()),
-              QuestionType.OBJECTIVE,
-              configDto.getConfiguredObjectiveCount(),
-              projectId);
-
-      List<Question> subjectiveQuestions =
-          questionMongoRepository.findRandomQuestionsByTypeAndDocumentId(
-              String.valueOf(configDto.getDocumentId()),
-              QuestionType.SUBJECTIVE,
-              configDto.getConfiguredSubjectiveCount(),
-              projectId);
-
-      // 2-3. 추출된 문제들을 TestQuestion 테이블에 저장
-      Stream.concat(objectiveQuestions.stream(), subjectiveQuestions.stream())
-          .forEach(
-              q -> {
-                TestQuestion testQuestion =
-                    TestQuestion.builder()
-                        .test(test)
-                        .questionId(q.getId()) // MongoDB ObjectId
-                        .isDeleted(false)
-                        .build();
-                testQuestionRepository.save(testQuestion);
-              });
-    }
-
-    // 3. 초대 링크 생성 및 저장
+    // 3. 초대 링크 생성
     String token = UUID.randomUUID().toString();
     LocalDateTime expiration = LocalDateTime.now().plusDays(7);
 
     InviteLink inviteLink =
         InviteLink.builder().test(test).token(token).expiresAt(expiration).isDeleted(false).build();
     inviteLinkRepository.save(inviteLink);
-
-    // 4. 초대 링크 반환
-    return "https://localhost:8080/invite/" + token;
   }
+
+  /**
+   * 테스트 ID로 초대 링크를 조회합니다.
+   *
+   * @param testId
+   * @return 초대 링크 URL
+   */
+  public String getInviteLink(Integer testId) {
+    log.info("Fetching invite link for test ID: {}", testId);
+
+    Test test =
+        testRepository
+            .findById(testId)
+            .orElseThrow(() -> new IllegalArgumentException("해당 테스트를 찾을 수 없습니다: " + testId));
+
+    InviteLink inviteLink =
+        inviteLinkRepository
+            .findByTest_TestIdAndIsDeletedFalse(test.getTestId())
+            .orElseThrow(() -> new IllegalArgumentException("해당 테스트의 초대 링크를 찾을 수 없습니다."));
+
+    return "https://localhost:8080/invite/" + inviteLink.getToken();
+  }
+
+  public void saveUserTest() {}
 
   /**
    * 유저 테스트 ID로 테스트 정보를 조회합니다.
@@ -282,5 +289,52 @@ public class TestService {
             .build();
 
     userTestRepository.save(userTest);
+  }
+
+  private void generateAndSaveQuestionsInParallel(
+      Test test, RequestCreateTestDto requestDto, Integer projectId) {
+    ExecutorService executor = Executors.newFixedThreadPool(4);
+    List<Future<List<Question>>> futures = new ArrayList<>();
+
+    for (TestDocumentConfigDto config : requestDto.getDocumentConfigs()) {
+      futures.add(
+          executor.submit(
+              () -> {
+                RequestCreateQuestionDto dto =
+                    RequestCreateQuestionDto.builder()
+                        .name(requestDto.getName())
+                        .difficultyLevel(requestDto.getDifficultyLevel())
+                        .limitedTime(requestDto.getLimitedTime())
+                        .passScore(requestDto.getPassScore())
+                        .isRetake(requestDto.getIsRetake())
+                        .documentId(config.getDocumentId())
+                        .objectiveCount(config.getConfiguredObjectiveCount())
+                        .subjectiveCount(config.getConfiguredSubjectiveCount())
+                        .build();
+
+                return questionService.generateQuestions(List.of(dto), projectId);
+              }));
+    }
+
+    try {
+      for (Future<List<Question>> future : futures) {
+        List<Question> questions = future.get(); // 한 문서에서 생성된 문제들
+
+        for (Question q : questions) {
+          TestQuestion testQuestion =
+              TestQuestion.builder()
+                  .test(test)
+                  .questionId(q.getId()) // MongoDB ObjectId
+                  .isDeleted(false)
+                  .build();
+          testQuestionRepository.save(testQuestion);
+        }
+      }
+    } catch (InterruptedException | ExecutionException e) {
+      log.error("문제 병렬 생성 중 오류 발생", e);
+      throw new RuntimeException("문제 생성 실패", e);
+    } finally {
+      executor.shutdown();
+    }
   }
 }

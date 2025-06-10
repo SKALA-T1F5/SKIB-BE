@@ -4,6 +4,7 @@ import com.t1f5.skib.global.customAnnotations.SwaggerApiNotFoundError;
 import com.t1f5.skib.global.customAnnotations.SwaggerApiSuccess;
 import com.t1f5.skib.global.customAnnotations.SwaggerInternetServerError;
 import com.t1f5.skib.global.dtos.ResultDto;
+import com.t1f5.skib.test.dto.RequestCreateTestByLLMDto;
 import com.t1f5.skib.test.dto.RequestCreateTestDto;
 import com.t1f5.skib.test.dto.ResponseTestDto;
 import com.t1f5.skib.test.dto.ResponseTestListDto;
@@ -27,15 +28,26 @@ import org.springframework.web.bind.annotation.RestController;
 public class TestController {
   private final TestService testService;
 
+  @SwaggerApiSuccess(summary = "LLM을 통한 테스트 생성", description = "LLM을 사용하여 새로운 테스트를 생성합니다.")
+  @SwaggerApiNotFoundError
+  @SwaggerInternetServerError
+  @PostMapping("/createByLLM")
+  public ResponseEntity<ResultDto<String>> makeTest(
+      @RequestBody RequestCreateTestByLLMDto dto, Integer projectId) {
+    String response = testService.makeTest(projectId, dto);
+
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", response));
+  }
+
   @SwaggerApiSuccess(summary = "테스트 생성", description = "새로운 테스트를 생성합니다.")
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
   @PostMapping
-  public ResponseEntity<ResultDto<String>> saveTest(
+  public ResponseEntity<ResultDto<?>> saveTest(
       @RequestBody RequestCreateTestDto requestCreateTestDto, Integer projectId) {
-    String inviteLink = testService.saveTest(projectId, requestCreateTestDto);
+    testService.saveTest(projectId, requestCreateTestDto);
 
-    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", inviteLink));
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "테스트가 성공적으로 생성되었습니다."));
   }
 
   @SwaggerApiSuccess(summary = "테스트 단일 조회", description = "테스트 ID로 테스트를 조회합니다.")
@@ -65,6 +77,15 @@ public class TestController {
       @RequestParam Integer projectId) {
     ResponseTestListDto result = testService.getAllTests(projectId);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", result));
+  }
+
+  @SwaggerApiSuccess(summary = "테스트 초대링크 조회", description = "테스트 ID로 초대링크를 조회합니다.")
+  @SwaggerApiNotFoundError
+  @SwaggerInternetServerError
+  @GetMapping("/getInviteLink")
+  public ResponseEntity<ResultDto<String>> getInviteLink(@RequestParam Integer testId) {
+    String inviteLink = testService.getInviteLink(testId);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", inviteLink));
   }
 
   @SwaggerApiSuccess(summary = "테스트 삭제", description = "테스트 ID로 테스트를 삭제합니다.")
