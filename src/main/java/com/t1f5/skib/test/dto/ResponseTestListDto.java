@@ -8,5 +8,5 @@ import lombok.Data;
 @AllArgsConstructor
 public class ResponseTestListDto {
   private int count;
-  private List<ResponseTestDto> projects;
+  private List<ResponseTestDto> tests;
 }

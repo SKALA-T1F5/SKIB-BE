@@ -142,7 +142,28 @@ public class TestService {
     return "https://localhost:8080/invite/" + inviteLink.getToken();
   }
 
-  public void saveUserTest() {}
+  /**
+   * 유저 ID로 유저의 테스트 목록을 조회합니다.
+   *
+   * @param userId
+   * @return ResponseTestListDto
+   */
+  public ResponseTestListDto getUserTestList(Integer userTestId) {
+    log.info("Fetching user test list for user ID: {}", userTestId);
+
+    List<UserTest> userTests = userTestRepository.findAllById(List.of(userTestId));
+
+    if (userTests.isEmpty()) {
+      throw new IllegalArgumentException("해당 유저의 테스트가 없습니다: " + userTestId);
+    }
+
+    List<ResponseTestDto> responseList =
+        userTests.stream()
+            .map(userTest -> getTestByUserTestId(userTest.getUserTestId()))
+            .collect(Collectors.toList());
+
+    return new ResponseTestListDto(responseList.size(), responseList);
+  }
 
   /**
    * 유저 테스트 ID로 테스트 정보를 조회합니다.
