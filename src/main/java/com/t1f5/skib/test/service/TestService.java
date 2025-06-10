@@ -206,6 +206,12 @@ public class TestService {
     return responseDto;
   }
 
+  /**
+   * 테스트 ID로 테스트 정보를 조회합니다.
+   *
+   * @param testId
+   * @return ResponseTestDto
+   */
   public ResponseTestDto getTestById(Integer testId) {
     log.info("Fetching test with ID: {}", testId);
     Test test =
@@ -232,6 +238,12 @@ public class TestService {
     return responseDto;
   }
 
+  /**
+   * 특정 프로젝트의 모든 테스트를 조회합니다.
+   *
+   * @param projectId
+   * @return ResponseTestListDto
+   */
   public ResponseTestListDto getAllTests(Integer projectId) {
     log.info("Fetching all tests for project ID: {}", projectId);
     var tests = testRepository.findByProject_ProjectId(projectId);
