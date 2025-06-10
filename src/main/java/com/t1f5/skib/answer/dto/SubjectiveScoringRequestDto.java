@@ -1,6 +1,9 @@
 package com.t1f5.skib.answer.dto;
 
 import java.util.List;
+
+import com.t1f5.skib.question.dto.GradingCriteriaDto;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -8,6 +11,6 @@ import lombok.Data;
 @AllArgsConstructor
 public class SubjectiveScoringRequestDto {
   private String questionId;
-  private List<String> grading_criteria;
+  private List<GradingCriteriaDto> grading_criteria;
   private String userResponse;
 }

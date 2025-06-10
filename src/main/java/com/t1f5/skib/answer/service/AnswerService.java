@@ -7,6 +7,7 @@ import com.t1f5.skib.answer.repository.AnswerRepository;
 import com.t1f5.skib.answer.repository.SubjectiveAnswerRepository;
 import com.t1f5.skib.global.enums.QuestionType;
 import com.t1f5.skib.question.domain.Question;
+import com.t1f5.skib.question.dto.GradingCriteriaDto;
 import com.t1f5.skib.question.repository.QuestionMongoRepository;
 import com.t1f5.skib.test.domain.UserTest;
 import com.t1f5.skib.test.repository.UserTestRepository;
@@ -57,7 +58,7 @@ public class AnswerService {
                 .findById(item.getId())
                 .orElseThrow(() -> new IllegalArgumentException("해당 주관식 문제를 찾을 수 없습니다."));
 
-        List<String> gradingCriteria = question.getGrading_criteria();
+        List<GradingCriteriaDto> gradingCriteria = question.getGrading_criteria();
 
         SubjectiveScoringResponseDto response =
             scoreSubjectiveAnswer(item.getId(), gradingCriteria, item.getResponse());
@@ -162,7 +163,7 @@ public class AnswerService {
   }
 
   private SubjectiveScoringResponseDto scoreSubjectiveAnswer(
-      String questionId, List<String> grading_criteria, String response) {
+      String questionId, List<GradingCriteriaDto> grading_criteria, String response) {
     return webClient
         .post()
         .uri(FASTAPI_URL)
