@@ -1,5 +1,6 @@
 package com.t1f5.skib.question.service;
 
+import com.t1f5.skib.global.services.TranslationService;
 import com.t1f5.skib.question.domain.Question;
 import com.t1f5.skib.question.dto.QuestionDto;
 import com.t1f5.skib.question.dto.QuestionDtoConverter;
@@ -9,6 +10,7 @@ import com.t1f5.skib.question.repository.QuestionMongoRepository;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -31,6 +33,7 @@ public class QuestionService {
   private final QuestionMongoRepository questionMongoRepository;
   private final QuestionDtoConverter questionDtoConverter;
   private final MongoTemplate mongoTemplate;
+  private final TranslationService translationService;
 
   public List<Question> generateQuestions(
       List<RequestCreateQuestionDto> requests, Integer projectId) {
@@ -80,5 +83,32 @@ public class QuestionService {
     }
 
     mongoTemplate.updateFirst(query, update, "QUESTION");
+  }
+
+  public QuestionDto translateQuestionDto(QuestionDto original, String targetLang) {
+    return QuestionDto.builder()
+        .type(original.getType())
+        .difficulty_level(original.getDifficulty_level())
+        .question(translateText(original.getQuestion(), targetLang)) // 번역
+        .options(
+            original.getOptions() != null
+                ? original.getOptions().stream()
+                    .map(opt -> translateText(opt, targetLang))
+                    .collect(Collectors.toList())
+                : null)
+        .answer(original.getAnswer())
+        .explanation(original.getExplanation())
+        .projectId(original.getProjectId())
+        .grading_criteria(original.getGrading_criteria())
+        .document_id(original.getDocument_id())
+        .tags(original.getTags())
+        .build();
+  }
+
+  private String translateText(String text, String targetLang) {
+    if (text == null || text.isBlank() || "ko".equalsIgnoreCase(targetLang)) {
+      return text;
+    }
+    return translationService.translate(text, targetLang);
   }
 }

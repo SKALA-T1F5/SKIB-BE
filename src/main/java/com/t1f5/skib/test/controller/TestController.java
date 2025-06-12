@@ -54,8 +54,9 @@ public class TestController {
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
   @GetMapping("/getTest")
-  public ResponseEntity<ResultDto<ResponseTestDto>> getTestById(@RequestParam Integer testId) {
-    ResponseTestDto result = testService.getTestById(testId);
+  public ResponseEntity<ResultDto<ResponseTestDto>> getTestById(
+      @RequestParam Integer testId, @RequestParam(defaultValue = "ko") String lang) {
+    ResponseTestDto result = testService.getTestById(testId, lang);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", result));
   }
 
