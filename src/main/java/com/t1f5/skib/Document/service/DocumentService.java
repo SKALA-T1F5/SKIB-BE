@@ -1,7 +1,6 @@
 package com.t1f5.skib.document.service;
 
 import com.t1f5.skib.document.domain.Document;
-import com.t1f5.skib.document.dto.requestdto.RequestCreateDocumentDto;
 import com.t1f5.skib.document.dto.responsedto.DocumentDtoConverter;
 import com.t1f5.skib.document.dto.responsedto.ResponseDocumentDto;
 import com.t1f5.skib.document.dto.responsedto.ResponseDocumentListDto;
@@ -10,48 +9,28 @@ import com.t1f5.skib.global.dtos.DtoConverter;
 import com.t1f5.skib.project.domain.Project;
 import com.t1f5.skib.project.repository.ProjectJpaRepository;
 import jakarta.transaction.Transactional;
-
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.WebClient;
 
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class DocumentService {
+  private final WebClient webClient;
   private final DocumentRepository documentRepository;
   private final ProjectJpaRepository projectRepository;
-
-  /**
-   * 문서를 저장하는 메서드
-   *
-   * @param projectId 해당 문서가 속할 프로젝트 ID
-   * @param dto 문서 생성 요청 DTO
-   */
-  @Transactional
-  public void saveDocument(Integer projectId, RequestCreateDocumentDto dto) {
-    Project project =
-        projectRepository
-            .findById(projectId)
-            .orElseThrow(
-                () -> new IllegalArgumentException("Project not found with id: " + projectId));
-
-    Document document =
-        Document.builder()
-            .name(dto.getName())
-            .url(dto.getUrl())
-            .fileSize(dto.getFileSize())
-            .extension(dto.getExtension())
-            .isUploaded(dto.getIsUploaded())
-            .isDeleted(false)
-            .project(project)
-            .build();
-
-    documentRepository.save(document);
-    log.info("Document created successfully: {} (projectId: {})", document.getName(), projectId);
-  }
 
   /**
    * 문서 ID로 단일 문서를 조회하는 메서드
@@ -87,10 +66,7 @@ public class DocumentService {
     List<ResponseDocumentDto> resultList =
         documents.stream().map(converter::convert).collect(Collectors.toList());
 
-    return ResponseDocumentListDto.builder()
-        .count(resultList.size())
-        .documents(resultList)
-        .build();
+    return ResponseDocumentListDto.builder().count(resultList.size()).documents(resultList).build();
   }
 
   /**
@@ -110,4 +86,86 @@ public class DocumentService {
     documentRepository.save(document);
     log.info("Document deleted: {}", document.getName());
   }
+
+
+  @Transactional
+  public void saveDocument(Integer projectId, MultipartFile file) {
+    // 1. 프로젝트 조회
+    Project project =
+        projectRepository
+            .findById(projectId)
+            .orElseThrow(
+                () -> new IllegalArgumentException("Project not found with id: " + projectId));
+
+    // 2. Document 먼저 저장 (isUploaded = false)
+    Document document =
+        Document.builder()
+            .name(removeExtension(file.getOriginalFilename()))
+            .url(null)
+            .fileSize(file.getSize())
+            .extension(getExtension(file.getOriginalFilename()))
+            .isUploaded(false)
+            .isDeleted(false)
+            .project(project)
+            .build();
+
+    documentRepository.save(document); // 여기서 documentId 생성됨
+
+    // 3. FastAPI로 파일 업로드 (documentId 포함)
+    String uploadedUrl =
+        sendFileToFastAPI(file, projectId, document.getDocumentId(), file.getOriginalFilename());
+
+    // 4. URL 업데이트 및 isUploaded=true
+    document.setUrl(uploadedUrl);
+    document.setIsUploaded(true);
+    documentRepository.save(document);
+
+    log.info(
+        "Document saved successfully: name='{}', size={} bytes, extension='{}', projectId={},"
+            + " url={}",
+        document.getName(),
+        document.getFileSize(),
+        document.getExtension(),
+        projectId,
+        document.getUrl());
+  }
+
+  private String sendFileToFastAPI(MultipartFile file, Integer projectId, Integer documentId, String name) {
+    try {
+        MultiValueMap<String, Object> multipartData = new LinkedMultiValueMap<>();
+        multipartData.add("file", file.getResource());
+        multipartData.add("project_id", projectId.toString());
+        multipartData.add("document_id", documentId.toString());
+        multipartData.add("name", name);
+
+        Map<String, Object> response = webClient
+            .post()
+            .uri("http://localhost:8000/api/document")
+            .contentType(MediaType.MULTIPART_FORM_DATA)
+            .body(BodyInserters.fromMultipartData(multipartData))
+            .retrieve()
+            .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+            .block();
+
+        log.info("FastAPI response: {}", response);
+
+        return response.get("file_path").toString();
+
+    } catch (Exception e) {
+            log.error("FastAPI 업로드 실패: {}", e.getMessage(), e);
+            throw new RuntimeException("FastAPI 업로드 실패", e);
+        }
+    }
+
+  private String getExtension(String filename) {
+    int dotIndex = filename.lastIndexOf('.');
+    return (dotIndex != -1) ? filename.substring(dotIndex + 1) : "";
+  }
+
+  private String removeExtension(String filename) {
+    if (filename == null) return null;
+    int lastDotIndex = filename.lastIndexOf(".");
+    if (lastDotIndex == -1) return filename; // 확장자 없음
+    return filename.substring(0, lastDotIndex);
+}
 }
