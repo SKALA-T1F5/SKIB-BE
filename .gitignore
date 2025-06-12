@@ -18,6 +18,7 @@ k8s/jwt-secret.yaml
 k8s/mariadb-secret.yaml
 k8s/mongo-secret.yaml
 k8s/docker-secret.yaml
+k8s/google-secret.yaml
 
 ### RESOURCES ###
 src/main/resources/secret/** 

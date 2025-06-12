@@ -65,7 +65,21 @@ spec:
                   name: jwt-secret
                   key: jwt-secret-key
 
+            - name: GOOGLE_CREDENTIALS_PATH
+              value: /secrets/google/google.json
+
             - name: SPRING_PROFILES_ACTIVE
               value: prod
+
+          volumeMounts:
+            - name: google-credentials
+              mountPath: /secrets/google
+              readOnly: true
+
+      volumes:
+        - name: google-credentials
+          secret:
+            secretName: google-credentials
+
       imagePullSecrets:
         - name: amdp-registry

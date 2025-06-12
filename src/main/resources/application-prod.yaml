@@ -21,5 +21,9 @@ spring:
       uri: ${MONGO_URI_PROD}
       database: sk-team-09
 
+google:
+  translate:
+    credentials-path: ${GOOGLE_CREDENTIALS_PATH:}
+
 jwt:
   secret-key: ${JWT_SECRET_KEY}
