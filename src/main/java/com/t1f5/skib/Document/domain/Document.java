@@ -37,7 +37,7 @@ public class Document extends BaseTimeEntity {
   @Column(name = "name", nullable = false, length = 100)
   private String name;
 
-  @Column(name = "url", nullable = false, length = 500)
+  @Column(name = "url", nullable = true, length = 500)
   private String url;
 
   @Column(name = "file_size", nullable = false)
