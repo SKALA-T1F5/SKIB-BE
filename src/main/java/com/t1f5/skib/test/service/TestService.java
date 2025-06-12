@@ -17,6 +17,8 @@ import com.t1f5.skib.test.dto.RequestCreateTestByLLMDto;
 import com.t1f5.skib.test.dto.RequestCreateTestDto;
 import com.t1f5.skib.test.dto.ResponseTestDto;
 import com.t1f5.skib.test.dto.ResponseTestListDto;
+import com.t1f5.skib.test.dto.ResponseTestSummaryDto;
+import com.t1f5.skib.test.dto.ResponseTestSummaryListDto;
 import com.t1f5.skib.test.dto.TestDocumentConfigDto;
 import com.t1f5.skib.test.dto.TestDtoConverter;
 import com.t1f5.skib.test.repository.InviteLinkRepository;
@@ -151,21 +153,30 @@ public class TestService {
    * @param userId
    * @return ResponseTestListDto
    */
-  public ResponseTestListDto getUserTestList(Integer userTestId) {
-    log.info("Fetching user test list for user ID: {}", userTestId);
+  public ResponseTestSummaryListDto getUserTestList(Integer userId) {
+    log.info("Fetching user test list for user ID: {}", userId);
 
-    List<UserTest> userTests = userTestRepository.findAllById(List.of(userTestId));
+    List<UserTest> userTests = userTestRepository.findAllByUser_UserIdAndIsDeletedFalse(userId);
 
     if (userTests.isEmpty()) {
-      throw new IllegalArgumentException("해당 유저의 테스트가 없습니다: " + userTestId);
+      throw new IllegalArgumentException("해당 유저의 테스트가 없습니다: " + userId);
     }
 
-    List<ResponseTestDto> responseList =
+    List<ResponseTestSummaryDto> responseList =
         userTests.stream()
-            .map(userTest -> getTestByUserTestId(userTest.getUserTestId()))
+            .map(
+                userTest -> {
+                  Test test = userTest.getTest();
+                  return ResponseTestSummaryDto.builder()
+                      .testId(test.getTestId())
+                      .name(test.getName())
+                      .limitedTime(test.getLimitedTime())
+                      .createdAt(test.getCreatedDate())
+                      .build();
+                })
             .collect(Collectors.toList());
 
-    return new ResponseTestListDto(responseList.size(), responseList);
+    return new ResponseTestSummaryListDto(responseList.size(), responseList);
   }
 
   /**
@@ -181,6 +192,11 @@ public class TestService {
         userTestRepository
             .findById(userTestId)
             .orElseThrow(() -> new IllegalArgumentException("해당 유저테스트를 찾을 수 없습니다: " + userTestId));
+
+    // ✅ 재응시(retake)가 false일 때만 허용
+    if (Boolean.TRUE.equals(userTest.getRetake())) {
+      throw new IllegalStateException("해당 테스트는 재응시 상태입니다. 접근할 수 없습니다.");
+    }
 
     Test test =
         testRepository
@@ -203,8 +219,8 @@ public class TestService {
         questions.stream().map(questionDtoConverter::convert).collect(Collectors.toList());
 
     // 4. Test → ResponseTestDto 변환
-    ResponseTestDto responseDto = testDtoConverter.convert(test); // 기존 converter 사용
-    responseDto.setQuestions(questionDtos); // 문제 리스트 추가
+    ResponseTestDto responseDto = testDtoConverter.convert(test);
+    responseDto.setQuestions(questionDtos);
 
     return responseDto;
   }
@@ -292,7 +308,8 @@ public class TestService {
    * @param token 초대 토큰
    * @param email 유저 이메일
    */
-  public void registerUserToTest(String token, Integer userId) {
+  public ResponseTestDto registerUserToTestAndReturnTest(
+      String token, Integer userId, String lang) {
     // 1. 초대 토큰으로 InviteLink 찾기
     InviteLink inviteLink =
         inviteLinkRepository
@@ -303,39 +320,41 @@ public class TestService {
       throw new IllegalArgumentException("초대 링크가 만료되었습니다.");
     }
 
-    // 2. 해당 테스트
+    // 2. 테스트 및 유저 조회
     Test test = inviteLink.getTest();
-
-    // 3. 이메일로 유저 조회
     User user =
         userRepository
             .findById(userId)
             .orElseThrow(() -> new IllegalArgumentException("해당 유저가 존재하지 않습니다."));
 
-    // 4. 이미 등록된 UserTest 있는지 확인
+    // 3. 이미 등록된 UserTest 있는지 확인
     Optional<UserTest> existing =
         userTestRepository.findByTest_TestIdAndUser_UserIdAndIsDeletedFalse(
             test.getTestId(), user.getUserId());
 
+    UserTest userTest;
+
     if (existing.isPresent()) {
       log.info("이미 등록된 유저입니다.");
-      return;
+      userTest = existing.get();
+    } else {
+      // 4. 새로 등록
+      userTest =
+          UserTest.builder()
+              .test(test)
+              .user(user)
+              .isTaken(false)
+              .retake(false)
+              .isPassed(false)
+              .takenDate(LocalDateTime.now())
+              .score(0)
+              .isDeleted(false)
+              .build();
+      userTestRepository.save(userTest);
     }
 
-    // 5. 새로운 UserTest 등록
-    UserTest userTest =
-        UserTest.builder()
-            .test(test)
-            .user(user)
-            .isTaken(false)
-            .retake(false)
-            .isPassed(false)
-            .takenDate(LocalDateTime.now())
-            .score(0)
-            .isDeleted(false)
-            .build();
-
-    userTestRepository.save(userTest);
+    // 5. 테스트 + 문제 리스트 함께 반환
+    return getTestById(userId, lang);
   }
 
   private void generateAndSaveQuestionsInParallel(

@@ -135,4 +135,22 @@ public class ProjectService {
 
     return converter.convert(project);
   }
+
+  /**
+   * 특정 유저가 속한 프로젝트 목록을 조회하는 메서드
+   *
+   * @param userId 조회할 유저의 ID
+   * @return ResponseProjectListDto 유저가 속한 프로젝트 목록 DTO
+   */
+  public ResponseProjectListDto getUserProjectList(Integer userId) {
+    List<ProjectUser> projects =
+        projectTrainerRepository.findByUser_UserIdAndIsDeletedFalse(userId);
+
+    DtoConverter<Project, ResponseProjectDto> converter = new ProjectDtoConverter();
+
+    List<ResponseProjectDto> resultList =
+        projects.stream().map(ProjectUser::getProject).map(converter::convert).toList();
+
+    return new ResponseProjectListDto(resultList.size(), resultList);
+  }
 }

@@ -25,9 +25,9 @@ public class AnswerController {
   @SwaggerInternetServerError
   @PostMapping
   public ResponseEntity<ResultDto<?>> submitAnswers(
-      Integer userTestId, @RequestBody RequestCreateAnswerDto dto) {
+      Integer userId, Integer testId, @RequestBody RequestCreateAnswerDto dto) {
 
-    answerService.saveAnswer(dto, userTestId);
+    answerService.saveAnswer(dto, userId, testId);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "답변이 성공적으로 저장되었습니다."));
   }
 

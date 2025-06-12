@@ -1,10 +1,14 @@
 package com.t1f5.skib.document.service;
 
 import com.t1f5.skib.document.domain.Document;
+import com.t1f5.skib.document.domain.Summary;
+import com.t1f5.skib.document.dto.SummaryDto;
+import com.t1f5.skib.document.dto.SummaryDtoConverter;
 import com.t1f5.skib.document.dto.responsedto.DocumentDtoConverter;
 import com.t1f5.skib.document.dto.responsedto.ResponseDocumentDto;
 import com.t1f5.skib.document.dto.responsedto.ResponseDocumentListDto;
 import com.t1f5.skib.document.repository.DocumentRepository;
+import com.t1f5.skib.document.repository.SummaryMongoRepository;
 import com.t1f5.skib.global.dtos.DtoConverter;
 import com.t1f5.skib.project.domain.Project;
 import com.t1f5.skib.project.repository.ProjectJpaRepository;
@@ -14,7 +18,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -31,6 +34,8 @@ public class DocumentService {
   private final WebClient webClient;
   private final DocumentRepository documentRepository;
   private final ProjectJpaRepository projectRepository;
+  private final SummaryMongoRepository summaryMongoRepository;
+  private final SummaryDtoConverter summaryDtoConverter;
 
   /**
    * 문서 ID로 단일 문서를 조회하는 메서드
@@ -87,7 +92,13 @@ public class DocumentService {
     log.info("Document deleted: {}", document.getName());
   }
 
-
+  /**
+   * 문서를 저장하는 메서드 1. 프로젝트 조회 2. Document 먼저 저장 (isUploaded = false) 3. FastAPI로 파일 업로드 (documentId
+   * 포함) 4. URL 업데이트 및 isUploaded=true
+   *
+   * @param projectId 프로젝트 ID
+   * @param file 업로드할 파일
+   */
   @Transactional
   public void saveDocument(Integer projectId, MultipartFile file) {
     // 1. 프로젝트 조회
@@ -130,32 +141,52 @@ public class DocumentService {
         document.getUrl());
   }
 
-  private String sendFileToFastAPI(MultipartFile file, Integer projectId, Integer documentId, String name) {
+  private String sendFileToFastAPI(
+      MultipartFile file, Integer projectId, Integer documentId, String name) {
     try {
-        MultiValueMap<String, Object> multipartData = new LinkedMultiValueMap<>();
-        multipartData.add("file", file.getResource());
-        multipartData.add("project_id", projectId.toString());
-        multipartData.add("document_id", documentId.toString());
-        multipartData.add("name", name);
+      MultiValueMap<String, Object> multipartData = new LinkedMultiValueMap<>();
+      multipartData.add("file", file.getResource());
+      multipartData.add("project_id", projectId.toString());
+      multipartData.add("document_id", documentId.toString());
+      multipartData.add("name", name);
 
-        Map<String, Object> response = webClient
-            .post()
-            .uri("http://localhost:8000/api/document")
-            .contentType(MediaType.MULTIPART_FORM_DATA)
-            .body(BodyInserters.fromMultipartData(multipartData))
-            .retrieve()
-            .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-            .block();
+      // 1. FastAPI 호출 및 응답 받기
+      Map<String, Object> response =
+          webClient
+              .post()
+              .uri("http://localhost:8000/api/document")
+              .contentType(MediaType.MULTIPART_FORM_DATA)
+              .body(BodyInserters.fromMultipartData(multipartData))
+              .retrieve()
+              .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+              .block();
 
-        log.info("FastAPI response: {}", response);
+      log.info("FastAPI response: {}", response);
 
-        return response.get("file_path").toString();
+      // 2. SummaryDto[] 추가로 받기
+      SummaryDto[] summaries =
+          webClient
+              .get()
+              .uri("http://localhost:8000/api/document/summary/" + documentId)
+              .retrieve()
+              .bodyToMono(SummaryDto[].class)
+              .block();
+
+      // 3. DTO → Entity 변환 후 Mongo에 저장
+      if (summaries != null && summaries.length > 0) {
+        for (SummaryDto summaryDto : summaries) {
+          Summary summary = summaryDtoConverter.convert(summaryDto, documentId);
+          summaryMongoRepository.save(summary);
+        }
+      }
+
+      return response.get("file_path").toString();
 
     } catch (Exception e) {
-            log.error("FastAPI 업로드 실패: {}", e.getMessage(), e);
-            throw new RuntimeException("FastAPI 업로드 실패", e);
-        }
+      log.error("FastAPI 업로드 실패: {}", e.getMessage(), e);
+      throw new RuntimeException("FastAPI 업로드 실패", e);
     }
+  }
 
   private String getExtension(String filename) {
     int dotIndex = filename.lastIndexOf('.');
@@ -167,5 +198,5 @@ public class DocumentService {
     int lastDotIndex = filename.lastIndexOf(".");
     if (lastDotIndex == -1) return filename; // 확장자 없음
     return filename.substring(0, lastDotIndex);
-}
+  }
 }

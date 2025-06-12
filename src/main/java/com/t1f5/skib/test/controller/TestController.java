@@ -8,6 +8,7 @@ import com.t1f5.skib.test.dto.RequestCreateTestByLLMDto;
 import com.t1f5.skib.test.dto.RequestCreateTestDto;
 import com.t1f5.skib.test.dto.ResponseTestDto;
 import com.t1f5.skib.test.dto.ResponseTestListDto;
+import com.t1f5.skib.test.dto.ResponseTestSummaryListDto;
 import com.t1f5.skib.test.service.TestService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -74,9 +75,9 @@ public class TestController {
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
   @GetMapping("/getUserTestList")
-  public ResponseEntity<ResultDto<ResponseTestListDto>> getUserTestList(
-      @RequestParam Integer userTestId) {
-    ResponseTestListDto result = testService.getUserTestList(userTestId);
+  public ResponseEntity<ResultDto<ResponseTestSummaryListDto>> getUserTestList(
+      @RequestParam Integer userId) {
+    ResponseTestSummaryListDto result = testService.getUserTestList(userId);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", result));
   }
 
@@ -112,10 +113,10 @@ public class TestController {
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
   @PostMapping("/invite/register")
-  public ResponseEntity<ResultDto<String>> registerUserToTest(
-      @RequestParam String token, Integer userId) {
+  public ResponseEntity<ResultDto<ResponseTestDto>> registerUserToTest(
+      @RequestParam String token, Integer userId, @RequestParam(defaultValue = "ko") String lang) {
 
-    testService.registerUserToTest(token, userId);
-    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "유저가 테스트에 등록되었습니다."));
+    ResponseTestDto response = testService.registerUserToTestAndReturnTest(token, userId, lang);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", response));
   }
 }
