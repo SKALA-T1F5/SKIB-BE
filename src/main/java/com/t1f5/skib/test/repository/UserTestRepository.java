@@ -10,4 +10,7 @@ public interface UserTestRepository extends JpaRepository<UserTest, Integer> {
       Integer testId, Integer userId);
 
   List<UserTest> findAllByUser_UserIdAndIsDeletedFalse(Integer userId);
+
+  Optional<UserTest> findByUser_UserIdAndTest_TestIdAndIsDeletedFalse(
+      Integer userId, Integer testId);
 }

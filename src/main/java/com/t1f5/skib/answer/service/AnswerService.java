@@ -40,11 +40,11 @@ public class AnswerService {
    * @param dto 사용자가 제출한 답변 DTO
    * @param userTestId 사용자 테스트 ID
    */
-  public void saveAnswer(RequestCreateAnswerDto dto, Integer userTestId) {
+  public void saveAnswer(RequestCreateAnswerDto dto, Integer userId, Integer testId) {
     UserTest userTest =
         userTestRepository
-            .findById(userTestId)
-            .orElseThrow(() -> new IllegalArgumentException("해당 유저 테스트가 존재하지 않습니다."));
+            .findByUser_UserIdAndTest_TestIdAndIsDeletedFalse(userId, testId)
+            .orElseThrow(() -> new IllegalArgumentException("해당 유저의 테스트가 존재하지 않습니다."));
 
     for (AnswerRequest item : dto.getAnswers()) {
       Boolean isCorrect = null;
@@ -93,6 +93,9 @@ public class AnswerService {
         log.info("주관식 DTO 변환 결과: {}", dtoResult);
       }
     }
+
+    userTest.setIsTaken(true);
+    userTestRepository.save(userTest);
   }
 
   /**
