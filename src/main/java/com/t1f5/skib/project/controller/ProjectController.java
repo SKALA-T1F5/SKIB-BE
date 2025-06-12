@@ -58,6 +58,16 @@ public class ProjectController {
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", result));
   }
 
+  @SwaggerApiSuccess(summary = "유저의 프로젝트 목록 조회", description = "특정 유저가 참여한 프로젝트 목록을 조회합니다.")
+  @SwaggerApiNotFoundError
+  @SwaggerInternetServerError
+  @GetMapping("/getUserProjectList")
+  public ResponseEntity<ResultDto<ResponseProjectListDto>> getUserProjectList(
+      @RequestParam Integer userId) {
+    ResponseProjectListDto result = projectService.getUserProjectList(userId);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", result));
+  }
+
   @SwaggerApiSuccess(summary = "프로젝트 유저 정보 조회", description = "특정 프로젝트의 트레이너/트레이니 유저 정보를 조회합니다.")
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
