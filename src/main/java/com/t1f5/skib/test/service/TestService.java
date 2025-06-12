@@ -17,6 +17,8 @@ import com.t1f5.skib.test.dto.RequestCreateTestByLLMDto;
 import com.t1f5.skib.test.dto.RequestCreateTestDto;
 import com.t1f5.skib.test.dto.ResponseTestDto;
 import com.t1f5.skib.test.dto.ResponseTestListDto;
+import com.t1f5.skib.test.dto.ResponseTestSummaryDto;
+import com.t1f5.skib.test.dto.ResponseTestSummaryListDto;
 import com.t1f5.skib.test.dto.TestDocumentConfigDto;
 import com.t1f5.skib.test.dto.TestDtoConverter;
 import com.t1f5.skib.test.repository.InviteLinkRepository;
@@ -151,21 +153,30 @@ public class TestService {
    * @param userId
    * @return ResponseTestListDto
    */
-  public ResponseTestListDto getUserTestList(Integer userTestId, String lang) {
-    log.info("Fetching user test list for user ID: {}", userTestId);
+  public ResponseTestSummaryListDto getUserTestList(Integer userId) {
+    log.info("Fetching user test list for user ID: {}", userId);
 
-    List<UserTest> userTests = userTestRepository.findAllById(List.of(userTestId));
+    List<UserTest> userTests = userTestRepository.findAllByUser_UserIdAndIsDeletedFalse(userId);
 
     if (userTests.isEmpty()) {
-      throw new IllegalArgumentException("해당 유저의 테스트가 없습니다: " + userTestId);
+      throw new IllegalArgumentException("해당 유저의 테스트가 없습니다: " + userId);
     }
 
-    List<ResponseTestDto> responseList =
+    List<ResponseTestSummaryDto> responseList =
         userTests.stream()
-            .map(userTest -> getTestByUserTestId(userTest.getUserTestId(), lang))
+            .map(
+                userTest -> {
+                  Test test = userTest.getTest();
+                  return ResponseTestSummaryDto.builder()
+                      .testId(test.getTestId())
+                      .name(test.getName())
+                      .limitedTime(test.getLimitedTime())
+                      .createdAt(test.getCreatedDate())
+                      .build();
+                })
             .collect(Collectors.toList());
 
-    return new ResponseTestListDto(responseList.size(), responseList);
+    return new ResponseTestSummaryListDto(responseList.size(), responseList);
   }
 
   /**
@@ -174,13 +185,18 @@ public class TestService {
    * @param userTestId
    * @return
    */
-  public ResponseTestDto getTestByUserTestId(Integer userTestId, String lang) {
+  public ResponseTestDto getTestByUserTestId(Integer userTestId) {
     log.info("Fetching test with ID: {}", userTestId);
 
     UserTest userTest =
         userTestRepository
             .findById(userTestId)
             .orElseThrow(() -> new IllegalArgumentException("해당 유저테스트를 찾을 수 없습니다: " + userTestId));
+
+    // ✅ 재응시(retake)가 false일 때만 허용
+    if (Boolean.TRUE.equals(userTest.getRetake())) {
+      throw new IllegalStateException("해당 테스트는 재응시 상태입니다. 접근할 수 없습니다.");
+    }
 
     Test test =
         testRepository
@@ -200,18 +216,11 @@ public class TestService {
 
     // 3. Question → QuestionDto 변환
     List<QuestionDto> questionDtos =
-        questions.stream()
-            .map(questionDtoConverter::convert)
-            .map(
-                q ->
-                    "ko".equalsIgnoreCase(lang)
-                        ? q
-                        : questionTranslator.translateQuestionDto(q, lang))
-            .collect(Collectors.toList());
+        questions.stream().map(questionDtoConverter::convert).collect(Collectors.toList());
 
     // 4. Test → ResponseTestDto 변환
-    ResponseTestDto responseDto = testDtoConverter.convert(test); // 기존 converter 사용
-    responseDto.setQuestions(questionDtos); // 문제 리스트 추가
+    ResponseTestDto responseDto = testDtoConverter.convert(test);
+    responseDto.setQuestions(questionDtos);
 
     return responseDto;
   }
@@ -345,7 +354,7 @@ public class TestService {
     }
 
     // 5. 테스트 + 문제 리스트 함께 반환
-    return getTestByUserTestId(userTest.getUserTestId(), lang);
+    return getTestById(userId, lang);
   }
 
   private void generateAndSaveQuestionsInParallel(
