@@ -9,6 +9,10 @@ build/
 ### VS Code ###
 /vscode/
 
+# Java build outputs
+bin/
+*.class
+
 ### Secretes ###
 k8s/jwt-secret.yaml
 k8s/mariadb-secret.yaml
