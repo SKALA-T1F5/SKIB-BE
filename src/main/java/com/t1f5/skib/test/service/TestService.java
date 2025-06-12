@@ -12,6 +12,7 @@ import com.t1f5.skib.test.domain.InviteLink;
 import com.t1f5.skib.test.domain.Test;
 import com.t1f5.skib.test.domain.TestQuestion;
 import com.t1f5.skib.test.domain.UserTest;
+import com.t1f5.skib.test.dto.QuestionTranslator;
 import com.t1f5.skib.test.dto.RequestCreateTestByLLMDto;
 import com.t1f5.skib.test.dto.RequestCreateTestDto;
 import com.t1f5.skib.test.dto.ResponseTestDto;
@@ -36,6 +37,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -55,6 +57,7 @@ public class TestService {
   private final ResponseQuestionDtoConverter questionDtoConverter;
   private final WebClient webClient;
   private final QuestionService questionService;
+  @Autowired private QuestionTranslator questionTranslator;
 
   /**
    * LLM을 사용하여 테스트를 생성합니다.
@@ -206,8 +209,16 @@ public class TestService {
     return responseDto;
   }
 
-  public ResponseTestDto getTestById(Integer testId) {
+  /**
+   * 테스트 ID로 테스트 정보를 조회합니다.
+   *
+   * @param testId 테스트 ID
+   * @param lang 사용 언어 코드 (예: "ko", "en", "vi")
+   * @return ResponseTestDto (문제 리스트 포함, 일부 필드 번역 적용)
+   */
+  public ResponseTestDto getTestById(Integer testId, String lang) {
     log.info("Fetching test with ID: {}", testId);
+
     Test test =
         testRepository
             .findById(testId)
@@ -221,17 +232,32 @@ public class TestService {
     // 2. MongoDB에서 실제 문제 조회
     List<Question> questions = questionMongoRepository.findAllById(questionIds);
 
-    // 3. Question → QuestionDto 변환
+    // 3. Question → QuestionDto 변환 + 조건적 번역
     List<QuestionDto> questionDtos =
-        questions.stream().map(questionDtoConverter::convert).collect(Collectors.toList());
+        questions.stream()
+            .map(questionDtoConverter::convert)
+            .map(
+                questionDto -> {
+                  if (!"ko".equalsIgnoreCase(lang)) {
+                    return questionTranslator.translateQuestionDto(questionDto, lang); // 🔧 수정
+                  }
+                  return questionDto;
+                })
+            .collect(Collectors.toList());
 
     // 4. Test → ResponseTestDto 변환
-    ResponseTestDto responseDto = testDtoConverter.convert(test); // 기존 converter 사용
-    responseDto.setQuestions(questionDtos); // 문제 리스트 추가
+    ResponseTestDto responseDto = testDtoConverter.convert(test);
+    responseDto.setQuestions(questionDtos);
 
     return responseDto;
   }
 
+  /**
+   * 특정 프로젝트의 모든 테스트를 조회합니다.
+   *
+   * @param projectId
+   * @return ResponseTestListDto
+   */
   public ResponseTestListDto getAllTests(Integer projectId) {
     log.info("Fetching all tests for project ID: {}", projectId);
     var tests = testRepository.findByProject_ProjectId(projectId);
@@ -329,8 +355,8 @@ public class TestService {
                         .passScore(requestDto.getPassScore())
                         .isRetake(requestDto.getIsRetake())
                         .documentId(config.getDocumentId())
-                        .objectiveCount(config.getConfiguredObjectiveCount())
-                        .subjectiveCount(config.getConfiguredSubjectiveCount())
+                        .configuredObjectiveCount(config.getConfiguredObjectiveCount())
+                        .configuredSubjectiveCount(config.getConfiguredSubjectiveCount())
                         .build();
 
                 return questionService.generateQuestions(List.of(dto), projectId);

@@ -1,16 +1,13 @@
 spring:
   application:
     name: skib
-
   config:
     import: optional:file:./.env.properties
-
   datasource:
     url: jdbc:mariadb://localhost:3306/SKIB
     username: root
     password: 1234
     driver-class-name: org.mariadb.jdbc.Driver
-
   jpa:
     hibernate:
       ddl-auto: update
@@ -18,11 +15,15 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MariaDBDialect
-
   data:
     mongodb:
       uri: mongodb+srv://yoonalim2003:${MONGO_PASSWORD_LOCAL}@cluster0.9asfqrd.mongodb.net/SKIB?retryWrites=true&w=majority
       database: SKIB
+
+google:
+  translate:
+    api-key: ${GOOGLE_TRANSLATE_API_KEY:320741b8db82b503bb5f2fc7a82dcdaf75d22137}
+    credentials-path: ${GOOGLE_CREDENTIALS_PATH:}
 
 jwt:
   secret-key: ${JWT_SECRET_KEY}

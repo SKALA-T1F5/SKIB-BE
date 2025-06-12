@@ -18,6 +18,6 @@ public class RequestCreateQuestionDto {
   private Boolean isRetake;
 
   private Integer documentId;
-  private int objectiveCount;
-  private int subjectiveCount;
+  private int configuredObjectiveCount;
+  private int configuredSubjectiveCount;
 }
