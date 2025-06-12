@@ -65,8 +65,8 @@ public class TestController {
   @SwaggerInternetServerError
   @GetMapping("/getUserTest")
   public ResponseEntity<ResultDto<ResponseTestDto>> getTestByUserTestId(
-      @RequestParam Integer userTestId) {
-    ResponseTestDto result = testService.getTestByUserTestId(userTestId);
+      @RequestParam Integer userTestId, @RequestParam(defaultValue = "ko") String lang) {
+    ResponseTestDto result = testService.getTestByUserTestId(userTestId, lang);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", result));
   }
 
@@ -75,8 +75,8 @@ public class TestController {
   @SwaggerInternetServerError
   @GetMapping("/getUserTestList")
   public ResponseEntity<ResultDto<ResponseTestListDto>> getUserTestList(
-      @RequestParam Integer userTestId) {
-    ResponseTestListDto result = testService.getUserTestList(userTestId);
+      @RequestParam Integer userTestId, @RequestParam(defaultValue = "ko") String lang) {
+    ResponseTestListDto result = testService.getUserTestList(userTestId, lang);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", result));
   }
 
@@ -112,10 +112,10 @@ public class TestController {
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
   @PostMapping("/invite/register")
-  public ResponseEntity<ResultDto<String>> registerUserToTest(
-      @RequestParam String token, Integer userId) {
+  public ResponseEntity<ResultDto<ResponseTestDto>> registerUserToTest(
+      @RequestParam String token, Integer userId, @RequestParam(defaultValue = "ko") String lang) {
 
-    testService.registerUserToTest(token, userId);
-    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "유저가 테스트에 등록되었습니다."));
+    ResponseTestDto response = testService.registerUserToTestAndReturnTest(token, userId, lang);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", response));
   }
 }

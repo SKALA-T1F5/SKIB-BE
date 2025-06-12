@@ -151,7 +151,7 @@ public class TestService {
    * @param userId
    * @return ResponseTestListDto
    */
-  public ResponseTestListDto getUserTestList(Integer userTestId) {
+  public ResponseTestListDto getUserTestList(Integer userTestId, String lang) {
     log.info("Fetching user test list for user ID: {}", userTestId);
 
     List<UserTest> userTests = userTestRepository.findAllById(List.of(userTestId));
@@ -162,7 +162,7 @@ public class TestService {
 
     List<ResponseTestDto> responseList =
         userTests.stream()
-            .map(userTest -> getTestByUserTestId(userTest.getUserTestId()))
+            .map(userTest -> getTestByUserTestId(userTest.getUserTestId(), lang))
             .collect(Collectors.toList());
 
     return new ResponseTestListDto(responseList.size(), responseList);
@@ -174,7 +174,7 @@ public class TestService {
    * @param userTestId
    * @return
    */
-  public ResponseTestDto getTestByUserTestId(Integer userTestId) {
+  public ResponseTestDto getTestByUserTestId(Integer userTestId, String lang) {
     log.info("Fetching test with ID: {}", userTestId);
 
     UserTest userTest =
@@ -200,7 +200,14 @@ public class TestService {
 
     // 3. Question → QuestionDto 변환
     List<QuestionDto> questionDtos =
-        questions.stream().map(questionDtoConverter::convert).collect(Collectors.toList());
+        questions.stream()
+            .map(questionDtoConverter::convert)
+            .map(
+                q ->
+                    "ko".equalsIgnoreCase(lang)
+                        ? q
+                        : questionTranslator.translateQuestionDto(q, lang))
+            .collect(Collectors.toList());
 
     // 4. Test → ResponseTestDto 변환
     ResponseTestDto responseDto = testDtoConverter.convert(test); // 기존 converter 사용
@@ -292,7 +299,8 @@ public class TestService {
    * @param token 초대 토큰
    * @param email 유저 이메일
    */
-  public void registerUserToTest(String token, Integer userId) {
+  public ResponseTestDto registerUserToTestAndReturnTest(
+      String token, Integer userId, String lang) {
     // 1. 초대 토큰으로 InviteLink 찾기
     InviteLink inviteLink =
         inviteLinkRepository
@@ -303,39 +311,41 @@ public class TestService {
       throw new IllegalArgumentException("초대 링크가 만료되었습니다.");
     }
 
-    // 2. 해당 테스트
+    // 2. 테스트 및 유저 조회
     Test test = inviteLink.getTest();
-
-    // 3. 이메일로 유저 조회
     User user =
         userRepository
             .findById(userId)
             .orElseThrow(() -> new IllegalArgumentException("해당 유저가 존재하지 않습니다."));
 
-    // 4. 이미 등록된 UserTest 있는지 확인
+    // 3. 이미 등록된 UserTest 있는지 확인
     Optional<UserTest> existing =
         userTestRepository.findByTest_TestIdAndUser_UserIdAndIsDeletedFalse(
             test.getTestId(), user.getUserId());
 
+    UserTest userTest;
+
     if (existing.isPresent()) {
       log.info("이미 등록된 유저입니다.");
-      return;
+      userTest = existing.get();
+    } else {
+      // 4. 새로 등록
+      userTest =
+          UserTest.builder()
+              .test(test)
+              .user(user)
+              .isTaken(false)
+              .retake(false)
+              .isPassed(false)
+              .takenDate(LocalDateTime.now())
+              .score(0)
+              .isDeleted(false)
+              .build();
+      userTestRepository.save(userTest);
     }
 
-    // 5. 새로운 UserTest 등록
-    UserTest userTest =
-        UserTest.builder()
-            .test(test)
-            .user(user)
-            .isTaken(false)
-            .retake(false)
-            .isPassed(false)
-            .takenDate(LocalDateTime.now())
-            .score(0)
-            .isDeleted(false)
-            .build();
-
-    userTestRepository.save(userTest);
+    // 5. 테스트 + 문제 리스트 함께 반환
+    return getTestByUserTestId(userTest.getUserTestId(), lang);
   }
 
   private void generateAndSaveQuestionsInParallel(
