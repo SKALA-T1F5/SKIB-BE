@@ -66,8 +66,8 @@ public class TestController {
   @SwaggerInternetServerError
   @GetMapping("/getUserTest")
   public ResponseEntity<ResultDto<ResponseTestDto>> getTestByUserTestId(
-      @RequestParam Integer userTestId) {
-    ResponseTestDto result = testService.getTestByUserTestId(userTestId);
+      @RequestParam Integer userId, @RequestParam Integer testId) {
+    ResponseTestDto result = testService.getTestByUserTestId(userId, testId);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", result));
   }
 
