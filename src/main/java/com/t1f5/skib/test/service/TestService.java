@@ -170,6 +170,10 @@ public class TestService {
                   return ResponseTestSummaryDto.builder()
                       .testId(test.getTestId())
                       .name(test.getName())
+                      .difficultyLevel(test.getDifficultyLevel())
+                      .isPassed(userTest.getIsPassed())
+                      .retake(userTest.getRetake())
+                      .score(userTest.getScore())
                       .limitedTime(test.getLimitedTime())
                       .createdAt(test.getCreatedDate())
                       .build();
@@ -180,10 +184,11 @@ public class TestService {
   }
 
   /**
-   * 유저 테스트 ID로 테스트 정보를 조회합니다.
+   * 유저 ID와 테스트 ID로 테스트 정보를 조회합니다.
    *
-   * @param userTestId
-   * @return
+   * @param userId 유저 ID
+   * @param testId 테스트 ID
+   * @return ResponseTestDto (문제 리스트 포함)
    */
   public ResponseTestDto getTestByUserTestId(Integer userId, Integer testId) {
     log.info("Fetching test with ID: {}", userId, testId);
