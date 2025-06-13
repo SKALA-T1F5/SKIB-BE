@@ -185,13 +185,16 @@ public class TestService {
    * @param userTestId
    * @return
    */
-  public ResponseTestDto getTestByUserTestId(Integer userTestId) {
-    log.info("Fetching test with ID: {}", userTestId);
+  public ResponseTestDto getTestByUserTestId(Integer userId, Integer testId) {
+    log.info("Fetching test with ID: {}", userId, testId);
 
     UserTest userTest =
         userTestRepository
-            .findById(userTestId)
-            .orElseThrow(() -> new IllegalArgumentException("해당 유저테스트를 찾을 수 없습니다: " + userTestId));
+            .findByUser_UserIdAndTest_TestIdAndIsDeletedFalse(userId, testId)
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        "해당 유저테스트를 찾을 수 없습니다: userId=" + userId + ", testId=" + testId));
 
     // ✅ 재응시(retake)가 false일 때만 허용
     if (Boolean.TRUE.equals(userTest.getRetake())) {
