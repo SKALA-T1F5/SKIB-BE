@@ -35,8 +35,8 @@ public class AnswerController {
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
   @GetMapping("/getResult")
-  public ResponseEntity<ResultDto<?>> getScoredAnswersByUserTestId(Integer userTestId) {
-    answerService.getScoredAnswersByUserTestId(userTestId);
+  public ResponseEntity<ResultDto<?>> getScoredAnswersByUserTestId(Integer userId, Integer testId) {
+    answerService.getScoredAnswersByUserTestId(userId, testId);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "답변을 성공적으로 조회했습니다."));
   }
 }

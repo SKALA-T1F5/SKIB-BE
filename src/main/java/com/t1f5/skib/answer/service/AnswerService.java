@@ -98,14 +98,9 @@ public class AnswerService {
     userTestRepository.save(userTest);
   }
 
-  /**
-   * 채점 결과를 조회합니다.
-   *
-   * @param userTestId 사용자 테스트 ID
-   * @return 사용자가 제출한 답변 목록
-   */
-  public List<ScoredAnswerResultDto> getScoredAnswersByUserTestId(Integer userTestId) {
-    List<Answer> answers = answerRepository.findByUserTest_UserTestId(userTestId);
+  public List<ScoredAnswerResultDto> getScoredAnswersByUserTestId(Integer userId, Integer testId) {
+
+    List<Answer> answers = answerRepository.findByUserIdAndTestId(userId, testId);
 
     List<ScoredAnswerResultDto> results = new ArrayList<>();
 
