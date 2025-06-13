@@ -34,7 +34,12 @@ public class AuthAdminService {
 
     String token = jwtTokenProvider.createToken(admin.getId().toString(), "ADMIN");
 
-    return LoginResponseDto.builder().token(token).role("ADMIN").build();
+    return LoginResponseDto.builder()
+        .userId(admin.getAdminId())
+        .name("관리자")
+        .token(token)
+        .role("ADMIN")
+        .build();
   }
 
   public LogoutResponseDto logout(String token) {

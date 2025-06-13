@@ -34,7 +34,12 @@ public class AuthUserService {
     String role = user.getType().name();
     String token = jwtTokenProvider.createToken(user.getEmail(), role);
 
-    return LoginResponseDto.builder().token(token).role(role).build();
+    return LoginResponseDto.builder()
+        .userId(user.getUserId())
+        .name(user.getName() != null ? user.getName() : "학습자")
+        .token(token)
+        .role(role)
+        .build();
   }
 
   public LogoutResponseDto logout(String token) {
