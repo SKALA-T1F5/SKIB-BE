@@ -2,6 +2,7 @@ package com.t1f5.skib.document.domain;
 
 import com.t1f5.skib.global.domain.BaseTimeEntity;
 import com.t1f5.skib.project.domain.Project;
+import com.t1f5.skib.question.domain.DocumentQuestion;
 import com.t1f5.skib.test.domain.TestDocumentConfig;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -58,4 +59,7 @@ public class Document extends BaseTimeEntity {
 
   @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<TestDocumentConfig> testConfigs;
+
+  @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<DocumentQuestion> documentQuestions;
 }
