@@ -26,7 +26,6 @@ public class QuestionTranslator {
         // ✅ 나머지 필드는 그대로 유지
         .answer(original.getAnswer())
         .explanation(original.getExplanation())
-        .projectId(original.getProjectId())
         .grading_criteria(original.getGrading_criteria())
         .document_id(original.getDocument_id())
         .tags(original.getTags())
