@@ -1,0 +1,14 @@
+package com.t1f5.skib.feedback.dto;
+
+import lombok.Builder;
+import lombok.Data;
+
+@Data
+@Builder
+public class ResponseFeedbackDocDto {
+    private String documentId;   // MongoDB의 documentId (문서 id)
+    private String documentName; // DOCUMENT.name
+    private Double accuracyRate; // 정답률 %
+    private Long correctCount;   // 맞춘 문제 수
+    private Long totalCount;     // 총 문제 수
+}
