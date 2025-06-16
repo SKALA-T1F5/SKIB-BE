@@ -19,7 +19,6 @@ public class SubjectiveAnswerDtoConverter
     return ResponseSubjectiveAnswerDto.builder()
         .userAnswerId(entity.getUserAnswerId())
         .questionId(entity.getQuestionId())
-        .response(entity.getResponse())
         .score(entity.getScore())
         .build();
   }

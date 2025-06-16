@@ -15,6 +15,5 @@ public class SubjectiveAnswer {
 
   private String userAnswerId;
   private String questionId;
-  private String response;
   private int score;
 }

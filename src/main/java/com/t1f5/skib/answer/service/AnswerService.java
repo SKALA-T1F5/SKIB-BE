@@ -82,7 +82,6 @@ public class AnswerService {
             SubjectiveAnswer.builder()
                 .userAnswerId(String.valueOf(saved.getUserAnswerId()))
                 .questionId(item.getId())
-                .response(item.getResponse())
                 .score(score)
                 .build();
 
