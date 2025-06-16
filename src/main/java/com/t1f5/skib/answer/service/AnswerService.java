@@ -32,7 +32,7 @@ public class AnswerService {
   private final WebClient webClient;
   private final SubjectiveAnswerDtoConverter subjectiveAnswerDtoConverter;
 
-  private static final String FASTAPI_URL = "http://localhost:8000/api/score/subjective";
+  private static final String FASTAPI_URL = "http://10.250.73.244:8000/api/grading/subjective";
 
   /**
    * 사용자가 제출한 답변을 저장합니다.
