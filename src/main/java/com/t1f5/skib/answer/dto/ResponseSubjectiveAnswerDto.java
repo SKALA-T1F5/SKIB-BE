@@ -12,6 +12,5 @@ import lombok.NoArgsConstructor;
 public class ResponseSubjectiveAnswerDto {
   private String userAnswerId;
   private String questionId;
-  private String response;
   private int score;
 }

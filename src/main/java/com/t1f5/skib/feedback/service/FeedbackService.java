@@ -1,16 +1,22 @@
 package com.t1f5.skib.feedback.service;
 
+import com.t1f5.skib.answer.repository.AnswerRepository;
+import com.t1f5.skib.answer.repository.QuestionCorrectRateProjection;
 import com.t1f5.skib.document.domain.Document;
 import com.t1f5.skib.feedback.dto.ResponseFeedbackAllDto;
 import com.t1f5.skib.feedback.dto.ResponseFeedbackDistributionDto;
 import com.t1f5.skib.feedback.dto.ResponseFeedbackDocDto;
 import com.t1f5.skib.feedback.dto.ResponseFeedbackTagDto;
 import com.t1f5.skib.feedback.dto.ScoreRangeCountDto;
+import com.t1f5.skib.feedback.dto.TrainerFeedBackDto;
 import com.t1f5.skib.feedback.repository.FeedbackDocumentQueryRepository;
 import com.t1f5.skib.feedback.repository.FeedbackQuestionMongoRepository;
 import com.t1f5.skib.feedback.repository.FeedbackUserAnswerRepository;
 import com.t1f5.skib.feedback.repository.FeedbackUserTestRepository;
 import com.t1f5.skib.question.domain.Question;
+import com.t1f5.skib.question.repository.QuestionMongoRepository;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +36,8 @@ public class FeedbackService {
   private final FeedbackQuestionMongoRepository feedbackQuestionMongoRepository;
   private final FeedbackDocumentQueryRepository feedbackDocumentQueryRepository;
   private final FeedbackUserTestRepository feedbackUserTestRepository;
+  private final QuestionMongoRepository questionMongoRepository;
+  private final AnswerRepository answerRepository;
 
   /**
    * 사용자의 테스트에 대한 전체 정확도 비율을 가져옵니다.
@@ -208,14 +216,13 @@ public class FeedbackService {
     return result;
   }
 
-    /**
-     * 사용자의 테스트에 대한 점수 분포를 가져옵니다.
-     *
-     * @param userId 사용자의 ID
-     * @param testId 테스트의 ID
-     * @return ResponseFeedbackDistributionDto 객체에 점수 분포, 사용자 점수, 총 사용자 수를 포함
-     */
-
+  /**
+   * 사용자의 테스트에 대한 점수 분포를 가져옵니다.
+   *
+   * @param userId 사용자의 ID
+   * @param testId 테스트의 ID
+   * @return ResponseFeedbackDistributionDto 객체에 점수 분포, 사용자 점수, 총 사용자 수를 포함
+   */
   public ResponseFeedbackDistributionDto getScoreDistribution(Integer userId, Integer testId) {
     // 1️⃣ 전체 응시자 점수 가져오기
     List<Integer> allScores = feedbackUserTestRepository.findAllScoresByTestId(testId);
@@ -259,5 +266,69 @@ public class FeedbackService {
         .myScore(myScore)
         .totalUserCount(total)
         .build();
+  }
+
+  /**
+   * 특정 테스트에 대한 문제별 피드백을 가져옵니다.
+   *
+   * @param testId 테스트 ID
+   * @param isDescending 정렬 방향 (내림차순 여부)
+   * @return TrainerFeedBackDto 리스트
+   */
+  public List<TrainerFeedBackDto> getQuestionFeedbackSortedByTestId(
+      Integer testId, boolean isDescending) {
+    // 1. MongoDB에서 모든 문제 조회
+    List<Question> questions = questionMongoRepository.findAll();
+
+    log.info("[1] MongoDB에서 가져온 Question 수: {}", questions.size());
+
+    // 2. 정답률 쿼리 호출
+    List<QuestionCorrectRateProjection> rateList =
+        answerRepository.findCorrectRatesByTestId(testId);
+    log.info("[2] 정답률 쿼리 결과 수: {}", rateList.size());
+
+    // 3. Map<questionId, correctRate> 구성
+    Map<String, Double> correctRateMap =
+        rateList.stream()
+            .collect(
+                Collectors.toMap(
+                    QuestionCorrectRateProjection::getQuestionId,
+                    p -> {
+                      if (p.getTotalCount() == 0) return 0.0;
+                      double raw = (double) p.getCorrectCount() / p.getTotalCount();
+                      return Math.round(raw * 10000.0) / 100.0; // e.g. 0.6666 → 66.67
+                    }));
+
+    // 4. Question 리스트를 DTO로 변환 + 로그 출력
+    List<TrainerFeedBackDto> feedbackList =
+        questions.stream()
+            .filter(q -> correctRateMap.containsKey(q.getId()))
+            .map(
+                q -> {
+                  double correctRate = correctRateMap.getOrDefault(q.getId(), 0.0);
+                  log.info("[정답률 계산] questionId={}, correctRate={}", q.getId(), correctRate);
+
+                  return TrainerFeedBackDto.builder()
+                      .questionId(q.getId())
+                      .documentId(q.getDocumentId())
+                      .questionText(q.getQuestion())
+                      .difficulty(q.getDifficultyLevel())
+                      .type(q.getType())
+                      .answer(q.getAnswer())
+                      .tags(q.getTags())
+                      .correctRate(correctRate)
+                      .build();
+                })
+            .sorted(Comparator.comparingDouble(TrainerFeedBackDto::getCorrectRate))
+            .collect(Collectors.toList());
+
+    // 5. 정렬 방향 처리
+    if (isDescending) {
+      Collections.reverse(feedbackList);
+    }
+
+    log.info("[최종 반환] Feedback 개수: {}", feedbackList.size());
+
+    return feedbackList;
   }
 }

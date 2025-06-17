@@ -14,7 +14,6 @@ public class QuestionDtoConverter {
         .options(dto.getOptions())
         .answer(dto.getAnswer())
         .explanation(dto.getExplanation())
-        .projectId(projectId)
         .documentId(dto.getDocument_id())
         .tags(dto.getTags())
         .build();
