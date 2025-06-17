@@ -268,6 +268,13 @@ public class FeedbackService {
         .build();
   }
 
+  /**
+   * 특정 테스트에 대한 문제별 피드백을 가져옵니다.
+   *
+   * @param testId 테스트 ID
+   * @param isDescending 정렬 방향 (내림차순 여부)
+   * @return TrainerFeedBackDto 리스트
+   */
   public List<TrainerFeedBackDto> getQuestionFeedbackSortedByTestId(
       Integer testId, boolean isDescending) {
     // 1. MongoDB에서 모든 문제 조회
