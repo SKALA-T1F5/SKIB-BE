@@ -4,6 +4,7 @@ import com.t1f5.skib.feedback.dto.ResponseFeedbackAllDto;
 import com.t1f5.skib.feedback.dto.ResponseFeedbackDistributionDto;
 import com.t1f5.skib.feedback.dto.ResponseFeedbackDocDto;
 import com.t1f5.skib.feedback.dto.ResponseFeedbackTagDto;
+import com.t1f5.skib.feedback.dto.TrainerFeedBackDto;
 import com.t1f5.skib.feedback.service.FeedbackService;
 import com.t1f5.skib.global.dtos.ResultDto;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -58,5 +59,21 @@ public class FeedbackController {
 
     ResponseFeedbackDistributionDto response = feedbackService.getScoreDistribution(userId, testId);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "점수 분포 조회 성공", response));
+  }
+
+  @GetMapping("/trainer-feedback/top")
+  public ResponseEntity<ResultDto<List<TrainerFeedBackDto>>> getTopQuestions(
+      @RequestParam Integer testId) {
+    List<TrainerFeedBackDto> response =
+        feedbackService.getQuestionFeedbackSortedByTestId(testId, true);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "문항 정답률 상위 정렬 반환 성공", response));
+  }
+
+  @GetMapping("/trainer-feedback/bottom")
+  public ResponseEntity<ResultDto<List<TrainerFeedBackDto>>> getBottomQuestions(
+      @RequestParam Integer testId) {
+    List<TrainerFeedBackDto> response =
+        feedbackService.getQuestionFeedbackSortedByTestId(testId, false);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "문항 정답률 하위 정렬 반환 성공", response));
   }
 }
