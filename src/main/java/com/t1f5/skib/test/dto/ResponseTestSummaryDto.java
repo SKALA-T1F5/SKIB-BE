@@ -20,4 +20,6 @@ public class ResponseTestSummaryDto {
   private LocalDateTime createdAt;
   private Boolean isPassed;
   private Boolean retake;
+  private Boolean isRetake;
+  private Integer passScore;
 }

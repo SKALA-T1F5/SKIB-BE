@@ -17,6 +17,7 @@ public class ResponseTestDto {
   private String name;
   private Integer limitedTime;
   private LocalDateTime createdAt;
+  private Integer passScore;
 
   // 추가 필드 : 테스트의 문제들
   private List<QuestionDto> questions;

@@ -174,6 +174,8 @@ public class TestService {
                       .isPassed(userTest.getIsPassed())
                       .retake(userTest.getRetake())
                       .score(userTest.getScore())
+                      .isRetake(test.getIsRetake())
+                      .passScore(test.getPassScore())
                       .limitedTime(test.getLimitedTime())
                       .createdAt(test.getCreatedDate())
                       .build();
@@ -229,6 +231,8 @@ public class TestService {
     // 4. Test → ResponseTestDto 변환
     ResponseTestDto responseDto = testDtoConverter.convert(test);
     responseDto.setQuestions(questionDtos);
+
+    responseDto.setPassScore(test.getPassScore());
 
     return responseDto;
   }
