@@ -1,23 +1,35 @@
 package com.t1f5.skib.feedback.service;
 
+import com.t1f5.skib.answer.domain.Answer;
 import com.t1f5.skib.answer.repository.AnswerRepository;
 import com.t1f5.skib.answer.repository.QuestionCorrectRateProjection;
 import com.t1f5.skib.document.domain.Document;
+import com.t1f5.skib.feedback.dto.ResponseAnswerMatrixDto;
+import com.t1f5.skib.feedback.dto.ResponseAnswerMatrixDto.AnswerRow;
 import com.t1f5.skib.feedback.dto.ResponseFeedbackAllDto;
 import com.t1f5.skib.feedback.dto.ResponseFeedbackDistributionDto;
 import com.t1f5.skib.feedback.dto.ResponseFeedbackDocDto;
 import com.t1f5.skib.feedback.dto.ResponseFeedbackTagDto;
+import com.t1f5.skib.feedback.dto.ResponseTestTagDto;
+import com.t1f5.skib.feedback.dto.ResponseTrainerTestStatisticsDto;
 import com.t1f5.skib.feedback.dto.ScoreRangeCountDto;
 import com.t1f5.skib.feedback.dto.TrainerFeedBackDto;
+import com.t1f5.skib.feedback.dto.projection.AnswerMatrixProjection;
 import com.t1f5.skib.feedback.repository.FeedbackDocumentQueryRepository;
 import com.t1f5.skib.feedback.repository.FeedbackQuestionMongoRepository;
 import com.t1f5.skib.feedback.repository.FeedbackUserAnswerRepository;
 import com.t1f5.skib.feedback.repository.FeedbackUserTestRepository;
 import com.t1f5.skib.question.domain.Question;
 import com.t1f5.skib.question.repository.QuestionMongoRepository;
+import com.t1f5.skib.test.domain.Test;
+import com.t1f5.skib.test.domain.TestQuestion;
+import com.t1f5.skib.test.repository.TestQuestionRepository;
+import com.t1f5.skib.test.repository.TestRepository;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -38,6 +50,8 @@ public class FeedbackService {
   private final FeedbackUserTestRepository feedbackUserTestRepository;
   private final QuestionMongoRepository questionMongoRepository;
   private final AnswerRepository answerRepository;
+  private final TestRepository testRepository;
+  private final TestQuestionRepository testQuestionRepository;
 
   /**
    * 사용자의 테스트에 대한 전체 정확도 비율을 가져옵니다.
@@ -330,5 +344,121 @@ public class FeedbackService {
     log.info("[최종 반환] Feedback 개수: {}", feedbackList.size());
 
     return feedbackList;
+  }
+
+  /**
+   * 트레이너가 특정 테스트의 통계 정보를 가져옵니다.
+   *
+   * @param testId 테스트의 ID
+   * @return ResponseTrainerTestStatisticsDto 객체에 평균 점수, 합격자 수, 응시자 수, 합격 기준 점수를 포함
+   */
+  public ResponseTrainerTestStatisticsDto getTestBasicStatistics(Integer testId) {
+    Test test =
+        testRepository
+            .findById(testId)
+            .orElseThrow(() -> new IllegalArgumentException("해당 테스트가 존재하지 않습니다."));
+
+    Integer passScore = test.getPassScore();
+    Double averageScore = feedbackUserTestRepository.findAverageScoreByTestId(testId);
+    Integer passCount = feedbackUserTestRepository.countPassUsersByTestId(testId, passScore);
+    Integer totalTakers = feedbackUserTestRepository.countTotalUsersByTestId(testId);
+
+    return ResponseTrainerTestStatisticsDto.builder()
+        .averageScore(averageScore != null ? Math.round(averageScore * 10.0) / 10.0 : 0.0)
+        .passCount(passCount)
+        .totalTakers(totalTakers)
+        .passScore(passScore)
+        .build();
+  }
+
+  /**
+   * 특정 테스트에 대한 학습자별 문제별 정답 현황을 가져옵니다.
+   *
+   * @param testId 테스트 ID
+   * @return ResponseAnswerMatrixDto 객체에 문제 레이블과 학습자별 정답 여부 리스트를 포함
+   */
+  public ResponseAnswerMatrixDto getAnswerMatrix(Integer testId) {
+    List<AnswerMatrixProjection> rows =
+        feedbackUserAnswerRepository.findAnswerMatrixByTestId(testId);
+
+    // 1. 문제 번호 정렬
+    List<Integer> questionNumbers =
+        rows.stream().map(AnswerMatrixProjection::getQuestionNumber).distinct().sorted().toList();
+
+    // 2. 사용자별 문제번호 → 정답 여부 Map 구성
+    Map<String, Map<Integer, Boolean>> userMap = new LinkedHashMap<>();
+    for (AnswerMatrixProjection row : rows) {
+      userMap
+          .computeIfAbsent(row.getUserName(), k -> new HashMap<>())
+          .put(row.getQuestionNumber(), row.getIsCorrect());
+    }
+
+    // 3. DTO 변환
+    List<AnswerRow> userAnswers = new ArrayList<>();
+    for (Map.Entry<String, Map<Integer, Boolean>> entry : userMap.entrySet()) {
+      List<Boolean> correctnessList =
+          questionNumbers.stream().map(qn -> entry.getValue().getOrDefault(qn, false)).toList();
+
+      userAnswers.add(
+          AnswerRow.builder().userName(entry.getKey()).correctnessList(correctnessList).build());
+    }
+
+    // 4. 최종 DTO 반환
+    List<String> questionLabels = questionNumbers.stream().map(qn -> "문제" + qn).toList();
+
+    return ResponseAnswerMatrixDto.builder()
+        .questionLabels(questionLabels)
+        .userAnswers(userAnswers)
+        .build();
+  }
+
+  /**
+   * 특정 테스트에 대한 태그별 정답률을 가져옵니다.
+   *
+   * @param testId 테스트 ID
+   * @return ResponseTestTagDto 리스트에 태그 이름과 정답률을 포함
+   */
+  
+  public List<ResponseTestTagDto> getTagAccuracyRatesByTestId(Integer testId) {
+    // 1. 테스트에 포함된 문제들
+    List<TestQuestion> testQuestions = testQuestionRepository.findByTest_TestId(testId);
+    Set<String> questionIds =
+        testQuestions.stream().map(TestQuestion::getQuestionId).collect(Collectors.toSet());
+
+    // 2. MongoDB에서 태그 조회
+    List<Question> questions = feedbackQuestionMongoRepository.findByIdIn(questionIds);
+
+    // 3. 각 문제별 정답률 계산
+    List<Answer> answers = feedbackUserAnswerRepository.findByQuestionIdIn(questionIds);
+    Map<String, List<Answer>> groupedByQuestion =
+        answers.stream().collect(Collectors.groupingBy(Answer::getQuestionId));
+
+    Map<String, Double> questionAccuracyMap = new HashMap<>();
+    for (Map.Entry<String, List<Answer>> entry : groupedByQuestion.entrySet()) {
+      long correct = entry.getValue().stream().filter(Answer::getIsCorrect).count();
+      long total = entry.getValue().size();
+      questionAccuracyMap.put(entry.getKey(), total > 0 ? (correct * 100.0 / total) : 0.0);
+    }
+
+    // 4. 태그 기준 평균 정답률 계산
+    Map<String, List<Double>> tagAccuracyMap = new HashMap<>();
+    for (Question q : questions) {
+      Double accuracy = questionAccuracyMap.getOrDefault(q.getId(), 0.0);
+      for (String tag : q.getTags()) {
+        tagAccuracyMap.computeIfAbsent(tag, k -> new ArrayList<>()).add(accuracy);
+      }
+    }
+
+    return tagAccuracyMap.entrySet().stream()
+        .map(
+            entry -> {
+              List<Double> scores = entry.getValue();
+              double avg = scores.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+              return ResponseTestTagDto.builder()
+                  .tagName(entry.getKey())
+                  .accuracyRate(Math.round(avg * 10.0) / 10.0)
+                  .build();
+            })
+        .collect(Collectors.toList());
   }
 }

@@ -1,9 +1,12 @@
 package com.t1f5.skib.feedback.controller;
 
+import com.t1f5.skib.feedback.dto.ResponseAnswerMatrixDto;
 import com.t1f5.skib.feedback.dto.ResponseFeedbackAllDto;
 import com.t1f5.skib.feedback.dto.ResponseFeedbackDistributionDto;
 import com.t1f5.skib.feedback.dto.ResponseFeedbackDocDto;
 import com.t1f5.skib.feedback.dto.ResponseFeedbackTagDto;
+import com.t1f5.skib.feedback.dto.ResponseTestTagDto;
+import com.t1f5.skib.feedback.dto.ResponseTrainerTestStatisticsDto;
 import com.t1f5.skib.feedback.dto.TrainerFeedBackDto;
 import com.t1f5.skib.feedback.service.FeedbackService;
 import com.t1f5.skib.global.customAnnotations.SwaggerApiNotFoundError;
@@ -29,7 +32,7 @@ public class FeedbackController {
   private final FeedbackService feedbackService;
 
   @SwaggerApiSuccess(
-      summary = "총 정답률 조회",
+      summary = "학습자별 총 정답률 조회",
       description = "사용자의 테스트에 대한 총 정답률을 조회합니다. 사용자 ID와 테스트 ID를 요청 파라미터로 받습니다.")
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
@@ -43,7 +46,7 @@ public class FeedbackController {
   }
 
   @SwaggerApiSuccess(
-      summary = "문서별 정답률 조회",
+      summary = "학습자별 문서별 정답률 조회",
       description = "사용자의 테스트에 대한 문서별 정답률을 조회합니다. 사용자 ID와 테스트 ID를 요청 파라미터로 받습니다.")
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
@@ -58,7 +61,7 @@ public class FeedbackController {
   }
 
   @SwaggerApiSuccess(
-      summary = "태그별 정답률 조회",
+      summary = "학습자별 태그별 정답률 조회",
       description = "사용자의 테스트에 대한 태그별 정답률을 조회합니다. 사용자 ID와 테스트 ID를 요청 파라미터로 받습니다.")
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
@@ -72,7 +75,7 @@ public class FeedbackController {
   }
 
   @SwaggerApiSuccess(
-      summary = "점수 분포 조회",
+      summary = "학습자별 위치 조회 (+점수 분포)",
       description = "사용자의 테스트에 대한 점수 분포를 조회합니다. 사용자 ID와 테스트 ID를 요청 파라미터로 받습니다.")
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
@@ -108,5 +111,44 @@ public class FeedbackController {
     List<TrainerFeedBackDto> response =
         feedbackService.getQuestionFeedbackSortedByTestId(testId, false);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "문항 정답률 하위 정렬 반환 성공", response));
+  }
+
+  @SwaggerApiSuccess(
+      summary = "테스트별 기본 통계(합격자 수, 평균점수 등) 조회",
+      description = "특정 테스트에 대한 평균 점수, 응시자 수, 합격자 수, 패스 점수를 조회합니다.")
+  @SwaggerApiNotFoundError
+  @SwaggerInternetServerError
+  @GetMapping("/test-basic-statistics")
+  public ResponseEntity<ResultDto<ResponseTrainerTestStatisticsDto>> getTestBasicStatistics(
+      @RequestParam Integer testId) {
+
+    ResponseTrainerTestStatisticsDto response = feedbackService.getTestBasicStatistics(testId);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "테스트 기본 통계 조회 성공", response));
+  }
+
+  @SwaggerApiSuccess(
+      summary = "테스트별 학습자별 문제별 정답 현황(정오표) 조회",
+      description = "특정 테스트에 대해 학습자별 문제별 정답 여부를 조회합니다.")
+  @SwaggerApiNotFoundError
+  @SwaggerInternetServerError
+  @GetMapping("/answer-matrix")
+  public ResponseEntity<ResultDto<ResponseAnswerMatrixDto>> getAnswerMatrix(
+      @RequestParam Integer testId) {
+
+    ResponseAnswerMatrixDto response = feedbackService.getAnswerMatrix(testId);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "정오표 조회 성공", response));
+  }
+
+  @SwaggerApiSuccess(
+      summary = "테스트별 태그별 정답률 조회",
+      description = "테스트에 포함된 문제들의 태그별 평균 정답률을 계산하여 반환합니다.")
+  @SwaggerApiNotFoundError
+  @SwaggerInternetServerError
+  @GetMapping("/tag-by-test")
+  public ResponseEntity<ResultDto<List<ResponseTestTagDto>>> getTagAccuracyByTest(
+      @RequestParam Integer testId) {
+
+    List<ResponseTestTagDto> response = feedbackService.getTagAccuracyRatesByTestId(testId);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "태그별 정답률 조회 성공", response));
   }
 }
