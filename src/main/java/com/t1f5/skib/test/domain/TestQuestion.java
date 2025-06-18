@@ -29,6 +29,9 @@ public class TestQuestion extends BaseTimeEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Integer testQuestionId;
 
+  @Column(name = "question_number", nullable = false)
+  private Integer questionNumber;
+
   @Column(name = "is_deleted", nullable = false)
   private Boolean isDeleted;
 
