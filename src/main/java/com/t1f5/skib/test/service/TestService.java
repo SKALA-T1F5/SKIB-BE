@@ -84,7 +84,8 @@ public class TestService {
     }
 
     // 2. DBMS에서 프로젝트에 속한 문서 목록 조회
-    List<Document> documents = documentRepository.findByProjectIdAndIsDeletedFalse(projectId);
+    List<Document> documents =
+        documentRepository.findByProject_ProjectIdAndIsDeletedFalse(projectId);
     List<Integer> documentIds =
         documents.stream().map(Document::getDocumentId).collect(Collectors.toList());
 
