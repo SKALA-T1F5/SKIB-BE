@@ -136,6 +136,7 @@ public class TestService {
     Test test =
         Test.builder()
             .name(requestCreateTestDto.getName())
+            .summary(requestCreateTestDto.getSummary())
             .difficultyLevel(requestCreateTestDto.getDifficultyLevel())
             .limitedTime(requestCreateTestDto.getLimitedTime())
             .passScore(requestCreateTestDto.getPassScore())
