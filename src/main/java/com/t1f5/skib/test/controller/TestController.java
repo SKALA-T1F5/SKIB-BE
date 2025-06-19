@@ -34,7 +34,8 @@ public class TestController {
   @SwaggerInternetServerError
   @PostMapping("/createByLLM")
   public ResponseEntity<ResultDto<String>> makeTest(
-      @RequestBody RequestCreateTestByLLMDto dto, Integer projectId) {
+      @RequestBody RequestCreateTestByLLMDto dto,
+      @RequestParam(value = "projectId") Integer projectId) {
     String response = testService.makeTest(projectId, dto);
 
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", response));
@@ -45,9 +46,9 @@ public class TestController {
   @SwaggerInternetServerError
   @PostMapping
   public ResponseEntity<ResultDto<?>> saveTest(
-      @RequestBody RequestCreateTestDto requestCreateTestDto, Integer projectId) {
+      @RequestBody RequestCreateTestDto requestCreateTestDto,
+      @RequestParam(value = "projectId") Integer projectId) {
     testService.saveTest(projectId, requestCreateTestDto);
-
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "테스트가 성공적으로 생성되었습니다."));
   }
 
@@ -56,7 +57,8 @@ public class TestController {
   @SwaggerInternetServerError
   @GetMapping("/getTest")
   public ResponseEntity<ResultDto<ResponseTestDto>> getTestById(
-      @RequestParam Integer testId, @RequestParam(defaultValue = "ko") String lang) {
+      @RequestParam(value = "testId") Integer testId,
+      @RequestParam(defaultValue = "ko") String lang) {
     ResponseTestDto result = testService.getTestById(testId, lang);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", result));
   }

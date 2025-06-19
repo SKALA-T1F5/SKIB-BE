@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RequestCreateTestDto {
   private String name;
+  private String summary;
   private DifficultyLevel difficultyLevel;
   private Integer limitedTime;
   private Integer passScore;

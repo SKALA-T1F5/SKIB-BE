@@ -11,6 +11,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
@@ -37,6 +38,10 @@ public class Test extends BaseTimeEntity {
 
   @Column(name = "name", nullable = false, length = 40)
   private String name;
+
+  @Lob
+  @Column(name = "summary", nullable = false, columnDefinition = "TEXT")
+  private String summary;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "difficulty_level", nullable = false)
