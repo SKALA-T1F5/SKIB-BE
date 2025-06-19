@@ -4,7 +4,11 @@ import com.t1f5.skib.global.enums.DifficultyLevel;
 import com.t1f5.skib.global.enums.QuestionType;
 import com.t1f5.skib.question.dto.GradingCriteriaDto;
 import java.util.List;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -17,7 +21,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class Question {
   @Id private String id;
 
-  private QuestionType type; // 객관식(MULTIPLE_CHOICE), 서술형(SUBJECTIVE)
+  private QuestionType type; // 객관식(OBJECTIVE), 서술형(SUBJECTIVE)
   private DifficultyLevel difficultyLevel; // 난이도 (예: EASY, MEDIUM, HARD)
   private String question; // 문제 본문
   private List<String> options; // 객관식 선택지 (nullable)
