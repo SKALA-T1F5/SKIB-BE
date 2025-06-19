@@ -35,8 +35,7 @@ public class QuestionService {
   private final MongoTemplate mongoTemplate;
   private final TranslationService translationService;
 
-  public List<Question> generateQuestions(
-      List<RequestCreateQuestionDto> requests, Integer projectId) {
+  public List<Question> generateQuestions(List<RequestCreateQuestionDto> requests) {
     List<Question> allQuestions = new ArrayList<>();
 
     for (RequestCreateQuestionDto request : requests) {
@@ -52,7 +51,7 @@ public class QuestionService {
       if (body == null) continue;
 
       List<Question> questions =
-          Arrays.stream(body).map(dto -> questionDtoConverter.convert(dto, projectId)).toList();
+          Arrays.stream(body).map(dto -> questionDtoConverter.convert(dto)).toList();
 
       questionMongoRepository.saveAll(questions);
       allQuestions.addAll(questions);
