@@ -19,6 +19,8 @@ public class QuestionDto {
   private String answer;
   private String explanation;
   private List<GradingCriteriaDto> grading_criteria;
-  private String document_id;
+  private Integer document_id;
+  private String document_name;
+  private List<String> keywords;
   private List<String> tags;
 }

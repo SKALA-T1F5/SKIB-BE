@@ -29,5 +29,7 @@ public class Question {
   private List<GradingCriteriaDto> grading_criteria; // 채점 기준 (nullable)
   private String explanation; // 해설
   private String documentId; // 문서 ID
+  private String documentName; // 문서 이름
+  private List<String> keywords; // 키워드 목록 (예: 문서 제목, 주요 내용 등)
   private List<String> tags; // 태그 목록 (예: 문해력, 논리력 등)
 }

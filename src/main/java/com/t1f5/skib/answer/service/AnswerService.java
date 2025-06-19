@@ -2,7 +2,13 @@ package com.t1f5.skib.answer.service;
 
 import com.t1f5.skib.answer.domain.Answer;
 import com.t1f5.skib.answer.domain.SubjectiveAnswer;
-import com.t1f5.skib.answer.dto.*;
+import com.t1f5.skib.answer.dto.AnswerRequest;
+import com.t1f5.skib.answer.dto.RequestCreateAnswerDto;
+import com.t1f5.skib.answer.dto.ResponseSubjectiveAnswerDto;
+import com.t1f5.skib.answer.dto.ScoredAnswerResultDto;
+import com.t1f5.skib.answer.dto.SubjectiveAnswerDtoConverter;
+import com.t1f5.skib.answer.dto.SubjectiveScoringRequestDto;
+import com.t1f5.skib.answer.dto.SubjectiveScoringResponseDto;
 import com.t1f5.skib.answer.repository.AnswerRepository;
 import com.t1f5.skib.answer.repository.SubjectiveAnswerRepository;
 import com.t1f5.skib.global.enums.QuestionType;
@@ -32,7 +38,8 @@ public class AnswerService {
   private final WebClient webClient;
   private final SubjectiveAnswerDtoConverter subjectiveAnswerDtoConverter;
 
-  private static final String FASTAPI_URL = "http://10.250.73.244:8000/api/grading/subjective";
+  private static final String FASTAPI_URL =
+      "http://skib-ai.skala25a.project.skala-ai.comapi/grading/subjective";
 
   /**
    * 사용자가 제출한 답변을 저장합니다.

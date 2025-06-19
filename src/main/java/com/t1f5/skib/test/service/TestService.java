@@ -78,7 +78,7 @@ public class TestService {
     String response =
         webClient
             .post()
-            .uri("http://fastapi-service:8000/api/test/generate")
+            .uri("http://skib-ai.skala25a.project.skala-ai.com/api/test/generate")
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(dto)
             .retrieve()
@@ -114,7 +114,7 @@ public class TestService {
     testRepository.save(test);
 
     // 2. 병렬로 문제 생성 및 TestQuestion 저장
-    generateAndSaveQuestionsInParallel(test, requestCreateTestDto, projectId);
+    generateAndSaveQuestionsInParallel(test, requestCreateTestDto);
 
     // 3. 초대 링크 생성
     String token = UUID.randomUUID().toString();
@@ -369,8 +369,7 @@ public class TestService {
     return getTestById(userId, lang);
   }
 
-  private void generateAndSaveQuestionsInParallel(
-      Test test, RequestCreateTestDto requestDto, Integer projectId) {
+  private void generateAndSaveQuestionsInParallel(Test test, RequestCreateTestDto requestDto) {
     ExecutorService executor = Executors.newFixedThreadPool(4);
     List<Future<List<Question>>> futures = new ArrayList<>();
 
@@ -390,7 +389,7 @@ public class TestService {
                         .configuredSubjectiveCount(config.getConfiguredSubjectiveCount())
                         .build();
 
-                return questionService.generateQuestions(List.of(dto), projectId);
+                return questionService.generateQuestions(List.of(dto));
               }));
     }
 
