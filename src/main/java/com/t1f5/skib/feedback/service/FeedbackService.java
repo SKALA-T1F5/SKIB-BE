@@ -291,17 +291,24 @@ public class FeedbackService {
    */
   public List<TrainerFeedBackDto> getQuestionFeedbackSortedByTestId(
       Integer testId, boolean isDescending) {
-    // 1. MongoDB에서 모든 문제 조회
-    List<Question> questions = questionMongoRepository.findAll();
 
+    // 1. TEST_QUESTION에서 해당 테스트의 문제 번호 매핑 조회
+    List<TestQuestion> testQuestions =
+        testQuestionRepository.findByTest_TestIdAndIsDeletedFalse(testId);
+    Map<String, Integer> questionNumberMap =
+        testQuestions.stream()
+            .collect(
+                Collectors.toMap(TestQuestion::getQuestionId, TestQuestion::getQuestionNumber));
+
+    // 2. MongoDB에서 모든 문제 조회
+    List<Question> questions = questionMongoRepository.findAll();
     log.info("[1] MongoDB에서 가져온 Question 수: {}", questions.size());
 
-    // 2. 정답률 쿼리 호출
+    // 3. 정답률 쿼리 호출
     List<QuestionCorrectRateProjection> rateList =
         answerRepository.findCorrectRatesByTestId(testId);
     log.info("[2] 정답률 쿼리 결과 수: {}", rateList.size());
 
-    // 3. Map<questionId, correctRate> 구성
     Map<String, Double> correctRateMap =
         rateList.stream()
             .collect(
@@ -310,19 +317,26 @@ public class FeedbackService {
                     p -> {
                       if (p.getTotalCount() == 0) return 0.0;
                       double raw = (double) p.getCorrectCount() / p.getTotalCount();
-                      return Math.round(raw * 10000.0) / 100.0; // e.g. 0.6666 → 66.67
+                      return Math.round(raw * 10000.0) / 100.0; // 66.67% 형식
                     }));
 
-    // 4. Question 리스트를 DTO로 변환 + 로그 출력
+    // 4. DTO 변환
     List<TrainerFeedBackDto> feedbackList =
         questions.stream()
             .filter(q -> correctRateMap.containsKey(q.getId()))
             .map(
                 q -> {
                   double correctRate = correctRateMap.getOrDefault(q.getId(), 0.0);
-                  log.info("[정답률 계산] questionId={}, correctRate={}", q.getId(), correctRate);
+                  Integer questionNumber = questionNumberMap.getOrDefault(q.getId(), null);
+
+                  log.info(
+                      "[정답률 계산] questionId={}, correctRate={}, questionNumber={}",
+                      q.getId(),
+                      correctRate,
+                      questionNumber);
 
                   return TrainerFeedBackDto.builder()
+                      .questionNumber(questionNumber)
                       .questionId(q.getId())
                       .documentId(q.getDocumentId())
                       .questionText(q.getQuestion())
@@ -336,13 +350,11 @@ public class FeedbackService {
             .sorted(Comparator.comparingDouble(TrainerFeedBackDto::getCorrectRate))
             .collect(Collectors.toList());
 
-    // 5. 정렬 방향 처리
     if (isDescending) {
       Collections.reverse(feedbackList);
     }
 
     log.info("[최종 반환] Feedback 개수: {}", feedbackList.size());
-
     return feedbackList;
   }
 
@@ -418,7 +430,6 @@ public class FeedbackService {
    * @param testId 테스트 ID
    * @return ResponseTestTagDto 리스트에 태그 이름과 정답률을 포함
    */
-  
   public List<ResponseTestTagDto> getTagAccuracyRatesByTestId(Integer testId) {
     // 1. 테스트에 포함된 문제들
     List<TestQuestion> testQuestions = testQuestionRepository.findByTest_TestId(testId);

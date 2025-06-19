@@ -10,7 +10,9 @@ import lombok.Data;
 @Builder
 public class TrainerFeedBackDto {
   private String questionId;
+  private Integer questionNumber;
   private String documentId;
+  private String documentName;
   private String questionText;
   private DifficultyLevel difficulty;
   private QuestionType type;
