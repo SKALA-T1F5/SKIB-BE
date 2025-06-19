@@ -1,5 +1,10 @@
 package com.t1f5.skib.test.service;
 
+import com.t1f5.skib.document.domain.Document;
+import com.t1f5.skib.document.domain.Summary;
+import com.t1f5.skib.document.dto.SummaryDto;
+import com.t1f5.skib.document.repository.DocumentRepository;
+import com.t1f5.skib.document.repository.SummaryMongoRepository;
 import com.t1f5.skib.global.dtos.DtoConverter;
 import com.t1f5.skib.project.repository.ProjectJpaRepository;
 import com.t1f5.skib.question.domain.Question;
@@ -59,34 +64,61 @@ public class TestService {
   private final ResponseQuestionDtoConverter questionDtoConverter;
   private final WebClient webClient;
   private final QuestionService questionService;
+  private final DocumentRepository documentRepository;
+  private final SummaryMongoRepository summaryMongoRepository;
   @Autowired private QuestionTranslator questionTranslator;
 
   /**
    * LLM을 사용하여 테스트를 생성합니다.
    *
    * @param projectId 프로젝트 ID
-   * @param dto LLM 요청 DTO
+   * @param dto 사용자 입력 및 요약 정보 DTO
    * @return 생성된 테스트의 응답
    */
   public String makeTest(Integer projectId, RequestCreateTestByLLMDto dto) {
     log.info("Creating test by LLM for project ID: {}", projectId);
 
+    // 1. 프로젝트 존재 확인
     if (!projectRepository.existsById(projectId)) {
       throw new IllegalArgumentException("해당 프로젝트가 존재하지 않습니다: " + projectId);
     }
 
+    // 2. DBMS에서 프로젝트에 속한 문서 목록 조회
+    List<Document> documents = documentRepository.findByProjectIdAndIsDeletedFalse(projectId);
+    List<Integer> documentIds =
+        documents.stream().map(Document::getDocumentId).collect(Collectors.toList());
+
+    // 3. MongoDB에서 문서 요약 정보 조회
+    List<Summary> summaries = summaryMongoRepository.findByDocumentIdIn(documentIds);
+
+    // 4. Summary → SummaryDto 변환
+    List<SummaryDto> summaryDtos =
+        summaries.stream()
+            .map(
+                summary ->
+                    SummaryDto.builder()
+                        .document_id(summary.getDocumentId())
+                        .summary(summary.getSummary())
+                        .keywords(summary.getKeyword())
+                        .build())
+            .collect(Collectors.toList());
+
+    // 5. FastAPI로 보낼 DTO 구성
+    RequestCreateTestByLLMDto payload =
+        new RequestCreateTestByLLMDto(projectId, dto.getUserInput(), summaryDtos);
+
+    // 6. FastAPI 호출
     String response =
         webClient
             .post()
             .uri("http://skib-ai.skala25a.project.skala-ai.com/api/test/generate")
             .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(dto)
+            .bodyValue(payload)
             .retrieve()
             .bodyToMono(String.class)
             .block();
 
     log.info("FastAPI 응답: {}", response);
-
     return response;
   }
 
