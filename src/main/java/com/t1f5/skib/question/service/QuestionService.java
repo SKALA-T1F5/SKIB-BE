@@ -45,7 +45,9 @@ public class QuestionService {
 
       ResponseEntity<QuestionDto[]> response =
           restTemplate.postForEntity(
-              "http://10.250.73.244:8000/api/question", entity, QuestionDto[].class);
+              "http://skib-ai.skala25a.project.skala-ai.com/api/question",
+              entity,
+              QuestionDto[].class);
 
       QuestionDto[] body = response.getBody();
       if (body == null) continue;

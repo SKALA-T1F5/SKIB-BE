@@ -78,7 +78,7 @@ public class TestService {
     String response =
         webClient
             .post()
-            .uri("http://fastapi-service:8000/api/test/generate")
+            .uri("http://skib-ai.skala25a.project.skala-ai.com/api/test/generate")
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(dto)
             .retrieve()
