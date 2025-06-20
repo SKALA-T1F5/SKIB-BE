@@ -120,7 +120,7 @@ public class TestService {
     String response =
         webClient
             .post()
-            .uri("http://skib-ai.skala25a.project.skala-ai.com/api/test/generate")
+            .uri("http://skib-ai.skala25a.project.skala-ai.com/api/test/plan")
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(payload)
             .retrieve()
