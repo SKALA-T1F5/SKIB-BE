@@ -205,6 +205,12 @@ public class DocumentService {
     }
   }
 
+  @Transactional
+  public void saveSummaryFromFastAPI(Integer documentId, SummaryDto summaryDto) {
+    Summary summary = summaryDtoConverter.convert(summaryDto, documentId);
+    summaryMongoRepository.save(summary);
+  }
+
   private String getExtension(String filename) {
     int dotIndex = filename.lastIndexOf('.');
     return (dotIndex != -1) ? filename.substring(dotIndex + 1) : "";
