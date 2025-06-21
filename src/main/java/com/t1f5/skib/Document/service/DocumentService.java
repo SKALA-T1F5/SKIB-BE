@@ -19,6 +19,8 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -155,10 +157,10 @@ public class DocumentService {
     try {
       // 1. FastAPI로 파일 업로드
       MultiValueMap<String, Object> multipartData = new LinkedMultiValueMap<>();
-      multipartData.add("file", file.getResource());
-      multipartData.add("project_id", projectId.toString());
-      multipartData.add("document_id", documentId.toString());
-      multipartData.add("name", name);
+      multipartData.add("file", new FileSystemResource(file.getResource().getFile()));
+      multipartData.add("document_id", new HttpEntity<>(documentId.toString()));
+      multipartData.add("project_id", new HttpEntity<>(projectId.toString()));
+      multipartData.add("name", new HttpEntity<>(name));
 
       Map<String, Object> response =
           webClient
