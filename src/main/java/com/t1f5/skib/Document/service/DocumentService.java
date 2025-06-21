@@ -163,7 +163,7 @@ public class DocumentService {
       Map<String, Object> response =
           webClient
               .post()
-              .uri("http://skib-ai.skala25a.project.skala-ai.com:8000/api/document")
+              .uri("http://skib-ai.skala25a.project.skala-ai.com/api/document")
               .contentType(MediaType.MULTIPART_FORM_DATA)
               .body(BodyInserters.fromMultipartData(multipartData))
               .retrieve()
@@ -185,8 +185,7 @@ public class DocumentService {
           webClient
               .get()
               .uri(
-                  "http://skib-ai.skala25a.project.skala-ai.com:8000/api/document/summary/"
-                      + documentId)
+                  "http://skib-ai.skala25a.project.skala-ai.com/api/document/summary/" + documentId)
               .retrieve()
               .bodyToMono(SummaryDto[].class)
               .block();
