@@ -21,6 +21,11 @@ spring:
       uri: ${MONGO_URI_PROD}
       database: sk-team-09
 
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 500MB
+
 google:
   translate:
     credentials-path: ${GOOGLE_CREDENTIALS_PATH:}

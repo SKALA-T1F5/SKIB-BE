@@ -20,6 +20,11 @@ spring:
       uri: mongodb+srv://yoonalim2003:${MONGO_PASSWORD_LOCAL}@cluster0.9asfqrd.mongodb.net/SKIB?retryWrites=true&w=majority
       database: SKIB
 
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 500MB
+
 google:
   translate:
     api-key: ${GOOGLE_TRANSLATE_API_KEY:320741b8db82b503bb5f2fc7a82dcdaf75d22137}
