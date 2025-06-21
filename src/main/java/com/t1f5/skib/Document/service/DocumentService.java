@@ -19,12 +19,9 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -155,26 +152,26 @@ public class DocumentService {
   private String sendFileToFastAPI(
       MultipartFile file, Integer projectId, Integer documentId, String name) {
     try {
-      // 1. FastAPI로 파일 업로드
-      MultiValueMap<String, Object> multipartData = new LinkedMultiValueMap<>();
-      multipartData.add("file", new FileSystemResource(file.getResource().getFile()));
-      multipartData.add("document_id", new HttpEntity<>(documentId.toString()));
-      multipartData.add("project_id", new HttpEntity<>(projectId.toString()));
-      multipartData.add("name", new HttpEntity<>(name));
+      MultipartBodyBuilder builder = new MultipartBodyBuilder();
+
+      // ⚠️ file은 MultipartFile에서 직접 바이트 배열로 받거나 Resource로 전환
+      builder.part("file", file.getResource());
+      builder.part("document_id", documentId.toString());
+      builder.part("project_id", projectId.toString());
+      builder.part("name", name);
 
       Map<String, Object> response =
           webClient
               .post()
               .uri("http://skib-ai.skala25a.project.skala-ai.com/api/document/upload")
               .contentType(MediaType.MULTIPART_FORM_DATA)
-              .body(BodyInserters.fromMultipartData(multipartData))
+              .body(BodyInserters.fromMultipartData(builder.build()))
               .retrieve()
               .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-              .block(); // 여기까지 완료되어야 아래 실행됨
+              .block();
 
       log.info("FastAPI 업로드 완료: {}", response);
 
-      // 업로드 응답에서 file_path 또는 필요한 값 추출
       String filePath = (String) response.get("file_path");
       if (filePath == null) {
         throw new IllegalStateException("file_path가 응답에 없습니다.");
