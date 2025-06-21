@@ -178,31 +178,24 @@ public class DocumentService {
         throw new IllegalStateException("file_path가 응답에 없습니다.");
       }
 
-      waitForFastAPIProcessing(documentId);
-
-      // 2. SummaryDto[] 요청 및 저장
-      SummaryDto[] summaries =
-          webClient
-              .get()
-              .uri(
-                  "http://skib-ai.skala25a.project.skala-ai.com/api/document/summary/" + documentId)
-              .retrieve()
-              .bodyToMono(SummaryDto[].class)
-              .block();
-
-      if (summaries != null && summaries.length > 0) {
-        for (SummaryDto summaryDto : summaries) {
-          Summary summary = summaryDtoConverter.convert(summaryDto, documentId);
-          summaryMongoRepository.save(summary);
-        }
-      }
-
       return filePath;
 
     } catch (Exception e) {
       log.error("FastAPI 연동 실패: {}", e.getMessage(), e);
       throw new RuntimeException("FastAPI 연동 실패", e);
     }
+  }
+
+  /**
+   * FastAPI로부터 SummaryDto를 받아 MongoDB에 저장하는 메서드
+   *
+   * @param documentId 문서 ID
+   * @param summaryDto SummaryDto 객체
+   */
+  @Transactional
+  public void saveSummaryFromFastAPI(Integer documentId, SummaryDto summaryDto) {
+    Summary summary = summaryDtoConverter.convert(summaryDto, documentId);
+    summaryMongoRepository.save(summary);
   }
 
   private String getExtension(String filename) {
@@ -215,31 +208,5 @@ public class DocumentService {
     int lastDotIndex = filename.lastIndexOf(".");
     if (lastDotIndex == -1) return filename; // 확장자 없음
     return filename.substring(0, lastDotIndex);
-  }
-
-  private void waitForFastAPIProcessing(Integer documentId) throws InterruptedException {
-    int retries = 20;
-    while (retries-- > 0) {
-      Map<String, String> statusResponse =
-          webClient
-              .get()
-              .uri("http://skib-ai.skala25a.project.skala-ai.com/api/document/status/" + documentId)
-              .retrieve()
-              .bodyToMono(new ParameterizedTypeReference<Map<String, String>>() {})
-              .block();
-
-      String status = statusResponse.get("status");
-      log.info("현재 상태: {}", status);
-
-      if ("완료되었습니다".equals(status)) {
-        return;
-      } else if ("실패하였습니다".equals(status)) {
-        throw new IllegalStateException("FastAPI 문서 전처리 실패");
-      }
-
-      Thread.sleep(3000); // 3초 간격으로 polling
-    }
-
-    throw new IllegalStateException("FastAPI 전처리 시간 초과");
   }
 }

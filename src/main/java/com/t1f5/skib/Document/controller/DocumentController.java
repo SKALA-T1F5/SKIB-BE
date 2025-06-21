@@ -1,5 +1,6 @@
 package com.t1f5.skib.document.controller;
 
+import com.t1f5.skib.document.dto.SummaryDto;
 import com.t1f5.skib.document.dto.responsedto.ResponseDocumentDto;
 import com.t1f5.skib.document.dto.responsedto.ResponseDocumentListDto;
 import com.t1f5.skib.document.service.DocumentService;
@@ -7,6 +8,7 @@ import com.t1f5.skib.global.customAnnotations.SwaggerApiNotFoundError;
 import com.t1f5.skib.global.customAnnotations.SwaggerApiSuccess;
 import com.t1f5.skib.global.customAnnotations.SwaggerInternetServerError;
 import com.t1f5.skib.global.dtos.ResultDto;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,7 +16,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
@@ -62,5 +66,16 @@ public class DocumentController {
   public ResponseEntity<?> deleteDocument(@RequestParam("documentId") Integer documentId) {
     documentService.deleteDocument(documentId);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "문서 삭제 완료"));
+  }
+
+  @SwaggerApiSuccess(summary = "문서 요약 저장", description = "FastAPI로부터 받은 문서 요약 정보를 저장합니다.")
+  @SwaggerApiNotFoundError
+  @SwaggerInternetServerError
+  @PutMapping("/api/document/summary/{documentId}")
+  public ResponseEntity<ResultDto<Void>> receiveSummaryFromFastAPI(
+      @PathVariable Integer documentId, @RequestBody SummaryDto summaryDto) {
+
+    documentService.saveSummaryFromFastAPI(documentId, summaryDto);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", null));
   }
 }
