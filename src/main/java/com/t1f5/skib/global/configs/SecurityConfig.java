@@ -40,6 +40,7 @@ public class SecurityConfig {
                         "/api/auth/user/login",
                         "/swagger-ui/**",
                         "/v3/api-docs/**",
+                        "/api/document/summary",
                         "/api/admin")
                     .permitAll()
                     .anyRequest()
@@ -61,7 +62,8 @@ public class SecurityConfig {
   public UrlBasedCorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration config = new CorsConfiguration();
     config.setAllowCredentials(true); // 쿠키 허용
-    config.setAllowedOrigins(List.of("http://10.250.72.251:5173","http://localhost:5173")); // 구체적 origin 명시
+    config.setAllowedOrigins(
+        List.of("http://10.250.72.251:5173", "http://localhost:5173")); // 구체적 origin 명시
     config.setAllowedHeaders(List.of("*"));
     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
     config.setExposedHeaders(List.of("Authorization"));
