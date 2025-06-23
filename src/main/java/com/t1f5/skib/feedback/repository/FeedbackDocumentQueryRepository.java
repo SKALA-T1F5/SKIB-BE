@@ -10,5 +10,4 @@ import org.springframework.stereotype.Repository;
 public interface FeedbackDocumentQueryRepository extends JpaRepository<Document, Integer> {
 
   List<Document> findByDocumentIdIn(Set<Integer> documentIds);
-  
 }

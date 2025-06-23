@@ -106,9 +106,9 @@ public class TestService {
             .map(
                 summary ->
                     SummaryDto.builder()
-                        .document_id(summary.getDocumentId())
+                        .documentId(summary.getDocumentId())
                         .summary(summary.getSummary())
-                        .keywords(summary.getKeyword())
+                        .keywords(summary.getKeywords())
                         .build())
             .collect(Collectors.toList());
 
@@ -174,9 +174,9 @@ public class TestService {
             .map(
                 summary ->
                     SummaryDto.builder()
-                        .document_id(summary.getDocumentId())
+                        .documentId(summary.getDocumentId())
                         .summary(summary.getSummary())
-                        .keywords(summary.getKeyword())
+                        .keywords(summary.getKeywords())
                         .build())
             .collect(Collectors.toList());
 
@@ -227,7 +227,7 @@ public class TestService {
             .findByTest_TestIdAndIsDeletedFalse(test.getTestId())
             .orElseThrow(() -> new IllegalArgumentException("해당 테스트의 초대 링크를 찾을 수 없습니다."));
 
-    return "https://localhost:8080/invite/" + inviteLink.getToken();
+    return "https://skib-backend.skala25a.project.skala-ai.com/invite/" + inviteLink.getToken();
   }
 
   /**
