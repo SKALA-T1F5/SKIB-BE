@@ -106,7 +106,7 @@ public class TestService {
             .map(
                 summary ->
                     SummaryDto.builder()
-                        .document_id(summary.getDocumentId())
+                        .documentId(summary.getDocumentId())
                         .summary(summary.getSummary())
                         .keywords(summary.getKeyword())
                         .build())
@@ -174,7 +174,7 @@ public class TestService {
             .map(
                 summary ->
                     SummaryDto.builder()
-                        .document_id(summary.getDocumentId())
+                        .documentId(summary.getDocumentId())
                         .summary(summary.getSummary())
                         .keywords(summary.getKeyword())
                         .build())

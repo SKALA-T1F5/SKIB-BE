@@ -13,5 +13,5 @@ import lombok.NoArgsConstructor;
 public class SummaryDto {
   private String summary;
   private List<String> keywords;
-  private Integer document_id;
+  private Integer documentId;
 }

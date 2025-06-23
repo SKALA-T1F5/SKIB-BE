@@ -72,10 +72,10 @@ public class DocumentController {
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
   @PutMapping("/api/document/summary/{documentId}")
-  public ResponseEntity<ResultDto<Void>> receiveSummaryFromFastAPI(
+  public ResponseEntity<ResultDto<?>> receiveSummaryFromFastAPI(
       @PathVariable Integer documentId, @RequestBody SummaryDto summaryDto) {
 
     documentService.saveSummaryFromFastAPI(documentId, summaryDto);
-    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", null));
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "문서 요약 저장 완료"));
   }
 }
