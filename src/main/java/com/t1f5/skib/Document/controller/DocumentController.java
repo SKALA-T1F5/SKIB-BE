@@ -8,9 +8,10 @@ import com.t1f5.skib.global.customAnnotations.SwaggerApiNotFoundError;
 import com.t1f5.skib.global.customAnnotations.SwaggerApiSuccess;
 import com.t1f5.skib.global.customAnnotations.SwaggerInternetServerError;
 import com.t1f5.skib.global.dtos.ResultDto;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
+
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,12 +20,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
+@Slf4j
 @Tag(name = "Document API", description = "문서 관련 API")
 @RequiredArgsConstructor
 public class DocumentController {
@@ -74,7 +77,7 @@ public class DocumentController {
   @PutMapping("/api/document/summary/{documentId}")
   public ResponseEntity<ResultDto<Void>> receiveSummaryFromFastAPI(
       @PathVariable Integer documentId, @RequestBody SummaryDto summaryDto) {
-
+    log.info("📥 수신된 요약 데이터: {}", summaryDto); // 🔥 로그 확인
     documentService.saveSummaryFromFastAPI(documentId, summaryDto);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", null));
   }
