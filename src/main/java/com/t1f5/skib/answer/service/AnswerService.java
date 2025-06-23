@@ -39,7 +39,7 @@ public class AnswerService {
   private final SubjectiveAnswerDtoConverter subjectiveAnswerDtoConverter;
 
   private static final String FASTAPI_URL =
-      "http://skib-ai.skala25a.project.skala-ai.comapi/grading/subjective";
+      "https://skib-ai.skala25a.project.skala-ai.comapi/grading/subjective";
 
   /**
    * 사용자가 제출한 답변을 저장합니다.
@@ -111,7 +111,6 @@ public class AnswerService {
    * @param testId 테스트 ID
    * @return 사용자가 제출한 답변 목록
    */
-
   public List<ScoredAnswerResultDto> getScoredAnswersByUserTestId(Integer userId, Integer testId) {
 
     List<Answer> answers = answerRepository.findByUserIdAndTestId(userId, testId);

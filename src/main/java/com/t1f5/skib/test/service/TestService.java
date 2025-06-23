@@ -1,5 +1,7 @@
 package com.t1f5.skib.test.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.t1f5.skib.document.domain.Document;
 import com.t1f5.skib.document.domain.Summary;
 import com.t1f5.skib.document.dto.SummaryDto;
@@ -83,7 +85,7 @@ public class TestService {
    * @param dto 사용자 입력 및 요약 정보 DTO
    * @return 생성된 테스트의 응답
    */
-  public String makeTest(Integer projectId, RequestCreateTestByLLMDto dto) {
+  public String makeTest(Integer projectId, String userInput) {
     log.info("Creating test by LLM for project ID: {}", projectId);
 
     // 1. 프로젝트 존재 확인
@@ -114,13 +116,21 @@ public class TestService {
 
     // 5. FastAPI로 보낼 DTO 구성
     RequestCreateTestByLLMDto payload =
-        new RequestCreateTestByLLMDto(projectId, dto.getUserInput(), summaryDtos);
+        new RequestCreateTestByLLMDto(projectId, userInput, summaryDtos);
+
+    ObjectMapper mapper = new ObjectMapper();
+    try {
+      String jsonPayload = mapper.writeValueAsString(payload);
+      log.info("📤 FastAPI로 전송할 payload JSON:\n{}", jsonPayload);
+    } catch (JsonProcessingException e) {
+      log.error("❌ payload 직렬화 실패", e);
+    }
 
     // 6. FastAPI 호출
     String response =
         webClient
             .post()
-            .uri("http://skib-ai.skala25a.project.skala-ai.com/api/test/plan")
+            .uri("https://skib-ai.skala25a.project.skala-ai.com/api/test/plan")
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(payload)
             .retrieve()
@@ -190,7 +200,7 @@ public class TestService {
     String response =
         webClient
             .post()
-            .uri("http://skib-ai.skala25a.project.skala-ai.com/api/test/generate")
+            .uri("https://skib-ai.skala25a.project.skala-ai.com/api/test/generate")
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(payload)
             .retrieve()
