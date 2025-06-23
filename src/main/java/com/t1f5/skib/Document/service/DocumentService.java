@@ -121,6 +121,13 @@ public class DocumentService {
 
     documentRepository.save(document); // 여기서 documentId 생성됨
 
+    log.info("Document saved with ID: {}", document.getDocumentId());
+    log.info(
+        "Document details: name='{}', size={} bytes, extension='{}', projectId={}",
+        projectId,
+        document.getDocumentId(),
+        file.getOriginalFilename());
+
     // 3. FastAPI로 파일 업로드 (documentId 포함)
     String uploadedUrl =
         sendFileToFastAPI(file, projectId, document.getDocumentId(), file.getOriginalFilename());
@@ -163,7 +170,7 @@ public class DocumentService {
       Map<String, Object> response =
           webClient
               .post()
-              .uri("http://skib-ai.skala25a.project.skala-ai.com/api/document/upload")
+              .uri("http://0.0.0.0:8000/api/document/upload")
               .contentType(MediaType.MULTIPART_FORM_DATA)
               .body(BodyInserters.fromMultipartData(builder.build()))
               .retrieve()
