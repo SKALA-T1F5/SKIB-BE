@@ -170,7 +170,7 @@ public class DocumentService {
       Map<String, Object> response =
           webClient
               .post()
-              .uri("http://0.0.0.0:8000/api/document/upload")
+              .uri("http://skib-ai.skala25a.project.skala-ai.com/api/document/upload")
               .contentType(MediaType.MULTIPART_FORM_DATA)
               .body(BodyInserters.fromMultipartData(builder.build()))
               .retrieve()
