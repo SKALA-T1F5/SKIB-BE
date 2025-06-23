@@ -45,7 +45,7 @@ public class QuestionService {
 
       ResponseEntity<QuestionDto[]> response =
           restTemplate.postForEntity(
-              "http://skib-ai.skala25a.project.skala-ai.com/api/question",
+              "https://skib-ai.skala25a.project.skala-ai.com/api/question",
               entity,
               QuestionDto[].class);
 
