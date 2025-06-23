@@ -104,6 +104,14 @@ public class AnswerService {
     userTestRepository.save(userTest);
   }
 
+  /**
+   * 사용자가 제출한 답변을 조회합니다.
+   *
+   * @param userId 사용자 ID
+   * @param testId 테스트 ID
+   * @return 사용자가 제출한 답변 목록
+   */
+
   public List<ScoredAnswerResultDto> getScoredAnswersByUserTestId(Integer userId, Integer testId) {
 
     List<Answer> answers = answerRepository.findByUserIdAndTestId(userId, testId);
