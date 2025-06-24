@@ -32,3 +32,6 @@ google:
 
 jwt:
   secret-key: ${JWT_SECRET_KEY}
+
+fastapi:
+  base-url: http://localhost:8000
