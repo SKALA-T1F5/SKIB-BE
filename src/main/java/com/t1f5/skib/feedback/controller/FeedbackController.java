@@ -54,7 +54,8 @@ public class FeedbackController {
   @SwaggerInternetServerError
   @GetMapping("/docs")
   public ResponseEntity<ResultDto<List<ResponseFeedbackDocDto>>> getDocumentFeedback(
-      @RequestParam Integer userId, @RequestParam Integer testId) {
+      @RequestParam(value = "userId") Integer userId,
+      @RequestParam(value = "testId") Integer testId) {
 
     List<ResponseFeedbackDocDto> response =
         feedbackService.getDocumentAccuracyRates(userId, testId);

@@ -42,4 +42,7 @@ public interface FeedbackUserAnswerRepository extends JpaRepository<Answer, Inte
   List<AnswerMatrixProjection> findAnswerMatrixByTestId(@Param("testId") Integer testId);
 
   List<Answer> findByQuestionIdIn(Set<String> questionIds);
+
+  @Query("SELECT a.questionId, a.isCorrect FROM Answer a WHERE a.userTest.userTestId = :userTestId")
+  List<Object[]> findQuestionIdAndIsCorrectByUserTestId(@Param("userTestId") Integer userTestId);
 }

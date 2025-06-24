@@ -20,7 +20,9 @@ import com.t1f5.skib.feedback.repository.FeedbackDocumentQueryRepository;
 import com.t1f5.skib.feedback.repository.FeedbackQuestionMongoRepository;
 import com.t1f5.skib.feedback.repository.FeedbackUserAnswerRepository;
 import com.t1f5.skib.feedback.repository.FeedbackUserTestRepository;
+import com.t1f5.skib.question.domain.DocumentQuestion;
 import com.t1f5.skib.question.domain.Question;
+import com.t1f5.skib.question.repository.DocumentQuestionRepository;
 import com.t1f5.skib.question.repository.QuestionMongoRepository;
 import com.t1f5.skib.test.domain.Test;
 import com.t1f5.skib.test.domain.TestQuestion;
@@ -30,10 +32,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -54,6 +56,7 @@ public class FeedbackService {
   private final FeedbackDocumentQueryRepository feedbackDocumentQueryRepository;
   private final FeedbackUserTestRepository feedbackUserTestRepository;
   private final QuestionMongoRepository questionMongoRepository;
+  private final DocumentQuestionRepository documentQuestionRepository;
   private final AnswerRepository answerRepository;
   private final TestRepository testRepository;
   private final WebClient webClient;
@@ -98,83 +101,74 @@ public class FeedbackService {
    * @return 문서 정확도 비율을 포함하는 ResponseFeedbackDocDto 리스트
    */
   public List<ResponseFeedbackDocDto> getDocumentAccuracyRates(Integer userId, Integer testId) {
+    // 1. 유저 테스트 조회
     Integer userTestId = feedbackUserTestRepository.findUserTestIdByUserIdAndTestId(userId, testId);
 
-    List<Object[]> answers = feedbackUserAnswerRepository.getAnswersByUserTestId(userTestId);
+    if (userTestId == null) {
+      return Collections.emptyList();
+    }
 
+    // 2. Answer에서 (questionId, isCorrect) 리스트 조회
+    List<Object[]> answers =
+        feedbackUserAnswerRepository.findQuestionIdAndIsCorrectByUserTestId(userTestId);
+
+    if (answers.isEmpty()) {
+      return Collections.emptyList();
+    }
+
+    // 3. questionId → documentId 매핑을 위해 questionId set 수집
     Set<String> questionIds =
         answers.stream().map(row -> String.valueOf(row[0])).collect(Collectors.toSet());
 
-    List<Question> questions = feedbackQuestionMongoRepository.findByIdIn(questionIds);
+    // 4. DocumentQuestion에서 questionKey 기준으로 documentId 조회
+    Map<String, Integer> questionToDocumentIdMap =
+        documentQuestionRepository.findByQuestionKeyIn(questionIds).stream()
+            .collect(
+                Collectors.toMap(
+                    DocumentQuestion::getQuestionKey, dq -> dq.getDocument().getDocumentId()));
 
-    Map<String, String> questionIdToDocumentIdMap =
-        questions.stream().collect(Collectors.toMap(Question::getId, Question::getDocumentId));
-
-    Set<Integer> documentIdSet =
-        questions.stream()
-            .map(
-                q -> {
-                  try {
-                    return Integer.parseInt(q.getDocumentId());
-                  } catch (Exception e) {
-                    return null;
-                  }
-                })
-            .filter(Objects::nonNull)
-            .collect(Collectors.toSet());
+    // 5. 문서 이름 조회용 documentId set 구성
+    Set<Integer> documentIds = new HashSet<>(questionToDocumentIdMap.values());
 
     Map<Integer, String> documentIdToNameMap =
-        feedbackDocumentQueryRepository.findByDocumentIdIn(documentIdSet).stream()
+        feedbackDocumentQueryRepository.findByDocumentIdIn(documentIds).stream()
             .collect(Collectors.toMap(Document::getDocumentId, Document::getName));
 
-    Map<String, long[]> documentStats = new HashMap<>();
+    // 6. 문서별 정답률 집계
+    Map<Integer, long[]> documentStats = new HashMap<>();
 
     for (Object[] row : answers) {
       String questionId = String.valueOf(row[0]);
       boolean isCorrect = (Boolean) row[1];
 
-      String documentIdStr = questionIdToDocumentIdMap.get(questionId);
-      if (documentIdStr == null) continue;
+      Integer documentId = questionToDocumentIdMap.get(questionId);
+      if (documentId == null) continue;
 
-      documentStats.putIfAbsent(documentIdStr, new long[2]);
-      long[] stats = documentStats.get(documentIdStr);
+      documentStats.putIfAbsent(documentId, new long[2]);
+      long[] stats = documentStats.get(documentId);
 
       if (isCorrect) stats[0]++;
       stats[1]++;
     }
 
-    List<ResponseFeedbackDocDto> result =
-        documentStats.entrySet().stream()
-            .map(
-                entry -> {
-                  String documentIdStr = entry.getKey();
-                  long correctCount = entry.getValue()[0];
-                  long totalCount = entry.getValue()[1];
-                  double accuracyRate =
-                      (totalCount > 0) ? (100.0 * correctCount / totalCount) : 0.0;
+    // 7. 결과 변환
+    return documentStats.entrySet().stream()
+        .map(
+            entry -> {
+              Integer docId = entry.getKey();
+              long correct = entry.getValue()[0];
+              long total = entry.getValue()[1];
+              double accuracy = total > 0 ? (100.0 * correct / total) : 0.0;
 
-                  Integer documentIdInt = null;
-                  try {
-                    documentIdInt = Integer.parseInt(documentIdStr);
-                  } catch (Exception ignored) {
-                  }
-
-                  String documentName =
-                      (documentIdInt != null)
-                          ? documentIdToNameMap.getOrDefault(documentIdInt, "Unknown")
-                          : "Unknown";
-
-                  return ResponseFeedbackDocDto.builder()
-                      .documentId(documentIdStr)
-                      .documentName(documentName)
-                      .accuracyRate(accuracyRate)
-                      .correctCount(correctCount)
-                      .totalCount(totalCount)
-                      .build();
-                })
-            .collect(Collectors.toList());
-
-    return result;
+              return ResponseFeedbackDocDto.builder()
+                  .documentId(docId.toString())
+                  .documentName(documentIdToNameMap.getOrDefault(docId, "Unknown"))
+                  .accuracyRate(accuracy)
+                  .correctCount(correct)
+                  .totalCount(total)
+                  .build();
+            })
+        .collect(Collectors.toList());
   }
 
   /**
