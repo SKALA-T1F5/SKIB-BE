@@ -67,11 +67,10 @@ public class FeedbackService {
    */
   public ResponseFeedbackAllDto getTotalAccuracyRate(Integer userId, Integer testId) {
     Integer userTestId = feedbackUserTestRepository.findUserTestIdByUserIdAndTestId(userId, testId);
-
     Object[] row = feedbackUserAnswerRepository.getTotalAccuracyRateByUserTestId(userTestId);
 
-    Long correctCount = (row[0] != null) ? (Long) row[0] : 0L;
-    Long totalCount = (row[1] != null) ? (Long) row[1] : 0L;
+    long correctCount = (row[0] != null) ? ((Number) row[0]).longValue() : 0L;
+    long totalCount = (row[1] != null) ? ((Number) row[1]).longValue() : 0L;
 
     double rate = 0.0;
     if (totalCount > 0) {
