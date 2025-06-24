@@ -32,3 +32,6 @@ google:
 
 jwt:
   secret-key: ${JWT_SECRET_KEY}
+
+fastapi:
+  base-url: https://skib-ai.skala25a.project.skala-ai.com

@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
@@ -35,6 +36,8 @@ public class DocumentService {
   private final ProjectJpaRepository projectRepository;
   private final SummaryMongoRepository summaryMongoRepository;
   private final SummaryDtoConverter summaryDtoConverter;
+  @Value("${fastapi.base-url}")
+  private String fastApiBaseUrl;
 
   /**
    * 문서 ID로 단일 문서를 조회하는 메서드
@@ -170,7 +173,7 @@ public class DocumentService {
       Map<String, Object> response =
           webClient
               .post()
-              .uri("https://skib-ai.skala25a.project.skala-ai.com/api/document/upload")
+              .uri(fastApiBaseUrl + "api/document/upload")
               .contentType(MediaType.MULTIPART_FORM_DATA)
               .body(BodyInserters.fromMultipartData(builder.build()))
               .retrieve()

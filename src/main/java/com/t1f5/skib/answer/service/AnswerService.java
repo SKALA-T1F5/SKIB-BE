@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.beans.factory.annotation.Value;
 import reactor.core.publisher.Mono;
 
 @RequiredArgsConstructor
@@ -38,9 +39,8 @@ public class AnswerService {
   private final WebClient webClient;
   private final SubjectiveAnswerDtoConverter subjectiveAnswerDtoConverter;
 
-  private static final String FASTAPI_URL =
-      "https://skib-ai.skala25a.project.skala-ai.comapi/grading/subjective";
-
+  @Value("${fastapi.base-url}")
+  private String fastApiBaseUrl;
   /**
    * 사용자가 제출한 답변을 저장합니다.
    *
@@ -177,7 +177,7 @@ public class AnswerService {
       String questionId, List<GradingCriteriaDto> grading_criteria, String response) {
     return webClient
         .post()
-        .uri(FASTAPI_URL)
+        .uri(fastApiBaseUrl + "/api/grading/subjective")
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(new SubjectiveScoringRequestDto(questionId, grading_criteria, response))
         .retrieve()
