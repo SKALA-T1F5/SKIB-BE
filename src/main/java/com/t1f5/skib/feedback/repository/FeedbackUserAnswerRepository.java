@@ -4,7 +4,6 @@ import com.t1f5.skib.answer.domain.Answer;
 import com.t1f5.skib.feedback.dto.projection.AnswerMatrixProjection;
 import java.util.List;
 import java.util.Set;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
