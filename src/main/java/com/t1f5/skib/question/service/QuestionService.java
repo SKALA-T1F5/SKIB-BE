@@ -48,7 +48,7 @@ public class QuestionService {
 
       ResponseEntity<QuestionDto[]> response =
           restTemplate.postForEntity(
-              fastApiBaseUrl+ "api/question",
+              fastApiBaseUrl+ "api/test/generate",
               entity,
               QuestionDto[].class);
 

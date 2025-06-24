@@ -70,15 +70,18 @@ public class FeedbackService {
    */
   public ResponseFeedbackAllDto getTotalAccuracyRate(Integer userId, Integer testId) {
     Integer userTestId = feedbackUserTestRepository.findUserTestIdByUserIdAndTestId(userId, testId);
+
     Object[] row = feedbackUserAnswerRepository.getTotalAccuracyRateByUserTestId(userTestId);
 
-    long correctCount = (row[0] != null) ? ((Number) row[0]).longValue() : 0L;
-    long totalCount = (row[1] != null) ? ((Number) row[1]).longValue() : 0L;
-
-    double rate = 0.0;
-    if (totalCount > 0) {
-      rate = 100.0 * correctCount / totalCount;
+    // row 길이 검증 (방어적)
+    long correctCount = 0;
+    long totalCount = 0;
+    if (row != null && row.length >= 2) {
+      correctCount = (row[0] instanceof Number) ? ((Number) row[0]).longValue() : 0L;
+      totalCount = (row[1] instanceof Number) ? ((Number) row[1]).longValue() : 0L;
     }
+
+    double rate = (totalCount > 0) ? (100.0 * correctCount / totalCount) : 0.0;
 
     return ResponseFeedbackAllDto.builder()
         .accuracyRate(rate)

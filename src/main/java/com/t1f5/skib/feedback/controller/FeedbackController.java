@@ -39,7 +39,8 @@ public class FeedbackController {
   @SwaggerInternetServerError
   @GetMapping("/all")
   public ResponseEntity<ResultDto<ResponseFeedbackAllDto>> getAllFeedback(
-      @RequestParam Integer userId, @RequestParam Integer testId) {
+      @RequestParam(value = "userId") Integer userId,
+      @RequestParam(value = "testId") Integer testId) {
 
     ResponseFeedbackAllDto response = feedbackService.getTotalAccuracyRate(userId, testId);
 
