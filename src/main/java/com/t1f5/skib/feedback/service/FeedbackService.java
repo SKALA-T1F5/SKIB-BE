@@ -4,6 +4,7 @@ import com.t1f5.skib.answer.domain.Answer;
 import com.t1f5.skib.answer.repository.AnswerRepository;
 import com.t1f5.skib.answer.repository.QuestionCorrectRateProjection;
 import com.t1f5.skib.document.domain.Document;
+import com.t1f5.skib.feedback.dto.RequestFeedbackForLLMDto;
 import com.t1f5.skib.feedback.dto.ResponseAnswerMatrixDto;
 import com.t1f5.skib.feedback.dto.ResponseAnswerMatrixDto.AnswerRow;
 import com.t1f5.skib.feedback.dto.ResponseFeedbackAllDto;
@@ -37,7 +38,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 @Service
 @Slf4j
@@ -51,6 +55,7 @@ public class FeedbackService {
   private final QuestionMongoRepository questionMongoRepository;
   private final AnswerRepository answerRepository;
   private final TestRepository testRepository;
+  private final WebClient webClient;
   private final TestQuestionRepository testQuestionRepository;
 
   /**
@@ -283,79 +288,67 @@ public class FeedbackService {
   }
 
   /**
-   * 특정 테스트에 대한 문제별 피드백을 가져옵니다.
+   * 트레이너가 특정 테스트의 문제별 피드백을 가져옵니다.
    *
-   * @param testId 테스트 ID
-   * @param isDescending 정렬 방향 (내림차순 여부)
-   * @return TrainerFeedBackDto 리스트
+   * @param testId 테스트의 ID
+   * @param isDescending 정렬 여부 (내림차순)
+   * @return TrainerFeedBackDto 리스트에 문제 번호, ID, 텍스트, 난이도, 유형, 정답률 등을 포함
    */
   public List<TrainerFeedBackDto> getQuestionFeedbackSortedByTestId(
       Integer testId, boolean isDescending) {
+    List<TrainerFeedBackDto> feedbackList = getFeedbackList(testId);
 
-    // 1. TEST_QUESTION에서 해당 테스트의 문제 번호 매핑 조회
-    List<TestQuestion> testQuestions =
-        testQuestionRepository.findByTest_TestIdAndIsDeletedFalse(testId);
-    Map<String, Integer> questionNumberMap =
-        testQuestions.stream()
-            .collect(
-                Collectors.toMap(TestQuestion::getQuestionId, TestQuestion::getQuestionNumber));
-
-    // 2. MongoDB에서 모든 문제 조회
-    List<Question> questions = questionMongoRepository.findAll();
-    log.info("[1] MongoDB에서 가져온 Question 수: {}", questions.size());
-
-    // 3. 정답률 쿼리 호출
-    List<QuestionCorrectRateProjection> rateList =
-        answerRepository.findCorrectRatesByTestId(testId);
-    log.info("[2] 정답률 쿼리 결과 수: {}", rateList.size());
-
-    Map<String, Double> correctRateMap =
-        rateList.stream()
-            .collect(
-                Collectors.toMap(
-                    QuestionCorrectRateProjection::getQuestionId,
-                    p -> {
-                      if (p.getTotalCount() == 0) return 0.0;
-                      double raw = (double) p.getCorrectCount() / p.getTotalCount();
-                      return Math.round(raw * 10000.0) / 100.0; // 66.67% 형식
-                    }));
-
-    // 4. DTO 변환
-    List<TrainerFeedBackDto> feedbackList =
-        questions.stream()
-            .filter(q -> correctRateMap.containsKey(q.getId()))
-            .map(
-                q -> {
-                  double correctRate = correctRateMap.getOrDefault(q.getId(), 0.0);
-                  Integer questionNumber = questionNumberMap.getOrDefault(q.getId(), null);
-
-                  log.info(
-                      "[정답률 계산] questionId={}, correctRate={}, questionNumber={}",
-                      q.getId(),
-                      correctRate,
-                      questionNumber);
-
-                  return TrainerFeedBackDto.builder()
-                      .questionNumber(questionNumber)
-                      .questionId(q.getId())
-                      .documentId(q.getDocumentId())
-                      .questionText(q.getQuestion())
-                      .difficulty(q.getDifficultyLevel())
-                      .type(q.getType())
-                      .answer(q.getAnswer())
-                      .tags(q.getTags())
-                      .correctRate(correctRate)
-                      .build();
-                })
-            .sorted(Comparator.comparingDouble(TrainerFeedBackDto::getCorrectRate))
-            .collect(Collectors.toList());
-
-    if (isDescending) {
-      Collections.reverse(feedbackList);
-    }
+    feedbackList.sort(Comparator.comparingDouble(TrainerFeedBackDto::getCorrectRate));
+    if (isDescending) Collections.reverse(feedbackList);
 
     log.info("[최종 반환] Feedback 개수: {}", feedbackList.size());
     return feedbackList;
+  }
+
+  public List<TrainerFeedBackDto> getQuestionFeedbackListWithoutSorting(Integer testId) {
+    return getFeedbackList(testId);
+  }
+
+  /**
+   * 트레이너가 특정 테스트에 대한 피드백을 생성합니다.
+   *
+   * @param testId 테스트의 ID
+   * @return FastAPI로부터 받은 피드백 문자열
+   */
+  public String generateFeedbackForTest(Integer testId) {
+    List<TrainerFeedBackDto> feedbackList = getQuestionFeedbackListWithoutSorting(testId);
+    if (feedbackList.isEmpty()) {
+      throw new IllegalArgumentException("해당 테스트에 대한 피드백을 생성할 수 없습니다. 문제나 답변이 없습니다.");
+    }
+
+    Test test =
+        testRepository
+            .findById(testId)
+            .orElseThrow(() -> new IllegalArgumentException("해당 테스트가 존재하지 않습니다."));
+
+    try {
+      String response =
+          sendFeedbackRequest(new RequestFeedbackForLLMDto(feedbackList, test.getSummary()))
+              .block();
+      log.info("FastAPI 응답: {}", response);
+      return response;
+    } catch (Exception e) {
+      log.error("FastAPI 호출 실패: {}", e.getMessage(), e);
+      throw new RuntimeException("FastAPI 서버 호출 중 오류가 발생했습니다.", e);
+    }
+  }
+
+  private Mono<String> sendFeedbackRequest(RequestFeedbackForLLMDto dto) {
+    return webClient
+        .post()
+        .uri("https://skib-ai.skala25a.project.skala-ai.com/api/feedback/generate")
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(dto)
+        .retrieve()
+        .onStatus(
+            status -> !status.is2xxSuccessful(),
+            clientResponse -> clientResponse.bodyToMono(String.class).map(RuntimeException::new))
+        .bodyToMono(String.class);
   }
 
   /**
@@ -471,5 +464,63 @@ public class FeedbackService {
                   .build();
             })
         .collect(Collectors.toList());
+  }
+
+  private List<TrainerFeedBackDto> getFeedbackList(Integer testId) {
+    Map<String, Integer> questionNumberMap = getQuestionNumberMap(testId);
+    Map<String, Double> correctRateMap = getCorrectRateMap(testId);
+
+    List<Question> questions = questionMongoRepository.findAll();
+    log.info("[MongoDB] 문제 수: {}", questions.size());
+
+    return questions.stream()
+        .filter(q -> correctRateMap.containsKey(q.getId()))
+        .map(q -> mapToFeedbackDto(q, questionNumberMap, correctRateMap))
+        .collect(Collectors.toList());
+  }
+
+  private Map<String, Integer> getQuestionNumberMap(Integer testId) {
+    return testQuestionRepository.findByTest_TestIdAndIsDeletedFalse(testId).stream()
+        .collect(Collectors.toMap(TestQuestion::getQuestionId, TestQuestion::getQuestionNumber));
+  }
+
+  private Map<String, Double> getCorrectRateMap(Integer testId) {
+    List<QuestionCorrectRateProjection> rateList =
+        answerRepository.findCorrectRatesByTestId(testId);
+    log.info("[정답률 쿼리 결과] {}건", rateList.size());
+
+    return rateList.stream()
+        .collect(
+            Collectors.toMap(
+                QuestionCorrectRateProjection::getQuestionId,
+                p -> {
+                  if (p.getTotalCount() == 0) return 0.0;
+                  return Math.round(((double) p.getCorrectCount() / p.getTotalCount()) * 10000.0)
+                      / 100.0;
+                }));
+  }
+
+  private TrainerFeedBackDto mapToFeedbackDto(
+      Question q, Map<String, Integer> numberMap, Map<String, Double> rateMap) {
+    double correctRate = rateMap.getOrDefault(q.getId(), 0.0);
+    Integer questionNumber = numberMap.getOrDefault(q.getId(), null);
+
+    log.info(
+        "[정답률 계산] questionId={}, correctRate={}, questionNumber={}",
+        q.getId(),
+        correctRate,
+        questionNumber);
+
+    return TrainerFeedBackDto.builder()
+        .questionNumber(questionNumber)
+        .questionId(q.getId())
+        .documentId(q.getDocumentId())
+        .questionText(q.getQuestion())
+        .difficulty(q.getDifficultyLevel())
+        .type(q.getType())
+        .answer(q.getAnswer())
+        .tags(q.getTags())
+        .correctRate(correctRate)
+        .build();
   }
 }

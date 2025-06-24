@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -124,6 +125,17 @@ public class FeedbackController {
 
     ResponseTrainerTestStatisticsDto response = feedbackService.getTestBasicStatistics(testId);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "테스트 기본 통계 조회 성공", response));
+  }
+
+  @SwaggerApiSuccess(
+      summary = "트레이너 피드백 생성",
+      description = "트레이너가 제공하는 피드백을 생성합니다. 요청 본문에 피드백 데이터를 포함합니다.")
+  @SwaggerApiNotFoundError
+  @SwaggerInternetServerError
+  @PostMapping("/trainer-feedback")
+  public ResponseEntity<ResultDto<String>> generateFeedbackForTest(@RequestParam Integer testId) {
+    String response = feedbackService.generateFeedbackForTest(testId);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "트레이너 피드백 생성 성공", response));
   }
 
   @SwaggerApiSuccess(
