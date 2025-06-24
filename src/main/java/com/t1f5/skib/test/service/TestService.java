@@ -473,6 +473,7 @@ public class TestService {
                 RequestCreateQuestionDto dto =
                     RequestCreateQuestionDto.builder()
                         .name(requestDto.getName())
+                        .summary(requestDto.getSummary())
                         .difficultyLevel(requestDto.getDifficultyLevel())
                         .limitedTime(requestDto.getLimitedTime())
                         .passScore(requestDto.getPassScore())

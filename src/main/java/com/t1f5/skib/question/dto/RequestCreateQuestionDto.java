@@ -17,6 +17,7 @@ public class RequestCreateQuestionDto {
   private Integer limitedTime;
   private Integer passScore;
   private Boolean isRetake;
+  private String summary;
 
   private Integer documentId;
   private List<String> keywords;
