@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -57,6 +58,8 @@ public class FeedbackService {
   private final TestRepository testRepository;
   private final WebClient webClient;
   private final TestQuestionRepository testQuestionRepository;
+  @Value("${fastapi.base-url}")
+  private String fastApiBaseUrl;
 
   /**
    * 사용자의 테스트에 대한 전체 정확도 비율을 가져옵니다.
@@ -340,7 +343,7 @@ public class FeedbackService {
   private Mono<String> sendFeedbackRequest(RequestFeedbackForLLMDto dto) {
     return webClient
         .post()
-        .uri("https://skib-ai.skala25a.project.skala-ai.com/api/feedback/generate")
+        .uri(fastApiBaseUrl+ "api/feedback/generate")
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(dto)
         .retrieve()

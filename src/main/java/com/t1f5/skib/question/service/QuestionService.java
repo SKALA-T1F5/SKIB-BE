@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -34,6 +35,8 @@ public class QuestionService {
   private final QuestionDtoConverter questionDtoConverter;
   private final MongoTemplate mongoTemplate;
   private final TranslationService translationService;
+  @Value("${fastapi.base-url}")
+  private String fastApiBaseUrl;
 
   public List<Question> generateQuestions(List<RequestCreateQuestionDto> requests) {
     List<Question> allQuestions = new ArrayList<>();
@@ -45,7 +48,7 @@ public class QuestionService {
 
       ResponseEntity<QuestionDto[]> response =
           restTemplate.postForEntity(
-              "https://skib-ai.skala25a.project.skala-ai.com/api/question",
+              fastApiBaseUrl+ "api/question",
               entity,
               QuestionDto[].class);
 

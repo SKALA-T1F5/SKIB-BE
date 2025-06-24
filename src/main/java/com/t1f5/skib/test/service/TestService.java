@@ -53,6 +53,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -77,6 +78,8 @@ public class TestService {
   private final TestDocumentConfigRepository testDocumentConfigRepository;
   private final DocumentQuestionRepository documentQuestionRepository;
   @Autowired private QuestionTranslator questionTranslator;
+  @Value("${fastapi.base-url}")
+  private String fastApiBaseUrl;
 
   /**
    * LLM을 사용하여 테스트를 생성합니다.
@@ -130,7 +133,7 @@ public class TestService {
     String response =
         webClient
             .post()
-            .uri("https://skib-ai.skala25a.project.skala-ai.com/api/test/plan")
+            .uri(fastApiBaseUrl+"/api/test/plan")
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(payload)
             .retrieve()
@@ -200,7 +203,7 @@ public class TestService {
     // String response =
     //     webClient
     //         .post()
-    //         .uri("https://skib-ai.skala25a.project.skala-ai.com/api/test/generate")
+    //         .uri(fastApiBaseUrl + "/api/test/generate")
     //         .contentType(MediaType.APPLICATION_JSON)
     //         .bodyValue(payload)
     //         .retrieve()
