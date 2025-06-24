@@ -171,43 +171,43 @@ public class TestService {
     // 2. 병렬로 문제 생성 및 연관 테이블 저장
     generateAndSaveQuestionsInParallel(test, requestCreateTestDto);
 
-    // ✅ 3. 문서 요약 정보 조회 (MongoDB)
-    List<Integer> documentIds =
-        requestCreateTestDto.getDocumentConfigs().stream()
-            .map(TestDocumentConfigDto::getDocumentId)
-            .collect(Collectors.toList());
+    // // ✅ 3. 문서 요약 정보 조회 (MongoDB)
+    // List<Integer> documentIds =
+    //     requestCreateTestDto.getDocumentConfigs().stream()
+    //         .map(TestDocumentConfigDto::getDocumentId)
+    //         .collect(Collectors.toList());
 
-    List<Summary> summaries = summaryMongoRepository.findByDocumentIdIn(documentIds);
+    // List<Summary> summaries = summaryMongoRepository.findByDocumentIdIn(documentIds);
 
-    List<SummaryDto> summaryDtos =
-        summaries.stream()
-            .map(
-                summary ->
-                    SummaryDto.builder()
-                        .documentId(summary.getDocumentId())
-                        .summary(summary.getSummary())
-                        .keywords(summary.getKeywords())
-                        .build())
-            .collect(Collectors.toList());
+    // List<SummaryDto> summaryDtos =
+    //     summaries.stream()
+    //         .map(
+    //             summary ->
+    //                 SummaryDto.builder()
+    //                     .documentId(summary.getDocumentId())
+    //                     .summary(summary.getSummary())
+    //                     .keywords(summary.getKeywords())
+    //                     .build())
+    //         .collect(Collectors.toList());
 
-    // ✅ 4. FastAPI에 전달할 요청 객체 생성
-    RequestCreateTestByLLMDto payload =
-        new RequestCreateTestByLLMDto(
-            projectId,
-            requestCreateTestDto.getSummary(), // userInput 대신 summary 사용
-            summaryDtos);
+    // // ✅ 4. FastAPI에 전달할 요청 객체 생성
+    // RequestCreateTestByLLMDto payload =
+    //     new RequestCreateTestByLLMDto(
+    //         projectId,
+    //         requestCreateTestDto.getSummary(), // userInput 대신 summary 사용
+    //         summaryDtos);
 
-    String response =
-        webClient
-            .post()
-            .uri("https://skib-ai.skala25a.project.skala-ai.com/api/test/generate")
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(payload)
-            .retrieve()
-            .bodyToMono(String.class)
-            .block();
+    // String response =
+    //     webClient
+    //         .post()
+    //         .uri("https://skib-ai.skala25a.project.skala-ai.com/api/test/generate")
+    //         .contentType(MediaType.APPLICATION_JSON)
+    //         .bodyValue(payload)
+    //         .retrieve()
+    //         .bodyToMono(String.class)
+    //         .block();
 
-    log.info("FastAPI 응답: {}", response);
+    // log.info("FastAPI 응답: {}", response);
 
     // 5. 초대 링크 생성 및 저장
     String token = UUID.randomUUID().toString();
@@ -478,6 +478,7 @@ public class TestService {
                         .passScore(requestDto.getPassScore())
                         .isRetake(requestDto.getIsRetake())
                         .documentId(config.getDocumentId())
+                        .keywords(config.getKeywords())
                         .configuredObjectiveCount(config.getConfiguredObjectiveCount())
                         .configuredSubjectiveCount(config.getConfiguredSubjectiveCount())
                         .build();

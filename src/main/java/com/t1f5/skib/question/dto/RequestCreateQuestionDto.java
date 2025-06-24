@@ -1,6 +1,7 @@
 package com.t1f5.skib.question.dto;
 
 import com.t1f5.skib.global.enums.DifficultyLevel;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,6 +19,7 @@ public class RequestCreateQuestionDto {
   private Boolean isRetake;
 
   private Integer documentId;
+  private List<String> keywords;
   private int configuredObjectiveCount;
   private int configuredSubjectiveCount;
 }
