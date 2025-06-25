@@ -62,8 +62,8 @@ public class TestController {
   @PostMapping("/finalize")
   public ResponseEntity<ResultDto<?>> finalizeTest(
       @RequestBody RequestFinalizeTestDto requestDto, @RequestParam("testId") Integer testId) {
-    testService.finalizeTest(testId, requestDto);
-    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "테스트가 최종 확정되었습니다."));
+    String result = testService.finalizeTest(testId, requestDto);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", result));
   }
 
   @SwaggerApiSuccess(summary = "랜덤 테스트 생성", description = "특정 프로젝트에서 랜덤으로 문제를 선택하여 테스트를 생성합니다.")
