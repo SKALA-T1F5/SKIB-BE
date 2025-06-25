@@ -5,7 +5,6 @@ import lombok.Data;
 
 @Data
 public class RequestFinalizeTestDto {
-  private Integer testId;
   private List<String> selectedQuestionIds; // 확정된 문제 ID들
   private List<String> allGeneratedQuestionIds; // 전체 생성된 문제 ID들
 }

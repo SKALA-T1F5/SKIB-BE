@@ -193,10 +193,10 @@ public class TestService {
    * @param dto
    */
   @Transactional
-  public void finalizeTest(RequestFinalizeTestDto dto) {
+  public void finalizeTest(Integer testId, RequestFinalizeTestDto dto) {
     Test test =
         testRepository
-            .findById(dto.getTestId())
+            .findById(testId)
             .orElseThrow(() -> new IllegalArgumentException("테스트가 존재하지 않습니다."));
 
     List<Question> selectedQuestions =

@@ -59,8 +59,9 @@ public class TestController {
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
   @PostMapping("/finalize")
-  public ResponseEntity<ResultDto<?>> finalizeTest(@RequestBody RequestFinalizeTestDto requestDto) {
-    testService.finalizeTest(requestDto);
+  public ResponseEntity<ResultDto<?>> finalizeTest(
+      @RequestBody RequestFinalizeTestDto requestDto, @RequestParam("testId") Integer testId) {
+    testService.finalizeTest(testId, requestDto);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "테스트가 최종 확정되었습니다."));
   }
 
