@@ -3,5 +3,5 @@
   "[java]": {
     "editor.defaultFormatter": "ilkka.google-java-format"
   },
-  "java.configuration.updateBuildConfiguration": "interactive"
+  "java.configuration.updateBuildConfiguration": "automatic"
 }

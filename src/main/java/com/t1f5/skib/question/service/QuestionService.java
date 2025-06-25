@@ -17,19 +17,16 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class QuestionService {
-
-  private final RestTemplate restTemplate;
+  private final WebClient webClient;
   private final QuestionMongoRepository questionMongoRepository;
   private final QuestionDtoConverter questionDtoConverter;
   private final MongoTemplate mongoTemplate;
@@ -38,21 +35,27 @@ public class QuestionService {
   @Value("${fastapi.base-url}")
   private String fastApiBaseUrl;
 
+  /**
+   * LLM을 사용하여 문제를 생성하는 메서드
+   *
+   * @param requestDto 문제 생성 요청 DTO
+   * @return 생성된 문제 목록
+   */
   public List<Question> generateQuestions(RequestCreateTestDto requestDto) {
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    HttpEntity<RequestCreateTestDto> entity = new HttpEntity<>(requestDto, headers);
+    QuestionResponse response =
+        webClient
+            .post()
+            .uri(fastApiBaseUrl + "api/test/generate")
+            .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+            .bodyValue(requestDto)
+            .retrieve()
+            .bodyToMono(QuestionResponse.class)
+            .block(); // 동기식 호출 (RestTemplate과 동일하게 처리)
 
-    ResponseEntity<QuestionResponse> response =
-        restTemplate.postForEntity(
-            fastApiBaseUrl + "api/test/generate", entity, QuestionResponse.class);
-
-    // 응답에서 questions 리스트 추출
-    QuestionResponse body = response.getBody();
-    if (body == null || body.getQuestions() == null) return List.of();
+    if (response == null || response.getQuestions() == null) return List.of();
 
     List<Question> questions =
-        body.getQuestions().stream().map(questionDtoConverter::convert).toList();
+        response.getQuestions().stream().map(questionDtoConverter::convert).toList();
 
     questionMongoRepository.saveAll(questions);
     return questions;
