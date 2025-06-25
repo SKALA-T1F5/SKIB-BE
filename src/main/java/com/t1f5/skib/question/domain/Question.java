@@ -1,6 +1,7 @@
 package com.t1f5.skib.question.domain;
 
 import com.t1f5.skib.global.enums.DifficultyLevel;
+import com.t1f5.skib.global.enums.GenerationType;
 import com.t1f5.skib.global.enums.QuestionType;
 import com.t1f5.skib.question.dto.GradingCriteriaDto;
 import java.util.List;
@@ -32,4 +33,5 @@ public class Question {
   private String documentName; // 문서 이름
   private List<String> keywords; // 키워드 목록 (예: 문서 제목, 주요 내용 등)
   private List<String> tags; // 태그 목록 (예: 문해력, 논리력 등)
+  private GenerationType generationType; // 문제 상태 (예: BASIC, EXTRA)
 }
