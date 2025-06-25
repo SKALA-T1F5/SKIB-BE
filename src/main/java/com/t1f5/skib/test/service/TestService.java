@@ -22,6 +22,7 @@ import com.t1f5.skib.test.domain.Test;
 import com.t1f5.skib.test.domain.TestDocumentConfig;
 import com.t1f5.skib.test.domain.TestQuestion;
 import com.t1f5.skib.test.domain.UserTest;
+import com.t1f5.skib.test.dto.DocumentQuestionCountDto;
 import com.t1f5.skib.test.dto.QuestionTranslator;
 import com.t1f5.skib.test.dto.RequestCreateTestByLLMDto;
 import com.t1f5.skib.test.dto.RequestCreateTestDto;
@@ -39,7 +40,11 @@ import com.t1f5.skib.test.repository.UserTestRepository;
 import com.t1f5.skib.user.model.User;
 import com.t1f5.skib.user.repository.UserRepository;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -263,6 +268,82 @@ public class TestService {
     InviteLink inviteLink =
         InviteLink.builder().test(test).token(token).expiresAt(expiration).isDeleted(false).build();
     inviteLinkRepository.save(inviteLink);
+  }
+
+  /**
+   * 프로젝트 ID와 총 문제 수를 기반으로 랜덤 테스트를 생성합니다.
+   *
+   * @param projectId 프로젝트 ID
+   * @param totalCount 생성할 총 문제 수
+   * @return 랜덤으로 선택된 문제 리스트
+   */
+  public List<Question> generateRandomTest(int projectId, int totalCount) {
+    // 1. 프로젝트에 해당하는 문서들 조회
+    List<Document> documents = documentRepository.findAllByProject_ProjectId(projectId);
+
+    // 2. 각 문서별 DocumentQuestion 수 집계
+    Map<Integer, List<DocumentQuestion>> questionMap = new HashMap<>();
+    int totalAvailableQuestions = 0;
+
+    for (Document doc : documents) {
+      List<DocumentQuestion> dqList =
+          documentQuestionRepository.findByDocument_DocumentId(doc.getDocumentId());
+      questionMap.put(doc.getDocumentId(), dqList);
+      totalAvailableQuestions += dqList.size();
+    }
+
+    if (totalAvailableQuestions < totalCount) {
+      throw new IllegalArgumentException("총 문제 수가 부족합니다.");
+    }
+
+    // 3. 문서별 비율로 문제 수 배정
+    Map<Integer, Integer> questionCountPerDoc = new HashMap<>();
+    for (Document doc : documents) {
+      int count = questionMap.get(doc.getDocumentId()).size();
+      int docQuestionCount = Math.round(((float) count / totalAvailableQuestions) * totalCount);
+      questionCountPerDoc.put(doc.getDocumentId(), docQuestionCount);
+    }
+
+    // 보정: 합이 totalCount 안 맞을 수 있으므로 가장 많은 문서에 부족분 보정
+    int sum = questionCountPerDoc.values().stream().mapToInt(i -> i).sum();
+    if (sum != totalCount) {
+      int delta = totalCount - sum;
+      Integer maxDocId =
+          Collections.max(questionCountPerDoc.entrySet(), Map.Entry.comparingByValue()).getKey();
+      questionCountPerDoc.put(maxDocId, questionCountPerDoc.get(maxDocId) + delta);
+    }
+
+    // 4. 각 문서에서 랜덤으로 문제 선택
+    List<String> selectedQuestionKeys = new ArrayList<>();
+    for (Document doc : documents) {
+      List<DocumentQuestion> candidates = questionMap.get(doc.getDocumentId());
+      Collections.shuffle(candidates);
+      int pick = questionCountPerDoc.get(doc.getDocumentId());
+      selectedQuestionKeys.addAll(
+          candidates.stream().limit(pick).map(DocumentQuestion::getQuestionKey).toList());
+    }
+
+    // 5. MongoDB에서 문제 조회
+    return questionMongoRepository.findAllById(selectedQuestionKeys);
+  }
+
+  /**
+   * 프로젝트 ID에 따른 문서의 문제 수를 조회합니다.
+   *
+   * @param projectId 프로젝트 ID
+   * @return 문서별 문제 수 리스트
+   */
+  public List<DocumentQuestionCountDto> getDocumentQuestionCountsByProject(Integer projectId) {
+    List<Document> documents = documentRepository.findAllByProject_ProjectId(projectId);
+
+    return documents.stream()
+        .map(
+            doc -> {
+              int count =
+                  documentQuestionRepository.countByDocument_DocumentId(doc.getDocumentId());
+              return new DocumentQuestionCountDto(doc.getDocumentId(), doc.getName(), count);
+            })
+        .collect(Collectors.toList());
   }
 
   /**

@@ -7,4 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface DocumentQuestionRepository extends JpaRepository<DocumentQuestion, Integer> {
   List<DocumentQuestion> findByQuestionKeyIn(Set<String> questionKeys);
+
+  List<DocumentQuestion> findByDocument_DocumentId(Integer documentId);
+
+  int countByDocument_DocumentId(Integer documentId);
 }

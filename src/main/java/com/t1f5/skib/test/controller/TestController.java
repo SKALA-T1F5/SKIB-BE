@@ -4,12 +4,15 @@ import com.t1f5.skib.global.customAnnotations.SwaggerApiNotFoundError;
 import com.t1f5.skib.global.customAnnotations.SwaggerApiSuccess;
 import com.t1f5.skib.global.customAnnotations.SwaggerInternetServerError;
 import com.t1f5.skib.global.dtos.ResultDto;
+import com.t1f5.skib.question.domain.Question;
+import com.t1f5.skib.test.dto.DocumentQuestionCountDto;
 import com.t1f5.skib.test.dto.RequestCreateTestDto;
 import com.t1f5.skib.test.dto.ResponseTestDto;
 import com.t1f5.skib.test.dto.ResponseTestListDto;
 import com.t1f5.skib.test.dto.ResponseTestSummaryListDto;
 import com.t1f5.skib.test.service.TestService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -49,6 +52,27 @@ public class TestController {
       @RequestParam(value = "projectId") Integer projectId) {
     testService.saveTest(projectId, requestCreateTestDto);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "테스트가 성공적으로 생성되었습니다."));
+  }
+
+  @SwaggerApiSuccess(summary = "랜덤 테스트 생성", description = "특정 프로젝트에서 랜덤으로 문제를 선택하여 테스트를 생성합니다.")
+  @SwaggerApiNotFoundError
+  @SwaggerInternetServerError
+  @GetMapping("/random")
+  public ResponseEntity<ResultDto<List<Question>>> generateRandomTest(
+      @RequestParam("projectId") Integer projectId, @RequestParam("count") Integer count) {
+    List<Question> questions = testService.generateRandomTest(projectId, count);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", questions));
+  }
+
+  @SwaggerApiSuccess(summary = "문서별 문제 수 조회", description = "특정 프로젝트의 문서별 문제 수를 조회합니다.")
+  @SwaggerApiNotFoundError
+  @SwaggerInternetServerError
+  @GetMapping("/document-question-counts")
+  public ResponseEntity<ResultDto<List<DocumentQuestionCountDto>>> getDocumentQuestionCounts(
+      @RequestParam("projectId") Integer projectId) {
+    List<DocumentQuestionCountDto> counts =
+        testService.getDocumentQuestionCountsByProject(projectId);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", counts));
   }
 
   @SwaggerApiSuccess(summary = "테스트 단일 조회", description = "테스트 ID로 테스트를 조회합니다.")
