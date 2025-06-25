@@ -13,7 +13,6 @@ import com.t1f5.skib.project.repository.ProjectJpaRepository;
 import com.t1f5.skib.question.domain.DocumentQuestion;
 import com.t1f5.skib.question.domain.Question;
 import com.t1f5.skib.question.dto.QuestionDto;
-import com.t1f5.skib.question.dto.RequestCreateQuestionDto;
 import com.t1f5.skib.question.dto.ResponseQuestionDtoConverter;
 import com.t1f5.skib.question.repository.DocumentQuestionRepository;
 import com.t1f5.skib.question.repository.QuestionMongoRepository;
@@ -40,18 +39,12 @@ import com.t1f5.skib.test.repository.UserTestRepository;
 import com.t1f5.skib.user.model.User;
 import com.t1f5.skib.user.repository.UserRepository;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -78,6 +71,7 @@ public class TestService {
   private final TestDocumentConfigRepository testDocumentConfigRepository;
   private final DocumentQuestionRepository documentQuestionRepository;
   @Autowired private QuestionTranslator questionTranslator;
+
   @Value("${fastapi.base-url}")
   private String fastApiBaseUrl;
 
@@ -133,7 +127,7 @@ public class TestService {
     String response =
         webClient
             .post()
-            .uri(fastApiBaseUrl+"/api/test/plan")
+            .uri(fastApiBaseUrl + "/api/test/plan")
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(payload)
             .retrieve()
@@ -172,7 +166,57 @@ public class TestService {
     testRepository.save(test);
 
     // 2. 병렬로 문제 생성 및 연관 테이블 저장
-    generateAndSaveQuestionsInParallel(test, requestCreateTestDto);
+    List<Question> questions = questionService.generateQuestions(requestCreateTestDto);
+
+    // 아래는 질문 저장 로직 (문서, testQuestion, documentQuestion 등 기존과 동일하게 반복 처리)
+    for (Question q : questions) {
+      TestQuestion testQuestion =
+          TestQuestion.builder().test(test).questionId(q.getId()).isDeleted(false).build();
+      testQuestionRepository.save(testQuestion);
+    }
+
+    for (TestDocumentConfigDto config : requestCreateTestDto.getDocumentConfigs()) {
+      // TestDocumentConfig 저장
+      TestDocumentConfig testDocumentConfig =
+          TestDocumentConfig.builder()
+              .test(test)
+              .document(documentRepository.findById(config.getDocumentId()).orElseThrow())
+              .configuredObjectiveCount(config.getConfiguredObjectiveCount())
+              .configuredSubjectiveCount(config.getConfiguredSubjectiveCount())
+              .isDeleted(false)
+              .build();
+      testDocumentConfigRepository.save(testDocumentConfig);
+
+      // 문서에 대해 생성된 문제 수 계산
+      int objectiveCount =
+          (int)
+              questions.stream()
+                  .filter(q -> q.getDocumentId().equals(config.getDocumentId()))
+                  .filter(q -> q.getType() == QuestionType.OBJECTIVE)
+                  .count();
+
+      int subjectiveCount =
+          (int)
+              questions.stream()
+                  .filter(q -> q.getDocumentId().equals(config.getDocumentId()))
+                  .filter(q -> q.getType() == QuestionType.SUBJECTIVE)
+                  .count();
+
+      // 질문이 하나라도 있는 타입 기준으로 설정
+      QuestionType questionType =
+          objectiveCount > 0 ? QuestionType.OBJECTIVE : QuestionType.SUBJECTIVE;
+
+      DocumentQuestion documentQuestion =
+          DocumentQuestion.builder()
+              .document(documentRepository.findById(config.getDocumentId()).orElseThrow())
+              .questionKey(UUID.randomUUID().toString())
+              .questionType(questionType)
+              .configuredObjectiveCount(objectiveCount)
+              .configuredSubjectiveCount(subjectiveCount)
+              .isDeleted(false)
+              .build();
+      documentQuestionRepository.save(documentQuestion);
+    }
 
     // // ✅ 3. 문서 요약 정보 조회 (MongoDB)
     // List<Integer> documentIds =
@@ -465,89 +509,89 @@ public class TestService {
     return getTestById(userId, lang);
   }
 
-  private void generateAndSaveQuestionsInParallel(Test test, RequestCreateTestDto requestDto) {
-    ExecutorService executor = Executors.newFixedThreadPool(4);
-    List<Future<Pair<TestDocumentConfigDto, List<Question>>>> futures = new ArrayList<>();
+  // private void generateAndSaveQuestionsInParallel(Test test, RequestCreateTestDto requestDto) {
+  //   ExecutorService executor = Executors.newFixedThreadPool(4);
+  //   List<Future<Pair<TestDocumentConfigDto, List<Question>>>> futures = new ArrayList<>();
 
-    for (TestDocumentConfigDto config : requestDto.getDocumentConfigs()) {
-      futures.add(
-          executor.submit(
-              () -> {
-                RequestCreateQuestionDto dto =
-                    RequestCreateQuestionDto.builder()
-                        .name(requestDto.getName())
-                        .summary(requestDto.getSummary())
-                        .difficultyLevel(requestDto.getDifficultyLevel())
-                        .limitedTime(requestDto.getLimitedTime())
-                        .passScore(requestDto.getPassScore())
-                        .isRetake(requestDto.getIsRetake())
-                        .documentId(config.getDocumentId())
-                        .keywords(config.getKeywords())
-                        .configuredObjectiveCount(config.getConfiguredObjectiveCount())
-                        .configuredSubjectiveCount(config.getConfiguredSubjectiveCount())
-                        .build();
+  //   for (TestDocumentConfigDto config : requestDto.getDocumentConfigs()) {
+  //     futures.add(
+  //         executor.submit(
+  //             () -> {
+  //               RequestCreateQuestionDto dto =
+  //                   RequestCreateQuestionDto.builder()
+  //                       .name(requestDto.getName())
+  //                       .summary(requestDto.getSummary())
+  //                       .difficultyLevel(requestDto.getDifficultyLevel())
+  //                       .limitedTime(requestDto.getLimitedTime())
+  //                       .passScore(requestDto.getPassScore())
+  //                       .isRetake(requestDto.getIsRetake())
+  //                       .documentId(config.getDocumentId())
+  //                       .keywords(config.getKeywords())
+  //                       .configuredObjectiveCount(config.getConfiguredObjectiveCount())
+  //                       .configuredSubjectiveCount(config.getConfiguredSubjectiveCount())
+  //                       .build();
 
-                List<Question> questions = questionService.generateQuestions(List.of(dto));
-                return Pair.of(config, questions);
-              }));
-    }
+  //               List<Question> questions = questionService.generateQuestions(List.of(dto));
+  //               return Pair.of(config, questions);
+  //             }));
+  //   }
 
-    try {
-      for (Future<Pair<TestDocumentConfigDto, List<Question>>> future : futures) {
-        Pair<TestDocumentConfigDto, List<Question>> result = future.get();
+  //   try {
+  //     for (Future<Pair<TestDocumentConfigDto, List<Question>>> future : futures) {
+  //       Pair<TestDocumentConfigDto, List<Question>> result = future.get();
 
-        TestDocumentConfigDto config = result.getLeft();
-        List<Question> questions = result.getRight();
+  //       TestDocumentConfigDto config = result.getLeft();
+  //       List<Question> questions = result.getRight();
 
-        // 1. 각 문제를 TestQuestion에 저장
-        for (Question q : questions) {
-          TestQuestion testQuestion =
-              TestQuestion.builder().test(test).questionId(q.getId()).isDeleted(false).build();
-          testQuestionRepository.save(testQuestion);
-        }
+  //       // 1. 각 문제를 TestQuestion에 저장
+  //       for (Question q : questions) {
+  //         TestQuestion testQuestion =
+  //             TestQuestion.builder().test(test).questionId(q.getId()).isDeleted(false).build();
+  //         testQuestionRepository.save(testQuestion);
+  //       }
 
-        // 2. TestDocumentConfig 저장
-        TestDocumentConfig testDocumentConfig =
-            TestDocumentConfig.builder()
-                .test(test)
-                .document(documentRepository.findById(config.getDocumentId()).orElseThrow())
-                .configuredObjectiveCount(config.getConfiguredObjectiveCount())
-                .configuredSubjectiveCount(config.getConfiguredSubjectiveCount())
-                .isDeleted(false)
-                .build();
-        testDocumentConfigRepository.save(testDocumentConfig);
+  //       // 2. TestDocumentConfig 저장
+  //       TestDocumentConfig testDocumentConfig =
+  //           TestDocumentConfig.builder()
+  //               .test(test)
+  //               .document(documentRepository.findById(config.getDocumentId()).orElseThrow())
+  //               .configuredObjectiveCount(config.getConfiguredObjectiveCount())
+  //               .configuredSubjectiveCount(config.getConfiguredSubjectiveCount())
+  //               .isDeleted(false)
+  //               .build();
+  //       testDocumentConfigRepository.save(testDocumentConfig);
 
-        // 3. DocumentQuestion 저장
-        int objectiveCount =
-            (int) questions.stream().filter(q -> q.getType() == QuestionType.OBJECTIVE).count();
-        int subjectiveCount =
-            (int) questions.stream().filter(q -> q.getType() == QuestionType.SUBJECTIVE).count();
+  //       // 3. DocumentQuestion 저장
+  //       int objectiveCount =
+  //           (int) questions.stream().filter(q -> q.getType() == QuestionType.OBJECTIVE).count();
+  //       int subjectiveCount =
+  //           (int) questions.stream().filter(q -> q.getType() == QuestionType.SUBJECTIVE).count();
 
-        QuestionType questionType;
-        if (objectiveCount > 0) {
-          questionType = QuestionType.OBJECTIVE;
-        } else {
-          questionType = QuestionType.SUBJECTIVE;
-        }
+  //       QuestionType questionType;
+  //       if (objectiveCount > 0) {
+  //         questionType = QuestionType.OBJECTIVE;
+  //       } else {
+  //         questionType = QuestionType.SUBJECTIVE;
+  //       }
 
-        DocumentQuestion documentQuestion =
-            DocumentQuestion.builder()
-                .document(documentRepository.findById(config.getDocumentId()).orElseThrow())
-                .questionKey(UUID.randomUUID().toString())
-                .questionType(questionType)
-                .configuredObjectiveCount(objectiveCount)
-                .configuredSubjectiveCount(subjectiveCount)
-                .isDeleted(false)
-                .build();
+  //       DocumentQuestion documentQuestion =
+  //           DocumentQuestion.builder()
+  //               .document(documentRepository.findById(config.getDocumentId()).orElseThrow())
+  //               .questionKey(UUID.randomUUID().toString())
+  //               .questionType(questionType)
+  //               .configuredObjectiveCount(objectiveCount)
+  //               .configuredSubjectiveCount(subjectiveCount)
+  //               .isDeleted(false)
+  //               .build();
 
-        documentQuestionRepository.save(documentQuestion);
-      }
+  //       documentQuestionRepository.save(documentQuestion);
+  //     }
 
-    } catch (InterruptedException | ExecutionException e) {
-      log.error("문제 병렬 생성 중 오류 발생", e);
-      throw new RuntimeException("문제 생성 실패", e);
-    } finally {
-      executor.shutdown();
-    }
-  }
+  //   } catch (InterruptedException | ExecutionException e) {
+  //     log.error("문제 병렬 생성 중 오류 발생", e);
+  //     throw new RuntimeException("문제 생성 실패", e);
+  //   } finally {
+  //     executor.shutdown();
+  //   }
+  // }
 }

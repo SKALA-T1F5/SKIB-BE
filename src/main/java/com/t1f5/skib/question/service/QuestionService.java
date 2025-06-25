@@ -5,9 +5,8 @@ import com.t1f5.skib.question.domain.Question;
 import com.t1f5.skib.question.dto.QuestionDto;
 import com.t1f5.skib.question.dto.QuestionDtoConverter;
 import com.t1f5.skib.question.dto.QuestionValueDto;
-import com.t1f5.skib.question.dto.RequestCreateQuestionDto;
 import com.t1f5.skib.question.repository.QuestionMongoRepository;
-import java.util.ArrayList;
+import com.t1f5.skib.test.dto.RequestCreateTestDto;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,34 +34,25 @@ public class QuestionService {
   private final QuestionDtoConverter questionDtoConverter;
   private final MongoTemplate mongoTemplate;
   private final TranslationService translationService;
+
   @Value("${fastapi.base-url}")
   private String fastApiBaseUrl;
 
-  public List<Question> generateQuestions(List<RequestCreateQuestionDto> requests) {
-    List<Question> allQuestions = new ArrayList<>();
+  public List<Question> generateQuestions(RequestCreateTestDto requestDto) {
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    HttpEntity<RequestCreateTestDto> entity = new HttpEntity<>(requestDto, headers);
 
-    for (RequestCreateQuestionDto request : requests) {
-      HttpHeaders headers = new HttpHeaders();
-      headers.setContentType(MediaType.APPLICATION_JSON);
-      HttpEntity<RequestCreateQuestionDto> entity = new HttpEntity<>(request, headers);
+    ResponseEntity<QuestionDto[]> response =
+        restTemplate.postForEntity(
+            fastApiBaseUrl + "api/test/generate", entity, QuestionDto[].class);
 
-      ResponseEntity<QuestionDto[]> response =
-          restTemplate.postForEntity(
-              fastApiBaseUrl+ "api/test/generate",
-              entity,
-              QuestionDto[].class);
+    QuestionDto[] body = response.getBody();
+    if (body == null) return List.of();
 
-      QuestionDto[] body = response.getBody();
-      if (body == null) continue;
-
-      List<Question> questions =
-          Arrays.stream(body).map(dto -> questionDtoConverter.convert(dto)).toList();
-
-      questionMongoRepository.saveAll(questions);
-      allQuestions.addAll(questions);
-    }
-
-    return allQuestions;
+    List<Question> questions = Arrays.stream(body).map(questionDtoConverter::convert).toList();
+    questionMongoRepository.saveAll(questions);
+    return questions;
   }
 
   public void updateQuestion(String key, QuestionValueDto updatedValueDto) {
