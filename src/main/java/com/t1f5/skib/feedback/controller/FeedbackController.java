@@ -33,8 +33,8 @@ public class FeedbackController {
   private final FeedbackService feedbackService;
 
   @SwaggerApiSuccess(
-      summary = "학습자별 총 정답률 조회",
-      description = "사용자의 테스트에 대한 총 정답률을 조회합니다. 사용자 ID와 테스트 ID를 요청 파라미터로 받습니다.")
+      summary = "학습자별 테스트 결과 요약 조회",
+      description = "사용자의 테스트 결과 요약을 조회 합니다(총 점수, 합격 점수, 정/오답 수. 사용자 ID와 테스트 ID를 요청 파라미터로 받습니다.")
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
   @GetMapping("/all")
@@ -42,9 +42,9 @@ public class FeedbackController {
       @RequestParam(value = "userId") Integer userId,
       @RequestParam(value = "testId") Integer testId) {
 
-    ResponseFeedbackAllDto response = feedbackService.getTotalAccuracyRate(userId, testId);
+    ResponseFeedbackAllDto response = feedbackService.getFeedbackSummary(userId, testId);
 
-    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "총 정답률 조회 성공", response));
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "테스트 결과 요약 조회 성공", response));
   }
 
   @SwaggerApiSuccess(

@@ -36,6 +36,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -61,6 +62,7 @@ public class FeedbackService {
   private final TestRepository testRepository;
   private final WebClient webClient;
   private final TestQuestionRepository testQuestionRepository;
+
   @Value("${fastapi.base-url}")
   private String fastApiBaseUrl;
 
@@ -71,25 +73,37 @@ public class FeedbackService {
    * @param testId 테스트의 ID
    * @return 정확도 비율, 정답 개수, 총 문항 수를 포함하는 ResponseFeedbackAllDto
    */
-  public ResponseFeedbackAllDto getTotalAccuracyRate(Integer userId, Integer testId) {
+  public ResponseFeedbackAllDto getFeedbackSummary(Integer userId, Integer testId) {
     Integer userTestId = feedbackUserTestRepository.findUserTestIdByUserIdAndTestId(userId, testId);
-
+    System.out.println("🎯 userTestId = " + userTestId);
+    
+    // 정답 수 / 전체 응시 문제 수
     Object[] row = feedbackUserAnswerRepository.getTotalAccuracyRateByUserTestId(userTestId);
-
-    // row 길이 검증 (방어적)
-    long correctCount = 0;
-    long totalCount = 0;
+    System.out.println("💾 raw row[0]  = " + row[0]);   // 기대: 3
+    System.out.println("💾 raw row[1]  = " + row[1]);   // 기대: 5
+    
+    long correctCount = 0L;
+    long totalCount = 0L;
     if (row != null && row.length >= 2) {
       correctCount = (row[0] instanceof Number) ? ((Number) row[0]).longValue() : 0L;
       totalCount = (row[1] instanceof Number) ? ((Number) row[1]).longValue() : 0L;
     }
+    long incorrectCount = totalCount - correctCount;
 
-    double rate = (totalCount > 0) ? (100.0 * correctCount / totalCount) : 0.0;
+    // 총 점수
+    Optional<Integer> scoreOpt =
+        feedbackUserTestRepository.findScoreByUserIdAndTestId(userId, testId);
+    Integer totalScore = scoreOpt.orElse(0);
+
+    // 합격 점수
+    Optional<Integer> passScoreOpt = testRepository.findPassScoreByTestId(testId);
+    Integer passScore = passScoreOpt.orElse(0);
 
     return ResponseFeedbackAllDto.builder()
-        .accuracyRate(rate)
+        .totalScore(totalScore)
+        .passScore(passScore)
         .correctCount(correctCount)
-        .totalCount(totalCount)
+        .incorrectCount(incorrectCount)
         .build();
   }
 
@@ -340,7 +354,7 @@ public class FeedbackService {
   private Mono<String> sendFeedbackRequest(RequestFeedbackForLLMDto dto) {
     return webClient
         .post()
-        .uri(fastApiBaseUrl+ "api/feedback/generate")
+        .uri(fastApiBaseUrl + "api/feedback/generate")
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(dto)
         .retrieve()

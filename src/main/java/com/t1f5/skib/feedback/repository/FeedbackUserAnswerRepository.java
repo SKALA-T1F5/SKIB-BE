@@ -15,7 +15,7 @@ public interface FeedbackUserAnswerRepository extends JpaRepository<Answer, Inte
   @Query(
       "SELECT SUM(CASE WHEN a.isCorrect = true THEN 1 ELSE 0 END), COUNT(a) "
           + "FROM Answer a "
-          + "WHERE a.userTest.userTestId = :userTestId AND a.isDeleted = false")
+          + "WHERE a.userTest.userTestId = :userTestId")
   Object[] getTotalAccuracyRateByUserTestId(@Param("userTestId") Integer userTestId);
 
   @Query(

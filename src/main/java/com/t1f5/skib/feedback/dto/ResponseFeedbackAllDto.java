@@ -6,7 +6,8 @@ import lombok.Data;
 @Data
 @Builder
 public class ResponseFeedbackAllDto {
-  private Double accuracyRate; // 0 ~ 100 (%)
-  private Long correctCount; // 맞춘 문제 수
-  private Long totalCount; // 총 문제 수
+  private Integer totalScore;      // 총 점수
+  private Integer passScore;       // 합격 점수
+  private Long correctCount;       // 정답 수
+  private Long incorrectCount;     // 오답 수 (= 총 문제 수 - 정답 수)
 }
