@@ -26,6 +26,7 @@ import com.t1f5.skib.test.dto.DocumentQuestionCountDto;
 import com.t1f5.skib.test.dto.QuestionTranslator;
 import com.t1f5.skib.test.dto.RequestCreateTestByLLMDto;
 import com.t1f5.skib.test.dto.RequestCreateTestDto;
+import com.t1f5.skib.test.dto.RequestSaveRandomTestDto;
 import com.t1f5.skib.test.dto.ResponseTestDto;
 import com.t1f5.skib.test.dto.ResponseTestListDto;
 import com.t1f5.skib.test.dto.ResponseTestSummaryDto;
@@ -54,6 +55,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 @RequiredArgsConstructor
@@ -268,6 +270,81 @@ public class TestService {
     InviteLink inviteLink =
         InviteLink.builder().test(test).token(token).expiresAt(expiration).isDeleted(false).build();
     inviteLinkRepository.save(inviteLink);
+  }
+
+  @Transactional
+  public void saveRandomTest(RequestSaveRandomTestDto dto) {
+    // 1. 프로젝트 확인
+    var project =
+        projectRepository
+            .findById(dto.getProjectId())
+            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 프로젝트입니다."));
+
+    // 2. 테스트 저장
+    Test test =
+        Test.builder()
+            .name(dto.getName())
+            .limitedTime(dto.getLimitedTime())
+            .passScore(dto.getPassScore())
+            .summary("랜덤 테스트") // 또는 프론트에서 받아도 OK
+            .isRetake(false)
+            .isDeleted(false)
+            .project(project)
+            .build();
+    testRepository.save(test);
+
+    // 3. MongoDB에서 문제 조회
+    List<Question> questions = questionMongoRepository.findAllById(dto.getQuestionIds());
+
+    // 4. TestQuestion 저장
+    for (Question q : questions) {
+      TestQuestion tq =
+          TestQuestion.builder().test(test).questionId(q.getId()).isDeleted(false).build();
+      testQuestionRepository.save(tq);
+    }
+
+    // 5. 문서별로 objective/subjective 문제 수 계산 후 TestDocumentConfig + DocumentQuestion 저장
+    Map<String, List<Question>> groupedByDoc =
+        questions.stream().collect(Collectors.groupingBy(Question::getDocumentId));
+
+    for (String docIdStr : groupedByDoc.keySet()) {
+      int docId = Integer.parseInt(docIdStr);
+      Document document =
+          documentRepository
+              .findById(docId)
+              .orElseThrow(() -> new IllegalArgumentException("문서를 찾을 수 없습니다: " + docId));
+
+      List<Question> docQuestions = groupedByDoc.get(docIdStr);
+      int objective =
+          (int) docQuestions.stream().filter(q -> q.getType() == QuestionType.OBJECTIVE).count();
+      int subjective =
+          (int) docQuestions.stream().filter(q -> q.getType() == QuestionType.SUBJECTIVE).count();
+
+      // TestDocumentConfig 저장
+      testDocumentConfigRepository.save(
+          TestDocumentConfig.builder()
+              .test(test)
+              .document(document)
+              .configuredObjectiveCount(objective)
+              .configuredSubjectiveCount(subjective)
+              .isDeleted(false)
+              .build());
+
+      // DocumentQuestion 저장
+      QuestionType questionType = objective > 0 ? QuestionType.OBJECTIVE : QuestionType.SUBJECTIVE;
+
+      documentQuestionRepository.save(
+          DocumentQuestion.builder()
+              .document(document)
+              .questionKey(UUID.randomUUID().toString())
+              .questionType(questionType)
+              .configuredObjectiveCount(objective)
+              .configuredSubjectiveCount(subjective)
+              .isDeleted(false)
+              .build());
+    }
+
+    log.info("✅ 랜덤 테스트 저장 완료: {}", test.getName());
   }
 
   /**
