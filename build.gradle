@@ -62,9 +62,6 @@ dependencies {
 	// ** google cloud
 	implementation 'com.google.cloud:google-cloud-translate:2.27.0'
 
-	// ** MAC
-	implementation 'io.netty:netty-resolver-dns-native-macos:4.1.100.Final:osx-aarch_64' // Apple Silicon
-
 	
 }
 
