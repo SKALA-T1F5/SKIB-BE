@@ -197,7 +197,7 @@ public class TestService {
    * @param dto
    */
   @Transactional
-  public void finalizeTest(Integer testId, RequestFinalizeTestDto dto) {
+  public String finalizeTest(Integer testId, RequestFinalizeTestDto dto) {
     Test test =
         testRepository
             .findById(testId)
@@ -261,22 +261,23 @@ public class TestService {
               .build());
     }
 
-    // ✅ 초대 링크 생성
-    inviteLinkRepository.save(
+    // ✅ 초대 링크 생성 및 반환
+    String token = UUID.randomUUID().toString();
+    InviteLink inviteLink =
         InviteLink.builder()
             .test(test)
-            .token(UUID.randomUUID().toString())
+            .token(token)
             .expiresAt(LocalDateTime.now().plusDays(7))
             .isDeleted(false)
-            .build());
+            .build();
+    inviteLinkRepository.save(inviteLink);
 
     // ✅ 여분 문제 삭제
-    List<String> toDelete =
-        dto.getAllGeneratedQuestionIds().stream()
-            .filter(id -> !dto.getSelectedQuestionIds().contains(id))
-            .toList();
+    if (dto.getToDeleteQuestionIds() != null && !dto.getToDeleteQuestionIds().isEmpty()) {
+      questionMongoRepository.deleteAllById(dto.getToDeleteQuestionIds());
+    }
 
-    questionMongoRepository.deleteAllById(toDelete);
+    return token;
   }
 
   /**
