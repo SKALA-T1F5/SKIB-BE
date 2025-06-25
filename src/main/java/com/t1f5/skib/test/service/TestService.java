@@ -91,7 +91,7 @@ public class TestService {
    * @param dto 사용자 입력 및 요약 정보 DTO
    * @return 생성된 테스트의 응답
    */
-  public String makeTest(Integer projectId, String userInput) {
+  public RequestCreateTestByLLMDto makeTest(Integer projectId, String userInput) {
     log.info("Creating test by LLM for project ID: {}", projectId);
 
     // 1. 프로젝트 존재 확인
@@ -144,7 +144,7 @@ public class TestService {
             .block();
 
     log.info("FastAPI 응답: {}", response);
-    return response;
+    return payload;
   }
 
   /**
