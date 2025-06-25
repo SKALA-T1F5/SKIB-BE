@@ -29,6 +29,7 @@ import com.t1f5.skib.test.dto.RequestCreateTestDto;
 import com.t1f5.skib.test.dto.RequestFinalizeTestDto;
 import com.t1f5.skib.test.dto.RequestSaveRandomTestDto;
 import com.t1f5.skib.test.dto.ResponseTestDto;
+import com.t1f5.skib.test.dto.ResponseTestInitDto;
 import com.t1f5.skib.test.dto.ResponseTestListDto;
 import com.t1f5.skib.test.dto.ResponseTestSummaryDto;
 import com.t1f5.skib.test.dto.ResponseTestSummaryListDto;
@@ -153,7 +154,7 @@ public class TestService {
    * @param requestCreateTestDto
    * @return
    */
-  public Integer saveTestWithQuestions(Integer projectId, RequestCreateTestDto dto) {
+  public ResponseTestInitDto saveTestWithQuestions(Integer projectId, RequestCreateTestDto dto) {
     // 테스트 저장
     Test test =
         Test.builder()
@@ -169,7 +170,7 @@ public class TestService {
     testRepository.save(test);
 
     // 문제 생성 및 MongoDB 저장
-    questionService.generateQuestions(dto);
+    List<Question> generatedQuestions = questionService.generateQuestions(dto);
 
     // TestDocumentConfig만 저장 (DocumentQuestion은 나중에)
     for (TestDocumentConfigDto config : dto.getDocumentConfigs()) {
@@ -184,7 +185,10 @@ public class TestService {
       testDocumentConfigRepository.save(testDocumentConfig);
     }
 
-    return test.getTestId();
+    return ResponseTestInitDto.builder()
+        .testId(test.getTestId())
+        .questions(generatedQuestions)
+        .build();
   }
 
   /**

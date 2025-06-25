@@ -10,6 +10,7 @@ import com.t1f5.skib.test.dto.RequestCreateTestDto;
 import com.t1f5.skib.test.dto.RequestFinalizeTestDto;
 import com.t1f5.skib.test.dto.RequestSaveRandomTestDto;
 import com.t1f5.skib.test.dto.ResponseTestDto;
+import com.t1f5.skib.test.dto.ResponseTestInitDto;
 import com.t1f5.skib.test.dto.ResponseTestListDto;
 import com.t1f5.skib.test.dto.ResponseTestSummaryListDto;
 import com.t1f5.skib.test.service.TestService;
@@ -51,8 +52,8 @@ public class TestController {
   @PostMapping
   public ResponseEntity<ResultDto<?>> saveTest(
       @RequestParam("projectId") Integer projectId, @RequestBody RequestCreateTestDto requestDto) {
-    Integer testId = testService.saveTestWithQuestions(projectId, requestDto);
-    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", testId));
+    ResponseTestInitDto response = testService.saveTestWithQuestions(projectId, requestDto);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", response));
   }
 
   @SwaggerApiSuccess(summary = "테스트 최종 확정", description = "테스트를 최종 확정합니다.")
