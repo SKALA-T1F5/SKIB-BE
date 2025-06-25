@@ -17,7 +17,7 @@ spring:
         dialect: org.hibernate.dialect.MariaDBDialect
   data:
     mongodb:
-      uri: mongodb+srv://yoonalim2003:${MONGO_PASSWORD_LOCAL}@cluster0.9asfqrd.mongodb.net/SKIB?retryWrites=true&w=majority
+      uri: mongodb+srv://yoonalim2003:${MONGO_PASSWORD_LOCAL}@cluster0.9asfqrd.mongodb.net/SKIB?retryWrites=true&w=majority&tls=true&tlsAllowInvalidHostnames=true
       database: SKIB
 
   servlet:
@@ -34,4 +34,4 @@ jwt:
   secret-key: ${JWT_SECRET_KEY}
 
 fastapi:
-  base-url: http://localhost:8000
+  base-url: http://localhost:8000/
