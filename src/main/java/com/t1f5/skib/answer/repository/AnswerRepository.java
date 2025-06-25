@@ -30,4 +30,6 @@ public interface AnswerRepository extends JpaRepository<Answer, Integer> {
           """,
       nativeQuery = true)
   List<QuestionCorrectRateProjection> findCorrectRatesByTestId(@Param("testId") Integer testId);
+
+  List<Answer> findAllByUserTest_UserTestId(Integer userTestId);
 }

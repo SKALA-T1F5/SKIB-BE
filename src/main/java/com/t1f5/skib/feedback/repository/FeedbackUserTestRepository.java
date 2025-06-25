@@ -18,6 +18,11 @@ public interface FeedbackUserTestRepository extends JpaRepository<UserTest, Inte
       @Param("userId") Integer userId, @Param("testId") Integer testId);
 
   @Query(
+      "SELECT ut FROM UserTest ut "
+          + "WHERE ut.user.userId = :userId AND ut.test.testId = :testId AND ut.isDeleted = false")
+  UserTest findByUserIdAndTestId(@Param("userId") Integer userId, @Param("testId") Integer testId);
+
+  @Query(
       "SELECT ut.score FROM UserTest ut "
           + "WHERE ut.user.userId = :userId AND ut.test.testId = :testId AND ut.isDeleted = false")
   Optional<Integer> findScoreByUserIdAndTestId(

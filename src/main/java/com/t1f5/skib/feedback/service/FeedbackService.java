@@ -26,6 +26,7 @@ import com.t1f5.skib.question.repository.DocumentQuestionRepository;
 import com.t1f5.skib.question.repository.QuestionMongoRepository;
 import com.t1f5.skib.test.domain.Test;
 import com.t1f5.skib.test.domain.TestQuestion;
+import com.t1f5.skib.test.domain.UserTest;
 import com.t1f5.skib.test.repository.TestQuestionRepository;
 import com.t1f5.skib.test.repository.TestRepository;
 import java.util.ArrayList;
@@ -36,7 +37,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +44,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -73,32 +74,27 @@ public class FeedbackService {
    * @param testId 테스트의 ID
    * @return 정확도 비율, 정답 개수, 총 문항 수를 포함하는 ResponseFeedbackAllDto
    */
+  @Transactional(readOnly = true)
   public ResponseFeedbackAllDto getFeedbackSummary(Integer userId, Integer testId) {
-    Integer userTestId = feedbackUserTestRepository.findUserTestIdByUserIdAndTestId(userId, testId);
+    // 1. 유저 테스트 가져오기
+    UserTest userTest = feedbackUserTestRepository.findByUserIdAndTestId(userId, testId);
+    Integer userTestId = userTest.getUserTestId();
     System.out.println("🎯 userTestId = " + userTestId);
-    
-    // 정답 수 / 전체 응시 문제 수
-    Object[] row = feedbackUserAnswerRepository.getTotalAccuracyRateByUserTestId(userTestId);
-    System.out.println("💾 raw row[0]  = " + row[0]);   // 기대: 3
-    System.out.println("💾 raw row[1]  = " + row[1]);   // 기대: 5
-    
-    long correctCount = 0L;
-    long totalCount = 0L;
-    if (row != null && row.length >= 2) {
-      correctCount = (row[0] instanceof Number) ? ((Number) row[0]).longValue() : 0L;
-      totalCount = (row[1] instanceof Number) ? ((Number) row[1]).longValue() : 0L;
-    }
-    long incorrectCount = totalCount - correctCount;
 
-    // 총 점수
-    Optional<Integer> scoreOpt =
-        feedbackUserTestRepository.findScoreByUserIdAndTestId(userId, testId);
-    Integer totalScore = scoreOpt.orElse(0);
+    // 2. 해당 유저 테스트에 연결된 Answer 리스트 조회
+    List<Answer> answers = answerRepository.findAllByUserTest_UserTestId(userTestId);
 
-    // 합격 점수
-    Optional<Integer> passScoreOpt = testRepository.findPassScoreByTestId(testId);
-    Integer passScore = passScoreOpt.orElse(0);
+    // 3. 정답/오답 개수 계산
+    long correctCount = answers.stream().filter(a -> Boolean.TRUE.equals(a.getIsCorrect())).count();
 
+    long incorrectCount =
+        answers.stream().filter(a -> Boolean.FALSE.equals(a.getIsCorrect())).count();
+
+    // 4. 점수 정보
+    Integer totalScore = userTest.getScore();
+    Integer passScore = testRepository.findPassScoreByTestId(testId).orElse(0);
+
+    // 5. 결과 DTO 반환
     return ResponseFeedbackAllDto.builder()
         .totalScore(totalScore)
         .passScore(passScore)
