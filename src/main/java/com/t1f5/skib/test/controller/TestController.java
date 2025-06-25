@@ -7,6 +7,7 @@ import com.t1f5.skib.global.dtos.ResultDto;
 import com.t1f5.skib.question.domain.Question;
 import com.t1f5.skib.test.dto.DocumentQuestionCountDto;
 import com.t1f5.skib.test.dto.RequestCreateTestDto;
+import com.t1f5.skib.test.dto.RequestFinalizeTestDto;
 import com.t1f5.skib.test.dto.RequestSaveRandomTestDto;
 import com.t1f5.skib.test.dto.ResponseTestDto;
 import com.t1f5.skib.test.dto.ResponseTestListDto;
@@ -49,10 +50,18 @@ public class TestController {
   @SwaggerInternetServerError
   @PostMapping
   public ResponseEntity<ResultDto<?>> saveTest(
-      @RequestBody RequestCreateTestDto requestCreateTestDto,
-      @RequestParam(value = "projectId") Integer projectId) {
-    testService.saveTest(projectId, requestCreateTestDto);
-    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "테스트가 성공적으로 생성되었습니다."));
+      @RequestParam("projectId") Integer projectId, @RequestBody RequestCreateTestDto requestDto) {
+    Integer testId = testService.saveTestWithQuestions(projectId, requestDto);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", testId));
+  }
+
+  @SwaggerApiSuccess(summary = "테스트 최종 확정", description = "테스트를 최종 확정합니다.")
+  @SwaggerApiNotFoundError
+  @SwaggerInternetServerError
+  @PostMapping("/finalize")
+  public ResponseEntity<ResultDto<?>> finalizeTest(@RequestBody RequestFinalizeTestDto requestDto) {
+    testService.finalizeTest(requestDto);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "테스트가 최종 확정되었습니다."));
   }
 
   @SwaggerApiSuccess(summary = "랜덤 테스트 생성", description = "특정 프로젝트에서 랜덤으로 문제를 선택하여 테스트를 생성합니다.")

@@ -26,6 +26,7 @@ import com.t1f5.skib.test.dto.DocumentQuestionCountDto;
 import com.t1f5.skib.test.dto.QuestionTranslator;
 import com.t1f5.skib.test.dto.RequestCreateTestByLLMDto;
 import com.t1f5.skib.test.dto.RequestCreateTestDto;
+import com.t1f5.skib.test.dto.RequestFinalizeTestDto;
 import com.t1f5.skib.test.dto.RequestSaveRandomTestDto;
 import com.t1f5.skib.test.dto.ResponseTestDto;
 import com.t1f5.skib.test.dto.ResponseTestListDto;
@@ -152,38 +153,26 @@ public class TestService {
    * @param requestCreateTestDto
    * @return
    */
-  public void saveTest(Integer projectId, RequestCreateTestDto requestCreateTestDto) {
-    log.info("Saving test with name: {}", requestCreateTestDto.getName());
-
-    // 1. 테스트 저장
+  public Integer saveTestWithQuestions(Integer projectId, RequestCreateTestDto dto) {
+    // 테스트 저장
     Test test =
         Test.builder()
-            .name(requestCreateTestDto.getName())
-            .summary(requestCreateTestDto.getSummary())
-            .difficultyLevel(requestCreateTestDto.getDifficultyLevel())
-            .limitedTime(requestCreateTestDto.getLimitedTime())
-            .passScore(requestCreateTestDto.getPassScore())
-            .isRetake(requestCreateTestDto.getIsRetake())
+            .name(dto.getName())
+            .summary(dto.getSummary())
+            .difficultyLevel(dto.getDifficultyLevel())
+            .limitedTime(dto.getLimitedTime())
+            .passScore(dto.getPassScore())
+            .isRetake(dto.getIsRetake())
             .isDeleted(false)
-            .project(
-                projectRepository
-                    .findById(projectId)
-                    .orElseThrow(() -> new IllegalArgumentException("프로젝트가 존재하지 않습니다.")))
+            .project(projectRepository.findById(projectId).orElseThrow())
             .build();
     testRepository.save(test);
 
-    // 2. 병렬로 문제 생성 및 연관 테이블 저장
-    List<Question> questions = questionService.generateQuestions(requestCreateTestDto);
+    // 문제 생성 및 MongoDB 저장
+    questionService.generateQuestions(dto);
 
-    // 아래는 질문 저장 로직 (문서, testQuestion, documentQuestion 등 기존과 동일하게 반복 처리)
-    for (Question q : questions) {
-      TestQuestion testQuestion =
-          TestQuestion.builder().test(test).questionId(q.getId()).isDeleted(false).build();
-      testQuestionRepository.save(testQuestion);
-    }
-
-    for (TestDocumentConfigDto config : requestCreateTestDto.getDocumentConfigs()) {
-      // TestDocumentConfig 저장
+    // TestDocumentConfig만 저장 (DocumentQuestion은 나중에)
+    for (TestDocumentConfigDto config : dto.getDocumentConfigs()) {
       TestDocumentConfig testDocumentConfig =
           TestDocumentConfig.builder()
               .test(test)
@@ -193,85 +182,104 @@ public class TestService {
               .isDeleted(false)
               .build();
       testDocumentConfigRepository.save(testDocumentConfig);
-
-      // 문서에 대해 생성된 문제 수 계산
-      int objectiveCount =
-          (int)
-              questions.stream()
-                  .filter(q -> q.getDocumentId().equals(config.getDocumentId()))
-                  .filter(q -> q.getType() == QuestionType.OBJECTIVE)
-                  .count();
-
-      int subjectiveCount =
-          (int)
-              questions.stream()
-                  .filter(q -> q.getDocumentId().equals(config.getDocumentId()))
-                  .filter(q -> q.getType() == QuestionType.SUBJECTIVE)
-                  .count();
-
-      // 질문이 하나라도 있는 타입 기준으로 설정
-      QuestionType questionType =
-          objectiveCount > 0 ? QuestionType.OBJECTIVE : QuestionType.SUBJECTIVE;
-
-      DocumentQuestion documentQuestion =
-          DocumentQuestion.builder()
-              .document(documentRepository.findById(config.getDocumentId()).orElseThrow())
-              .questionKey(UUID.randomUUID().toString())
-              .questionType(questionType)
-              .configuredObjectiveCount(objectiveCount)
-              .configuredSubjectiveCount(subjectiveCount)
-              .isDeleted(false)
-              .build();
-      documentQuestionRepository.save(documentQuestion);
     }
 
-    // // ✅ 3. 문서 요약 정보 조회 (MongoDB)
-    // List<Integer> documentIds =
-    //     requestCreateTestDto.getDocumentConfigs().stream()
-    //         .map(TestDocumentConfigDto::getDocumentId)
-    //         .collect(Collectors.toList());
-
-    // List<Summary> summaries = summaryMongoRepository.findByDocumentIdIn(documentIds);
-
-    // List<SummaryDto> summaryDtos =
-    //     summaries.stream()
-    //         .map(
-    //             summary ->
-    //                 SummaryDto.builder()
-    //                     .documentId(summary.getDocumentId())
-    //                     .summary(summary.getSummary())
-    //                     .keywords(summary.getKeywords())
-    //                     .build())
-    //         .collect(Collectors.toList());
-
-    // // ✅ 4. FastAPI에 전달할 요청 객체 생성
-    // RequestCreateTestByLLMDto payload =
-    //     new RequestCreateTestByLLMDto(
-    //         projectId,
-    //         requestCreateTestDto.getSummary(), // userInput 대신 summary 사용
-    //         summaryDtos);
-
-    // String response =
-    //     webClient
-    //         .post()
-    //         .uri(fastApiBaseUrl + "/api/test/generate")
-    //         .contentType(MediaType.APPLICATION_JSON)
-    //         .bodyValue(payload)
-    //         .retrieve()
-    //         .bodyToMono(String.class)
-    //         .block();
-
-    // log.info("FastAPI 응답: {}", response);
-
-    // 5. 초대 링크 생성 및 저장
-    String token = UUID.randomUUID().toString();
-    LocalDateTime expiration = LocalDateTime.now().plusDays(7);
-
-    InviteLink inviteLink =
-        InviteLink.builder().test(test).token(token).expiresAt(expiration).isDeleted(false).build();
-    inviteLinkRepository.save(inviteLink);
+    return test.getTestId();
   }
 
+  /**
+   * 테스트를 최종화하고 초대 링크를 생성합니다.
+   *
+   * @param dto
+   */
+  @Transactional
+  public void finalizeTest(RequestFinalizeTestDto dto) {
+    Test test =
+        testRepository
+            .findById(dto.getTestId())
+            .orElseThrow(() -> new IllegalArgumentException("테스트가 존재하지 않습니다."));
+
+    List<Question> selectedQuestions =
+        questionMongoRepository.findAllById(dto.getSelectedQuestionIds());
+
+    // ✅ TestQuestion 저장
+    int questionNumber = 1;
+    for (Question q : selectedQuestions) {
+      testQuestionRepository.save(
+          TestQuestion.builder()
+              .test(test)
+              .questionId(q.getId())
+              .questionNumber(questionNumber++)
+              .isDeleted(false)
+              .build());
+    }
+
+    // ✅ DocumentQuestion 저장
+    Map<String, List<Question>> groupedByDocument =
+        selectedQuestions.stream().collect(Collectors.groupingBy(Question::getDocumentId));
+
+    for (Map.Entry<String, List<Question>> entry : groupedByDocument.entrySet()) {
+      String documentIdStr = entry.getKey();
+      List<Question> questionsForDoc = entry.getValue();
+
+      Integer documentId;
+      try {
+        documentId = Integer.parseInt(documentIdStr);
+      } catch (NumberFormatException e) {
+        log.warn("문서 ID가 정수가 아닙니다: {}", documentIdStr);
+        continue;
+      }
+
+      Document document =
+          documentRepository
+              .findById(documentId)
+              .orElseThrow(() -> new IllegalArgumentException("문서를 찾을 수 없습니다: " + documentId));
+
+      int objCount =
+          (int) questionsForDoc.stream().filter(q -> q.getType() == QuestionType.OBJECTIVE).count();
+
+      int subCount =
+          (int)
+              questionsForDoc.stream().filter(q -> q.getType() == QuestionType.SUBJECTIVE).count();
+
+      if (objCount + subCount == 0) continue;
+
+      QuestionType type = objCount > 0 ? QuestionType.OBJECTIVE : QuestionType.SUBJECTIVE;
+
+      documentQuestionRepository.save(
+          DocumentQuestion.builder()
+              .document(document)
+              .questionKey(UUID.randomUUID().toString())
+              .questionType(type)
+              .configuredObjectiveCount(objCount)
+              .configuredSubjectiveCount(subCount)
+              .isDeleted(false)
+              .build());
+    }
+
+    // ✅ 초대 링크 생성
+    inviteLinkRepository.save(
+        InviteLink.builder()
+            .test(test)
+            .token(UUID.randomUUID().toString())
+            .expiresAt(LocalDateTime.now().plusDays(7))
+            .isDeleted(false)
+            .build());
+
+    // ✅ 여분 문제 삭제
+    List<String> toDelete =
+        dto.getAllGeneratedQuestionIds().stream()
+            .filter(id -> !dto.getSelectedQuestionIds().contains(id))
+            .toList();
+
+    questionMongoRepository.deleteAllById(toDelete);
+  }
+
+  /**
+   * 랜덤 테스트를 저장합니다.
+   *
+   * @param dto
+   */
   @Transactional
   public void saveRandomTest(RequestSaveRandomTestDto dto) {
     // 1. 프로젝트 확인
