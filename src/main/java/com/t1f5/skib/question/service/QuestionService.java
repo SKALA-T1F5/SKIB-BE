@@ -4,10 +4,10 @@ import com.t1f5.skib.global.services.TranslationService;
 import com.t1f5.skib.question.domain.Question;
 import com.t1f5.skib.question.dto.QuestionDto;
 import com.t1f5.skib.question.dto.QuestionDtoConverter;
+import com.t1f5.skib.question.dto.QuestionResponse;
 import com.t1f5.skib.question.dto.QuestionValueDto;
 import com.t1f5.skib.question.repository.QuestionMongoRepository;
 import com.t1f5.skib.test.dto.RequestCreateTestDto;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -43,14 +43,17 @@ public class QuestionService {
     headers.setContentType(MediaType.APPLICATION_JSON);
     HttpEntity<RequestCreateTestDto> entity = new HttpEntity<>(requestDto, headers);
 
-    ResponseEntity<QuestionDto[]> response =
+    ResponseEntity<QuestionResponse> response =
         restTemplate.postForEntity(
-            fastApiBaseUrl + "api/test/generate", entity, QuestionDto[].class);
+            fastApiBaseUrl + "api/test/generate", entity, QuestionResponse.class);
 
-    QuestionDto[] body = response.getBody();
-    if (body == null) return List.of();
+    // 응답에서 questions 리스트 추출
+    QuestionResponse body = response.getBody();
+    if (body == null || body.getQuestions() == null) return List.of();
 
-    List<Question> questions = Arrays.stream(body).map(questionDtoConverter::convert).toList();
+    List<Question> questions =
+        body.getQuestions().stream().map(questionDtoConverter::convert).toList();
+
     questionMongoRepository.saveAll(questions);
     return questions;
   }
