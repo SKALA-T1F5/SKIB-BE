@@ -167,7 +167,7 @@ public class DocumentService {
 
       // ⚠️ file은 MultipartFile에서 직접 바이트 배열로 받거나 Resource로 전환
       builder.part("file", file.getResource());
-      builder.part("documentId", documentId.toString());
+      builder.part("document_id", documentId.toString());
       builder.part("project_id", projectId.toString());
       builder.part("name", name);
 
