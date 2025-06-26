@@ -15,7 +15,7 @@ public class ResponseQuestionDtoConverter implements DtoConverter<Question, Ques
         .question(question.getQuestion())
         .options(question.getOptions())
         .answer(question.getAnswer())
-        .grading_criteria(question.getGrading_criteria())
+        .grading_criteria(question.getGradingCriteria())
         .explanation(question.getExplanation())
         .documentId(
             question.getDocumentId() != null ? Integer.valueOf(question.getDocumentId()) : null)

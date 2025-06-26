@@ -1,5 +1,6 @@
 package com.t1f5.skib.question.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.t1f5.skib.global.services.TranslationService;
 import com.t1f5.skib.question.domain.Question;
 import com.t1f5.skib.question.dto.QuestionDto;
@@ -51,6 +52,17 @@ public class QuestionService {
             .retrieve()
             .bodyToMono(QuestionResponse.class)
             .block(); // 동기식 호출 (RestTemplate과 동일하게 처리)
+
+    ObjectMapper mapper = new ObjectMapper();
+
+    try {
+        log.info("🧪 RAW FastAPI Response: {}", mapper.writeValueAsString(response));
+        log.info("🧪 Deserialized DTO (1st Question): {}", mapper.writeValueAsString(response.getQuestions().get(0)));
+        log.info("🧪 grading_criteria: {}", mapper.writeValueAsString(response.getQuestions().get(0).getGrading_criteria()));
+    } catch (Exception e) {
+        log.error("🛑 JSON 직렬화 중 오류 발생", e);
+    }
+
 
     if (response == null || response.getQuestions() == null) return List.of();
 

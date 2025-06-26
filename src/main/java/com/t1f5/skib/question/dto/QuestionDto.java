@@ -1,6 +1,8 @@
 package com.t1f5.skib.question.dto;
 
 import com.t1f5.skib.global.enums.DifficultyLevel;
+import com.t1f5.skib.global.enums.GenerationType;
+
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,4 +25,5 @@ public class QuestionDto {
   private String document_name;
   private List<String> keywords;
   private List<String> tags;
+  private GenerationType generationType;
 }

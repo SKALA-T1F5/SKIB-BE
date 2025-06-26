@@ -65,7 +65,7 @@ public class AnswerService {
                 .findById(item.getId())
                 .orElseThrow(() -> new IllegalArgumentException("해당 주관식 문제를 찾을 수 없습니다."));
 
-        List<GradingCriteriaDto> gradingCriteria = question.getGrading_criteria();
+        List<GradingCriteriaDto> gradingCriteria = question.getGradingCriteria();
 
         SubjectiveScoringResponseDto response =
             scoreSubjectiveAnswer(item.getId(), gradingCriteria, item.getResponse());
