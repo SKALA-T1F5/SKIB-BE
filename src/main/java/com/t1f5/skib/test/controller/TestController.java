@@ -6,10 +6,10 @@ import com.t1f5.skib.global.customAnnotations.SwaggerInternetServerError;
 import com.t1f5.skib.global.dtos.ResultDto;
 import com.t1f5.skib.question.domain.Question;
 import com.t1f5.skib.test.dto.DocumentQuestionCountDto;
-import com.t1f5.skib.test.dto.RequestCreateTestByLLMDto;
 import com.t1f5.skib.test.dto.RequestCreateTestDto;
 import com.t1f5.skib.test.dto.RequestFinalizeTestDto;
 import com.t1f5.skib.test.dto.RequestSaveRandomTestDto;
+import com.t1f5.skib.test.dto.ResponseCreateTestByLLMDto;
 import com.t1f5.skib.test.dto.ResponseTestDto;
 import com.t1f5.skib.test.dto.ResponseTestInitDto;
 import com.t1f5.skib.test.dto.ResponseTestListDto;
@@ -39,10 +39,10 @@ public class TestController {
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
   @PostMapping("/createByLLM")
-  public ResponseEntity<ResultDto<RequestCreateTestByLLMDto>> makeTest(
+  public ResponseEntity<ResultDto<ResponseCreateTestByLLMDto>> makeTest(
       @RequestParam(value = "userInput") String userInput,
       @RequestParam(value = "projectId") Integer projectId) {
-    RequestCreateTestByLLMDto response = testService.makeTest(projectId, userInput);
+    ResponseCreateTestByLLMDto response = testService.makeTest(projectId, userInput);
 
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", response));
   }

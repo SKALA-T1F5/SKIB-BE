@@ -28,6 +28,7 @@ import com.t1f5.skib.test.dto.RequestCreateTestByLLMDto;
 import com.t1f5.skib.test.dto.RequestCreateTestDto;
 import com.t1f5.skib.test.dto.RequestFinalizeTestDto;
 import com.t1f5.skib.test.dto.RequestSaveRandomTestDto;
+import com.t1f5.skib.test.dto.ResponseCreateTestByLLMDto;
 import com.t1f5.skib.test.dto.ResponseTestDto;
 import com.t1f5.skib.test.dto.ResponseTestInitDto;
 import com.t1f5.skib.test.dto.ResponseTestListDto;
@@ -91,7 +92,7 @@ public class TestService {
    * @param dto 사용자 입력 및 요약 정보 DTO
    * @return 생성된 테스트의 응답
    */
-  public RequestCreateTestByLLMDto makeTest(Integer projectId, String userInput) {
+  public ResponseCreateTestByLLMDto makeTest(Integer projectId, String userInput) {
     log.info("Creating test by LLM for project ID: {}", projectId);
 
     // 1. 프로젝트 존재 확인
@@ -133,18 +134,19 @@ public class TestService {
     }
 
     // 6. FastAPI 호출
-    String response =
+    ResponseCreateTestByLLMDto response =
         webClient
             .post()
             .uri(fastApiBaseUrl + "/api/test/plan")
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(payload)
             .retrieve()
-            .bodyToMono(String.class)
-            .block();
+            .bodyToMono(ResponseCreateTestByLLMDto.class)
+            .block(); // Blocking 방식으로 응답 대기
 
     log.info("FastAPI 응답: {}", response);
-    return payload;
+
+    return response;
   }
 
   /**
