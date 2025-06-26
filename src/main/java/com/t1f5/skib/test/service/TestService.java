@@ -116,6 +116,7 @@ public class TestService {
                 summary ->
                     SummaryDto.builder()
                         .documentId(summary.getDocumentId())
+                        .name(summary.getName())
                         .summary(summary.getSummary())
                         .keywords(summary.getKeywords())
                         .build())
