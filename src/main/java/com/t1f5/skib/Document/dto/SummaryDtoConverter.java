@@ -8,6 +8,7 @@ public class SummaryDtoConverter {
   public Summary convert(SummaryDto dto, Integer documentId) {
     return Summary.builder()
         .summary(dto.getSummary())
+        .name(dto.getName())
         .keywords(dto.getKeywords())
         .documentId(documentId)
         .build();
