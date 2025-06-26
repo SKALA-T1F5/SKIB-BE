@@ -19,7 +19,7 @@ public class QuestionDto {
   private String answer;
   private String explanation;
   private List<GradingCriteriaDto> grading_criteria;
-  private Integer document_id;
+  private Integer documentId;
   private String document_name;
   private List<String> keywords;
   private List<String> tags;

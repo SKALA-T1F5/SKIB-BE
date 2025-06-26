@@ -99,7 +99,7 @@ public class QuestionService {
         .answer(original.getAnswer())
         .explanation(original.getExplanation())
         .grading_criteria(original.getGrading_criteria())
-        .document_id(original.getDocument_id())
+        .documentId(original.getDocumentId())
         .tags(original.getTags())
         .build();
   }

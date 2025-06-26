@@ -1,6 +1,5 @@
 package com.t1f5.skib.document.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,6 +15,5 @@ public class SummaryDto {
   private String summary;
   private List<String> keywords;
 
-  @JsonProperty("document_id")
   private Integer documentId;
 }

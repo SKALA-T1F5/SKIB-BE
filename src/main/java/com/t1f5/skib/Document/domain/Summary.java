@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
 
 @Document(collection = "summary")
 @Data
@@ -16,8 +15,6 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @Builder
 public class Summary {
   @Id private String summaryId; // MongoDB에서는 일반적으로 String ID를 사용
-
-  @Field("document_id")
   private Integer documentId; // 연관된 문서 ID
 
   private String name; // 문서 이름
