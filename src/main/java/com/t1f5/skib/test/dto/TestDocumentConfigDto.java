@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class TestDocumentConfigDto {
   private Integer documentId;
+  private String documentName;
   private List<String> keywords;
   private int configuredObjectiveCount;
   private int configuredSubjectiveCount;
