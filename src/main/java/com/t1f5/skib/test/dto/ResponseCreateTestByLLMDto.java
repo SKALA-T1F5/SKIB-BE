@@ -13,7 +13,7 @@ public class ResponseCreateTestByLLMDto {
   private String name;
   private String summary;
   private DifficultyLevel difficultyLevel;
-  private Integer limitiedTime;
+  private Integer limitedTime;
   private Integer passScore;
   private Boolean isRetake;
   private List<TestDocumentConfigDto> documentConfigs;
