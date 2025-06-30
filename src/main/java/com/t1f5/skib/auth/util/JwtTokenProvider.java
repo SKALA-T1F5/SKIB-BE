@@ -27,7 +27,7 @@ public class JwtTokenProvider {
     return Jwts.builder()
         .setClaims(claims)
         .setIssuedAt(new Date())
-        .setExpiration(new Date(System.currentTimeMillis() + 3600_000)) // 1시간
+        .setExpiration(new Date(System.currentTimeMillis() + 2 * 24 * 60 * 60 * 1000L)) // 2일
         .signWith(key, SignatureAlgorithm.HS256)
         .compact();
   }
