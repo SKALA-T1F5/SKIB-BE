@@ -1,6 +1,7 @@
 package com.t1f5.skib.document.controller;
 
 import com.t1f5.skib.document.dto.SummaryDto;
+import com.t1f5.skib.document.dto.SummaryNotification;
 import com.t1f5.skib.document.dto.responsedto.ResponseDocumentDto;
 import com.t1f5.skib.document.dto.responsedto.ResponseDocumentListDto;
 import com.t1f5.skib.document.service.DocumentService;
@@ -8,13 +9,13 @@ import com.t1f5.skib.global.customAnnotations.SwaggerApiNotFoundError;
 import com.t1f5.skib.global.customAnnotations.SwaggerApiSuccess;
 import com.t1f5.skib.global.customAnnotations.SwaggerInternetServerError;
 import com.t1f5.skib.global.dtos.ResultDto;
-
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,6 +34,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class DocumentController {
 
   private final DocumentService documentService;
+  private final SimpMessagingTemplate messagingTemplate;
 
   @SwaggerApiSuccess(summary = "문서 업로드 후 정보 저장", description = "PDF 파일과 문서 정보를 업로드한 후 저장합니다.")
   @SwaggerApiNotFoundError
@@ -71,14 +73,19 @@ public class DocumentController {
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "문서 삭제 완료"));
   }
 
-  @SwaggerApiSuccess(summary = "문서 요약 저장", description = "FastAPI로부터 받은 문서 요약 정보를 저장합니다.")
-  @SwaggerApiNotFoundError
-  @SwaggerInternetServerError
   @PutMapping("/api/document/summary/{documentId}")
   public ResponseEntity<ResultDto<Void>> receiveSummaryFromFastAPI(
       @PathVariable Integer documentId, @RequestBody SummaryDto summaryDto) {
-    log.info("📥 수신된 요약 데이터: {}", summaryDto); // 🔥 로그 확인
+
+    log.info("📥 수신된 요약 데이터: {}", summaryDto);
     documentService.saveSummaryFromFastAPI(documentId, summaryDto);
+
+    // ✨ 요약 완료 알림 전송
+    SummaryNotification notification =
+        SummaryNotification.builder().documentId(documentId).message("요약이 완료되었습니다.").build();
+
+    messagingTemplate.convertAndSend("/topic/summary", notification);
+
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", null));
   }
 }
