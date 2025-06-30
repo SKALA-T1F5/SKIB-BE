@@ -102,19 +102,19 @@ public class DocumentController {
       return "실패";
     }
 
-    if ("COMPLETED".equals(status)) {
+    if ("SUMMARY_COMPLETED".equals(status)) {
       return "요약이 완료되었습니다.";
     }
 
-    if ("PENDING".equals(status)) {
+    if ("UPLOAD_COMPLETED".equals(status)) {
       return "업로드 완료";
     }
 
-    if ("PARSING_DOCUMENTS".equals(status)) {
+    if ("PREPROCESSING".equals(status)) {
       return "전처리 중";
     }
 
-    if ("DESIGNING_TEST".equals(status) || "GENERATING_QUESTIONS".equals(status)) {
+    if ("SUMMARIZING".equals(status)) {
       return "요약 중";
     }
 
