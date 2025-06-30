@@ -1,5 +1,6 @@
 package com.t1f5.skib.document.controller;
 
+import com.t1f5.skib.document.dto.DocumentProgressDto;
 import com.t1f5.skib.document.dto.SummaryDto;
 import com.t1f5.skib.document.dto.SummaryNotification;
 import com.t1f5.skib.document.dto.responsedto.ResponseDocumentDto;
@@ -80,12 +81,43 @@ public class DocumentController {
     log.info("📥 수신된 요약 데이터: {}", summaryDto);
     documentService.saveSummaryFromFastAPI(documentId, summaryDto);
 
-    // ✨ 요약 완료 알림 전송
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", null));
+  }
+
+  @PutMapping("/api/document/progress")
+  public ResponseEntity<ResultDto<Void>> receiveProgressFromFastAPI(
+      @RequestBody DocumentProgressDto dto) {
+    String message = mapStatusToMessage(dto.getStatus());
+
     SummaryNotification notification =
-        SummaryNotification.builder().documentId(documentId).message("요약이 완료되었습니다.").build();
+        SummaryNotification.builder().documentId(dto.getDocumentId()).message(message).build();
 
     messagingTemplate.convertAndSend("/topic/summary", notification);
 
-    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", null));
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "PROGRESS_UPDATED", null));
+  }
+
+  private String mapStatusToMessage(String status) {
+    if ("FAILED".equals(status)) {
+      return "실패";
+    }
+
+    if ("COMPLETED".equals(status)) {
+      return "요약이 완료되었습니다.";
+    }
+
+    if ("PENDING".equals(status)) {
+      return "업로드 완료";
+    }
+
+    if ("PARSING_DOCUMENTS".equals(status)) {
+      return "전처리 중";
+    }
+
+    if ("DESIGNING_TEST".equals(status) || "GENERATING_QUESTIONS".equals(status)) {
+      return "요약 중";
+    }
+
+    return "알 수 없음";
   }
 }
