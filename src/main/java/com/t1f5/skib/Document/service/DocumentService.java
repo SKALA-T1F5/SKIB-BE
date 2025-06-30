@@ -7,6 +7,7 @@ import com.t1f5.skib.document.dto.SummaryDtoConverter;
 import com.t1f5.skib.document.dto.responsedto.DocumentDtoConverter;
 import com.t1f5.skib.document.dto.responsedto.ResponseDocumentDto;
 import com.t1f5.skib.document.dto.responsedto.ResponseDocumentListDto;
+import com.t1f5.skib.document.exception.DuplicateDocumentNameException;
 import com.t1f5.skib.document.repository.DocumentRepository;
 import com.t1f5.skib.document.repository.SummaryMongoRepository;
 import com.t1f5.skib.global.dtos.DtoConverter;
@@ -15,6 +16,7 @@ import com.t1f5.skib.project.repository.ProjectJpaRepository;
 import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -111,6 +113,19 @@ public class DocumentService {
             .orElseThrow(
                 () -> new IllegalArgumentException("Project not found with id: " + projectId));
 
+    // 문서 중복 체크 코드
+    String documentName = removeExtension(file.getOriginalFilename());
+
+    Optional<Document> existingDocument =
+        documentRepository.findByProject_ProjectIdAndNameAndIsDeletedFalse(projectId, documentName);
+
+    if (existingDocument.isPresent()) {
+      log.info(
+          "⚠️ 동일한 이름의 문서가 이미 존재합니다. 저장을 건너뜁니다. documentId: {}",
+          existingDocument.get().getDocumentId());
+      throw new DuplicateDocumentNameException(documentName);
+    }
+
     // 2. Document 먼저 저장 (isUploaded = false)
     Document document =
         Document.builder()
@@ -128,9 +143,10 @@ public class DocumentService {
     log.info("Document saved with ID: {}", document.getDocumentId());
     log.info(
         "Document details: name='{}', size={} bytes, extension='{}', projectId={}",
-        projectId,
+        document.getName(),
         document.getDocumentId(),
-        file.getOriginalFilename());
+        file.getOriginalFilename(),
+        projectId);
 
     // 3. FastAPI로 파일 업로드 (documentId 포함)
     String uploadedUrl =
