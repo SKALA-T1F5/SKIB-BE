@@ -1,6 +1,7 @@
 package com.t1f5.skib.global.handler;
 
 import com.t1f5.skib.auth.exception.InvalidTokenException;
+import com.t1f5.skib.document.exception.DuplicateDocumentNameException;
 import com.t1f5.skib.global.dtos.ResultDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,5 +28,13 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(InvalidTokenException.class)
   public ResponseEntity<String> handleInvalidTokenException(InvalidTokenException e) {
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+  }
+
+  @ExceptionHandler(DuplicateDocumentNameException.class)
+  public ResponseEntity<ResultDto<String>> handleDuplicateDocumentNameException(
+      DuplicateDocumentNameException ex) {
+    return new ResponseEntity<>(
+        ResultDto.res(HttpStatus.CONFLICT, "DUPLICATE_DOCUMENT", ex.getMessage()),
+        HttpStatus.CONFLICT);
   }
 }
