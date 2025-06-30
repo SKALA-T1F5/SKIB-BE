@@ -36,7 +36,7 @@ public class Test extends BaseTimeEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Integer testId;
 
-  @Column(name = "name", nullable = false, length = 40)
+  @Column(name = "name", nullable = false, length = 500)
   private String name;
 
   @Lob
