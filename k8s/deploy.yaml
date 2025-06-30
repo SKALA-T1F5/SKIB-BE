@@ -20,7 +20,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: sk-team-09-backend
-          image: amdp-registry.skala-ai.com/skala25a/sk-team-09-backend:1.0.0-61-796de5ea8e2d
+          image: amdp-registry.skala-ai.com/skala25a/sk-team-09-backend:1.0.0-62-7b3e47fa8930
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
