@@ -39,17 +39,18 @@ public class DocumentController {
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
   @PostMapping(value = "/api/document", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  public ResponseEntity<?> uploadDocument(
+  public ResponseEntity<ResultDto<Integer>> uploadDocument(
       @RequestParam("projectId") Integer projectId, @RequestPart("file") MultipartFile file) {
-    documentService.saveDocument(projectId, file);
-    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "문서 업로드 완료"));
+    Integer documentId = documentService.saveDocument(projectId, file);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", documentId));
   }
 
   @SwaggerApiSuccess(summary = "문서 목록 조회", description = "특정 프로젝트에 속한 문서들의 정보를 조회합니다.")
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
   @GetMapping("/api/documents")
-  public ResponseEntity<?> getDocuments(@RequestParam("projectId") Integer projectId) {
+  public ResponseEntity<ResultDto<ResponseDocumentListDto>> getDocuments(
+      @RequestParam("projectId") Integer projectId) {
     ResponseDocumentListDto documents = documentService.getDocumentsByProject(projectId);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", documents));
   }
@@ -58,7 +59,8 @@ public class DocumentController {
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
   @GetMapping("/api/document")
-  public ResponseEntity<?> getDocument(@RequestParam("documentId") Integer documentId) {
+  public ResponseEntity<ResultDto<ResponseDocumentDto>> getDocument(
+      @RequestParam("documentId") Integer documentId) {
     ResponseDocumentDto document = documentService.getOneDocument(documentId);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", document));
   }
@@ -67,7 +69,8 @@ public class DocumentController {
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
   @DeleteMapping("/api/document/delete")
-  public ResponseEntity<?> deleteDocument(@RequestParam("documentId") Integer documentId) {
+  public ResponseEntity<ResultDto<String>> deleteDocument(
+      @RequestParam("documentId") Integer documentId) {
     documentService.deleteDocument(documentId);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "문서 삭제 완료"));
   }

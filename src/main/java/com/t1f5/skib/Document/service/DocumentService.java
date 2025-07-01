@@ -107,7 +107,7 @@ public class DocumentService {
    * @param file 업로드할 파일
    */
   @Transactional
-  public void saveDocument(Integer projectId, MultipartFile file) {
+  public Integer saveDocument(Integer projectId, MultipartFile file) {
     // 1. 프로젝트 조회
     Project project =
         projectRepository
@@ -168,6 +168,8 @@ public class DocumentService {
         document.getExtension(),
         projectId,
         document.getUrl());
+
+    return document.getDocumentId();
   }
 
   /**
