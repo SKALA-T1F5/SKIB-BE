@@ -37,7 +37,7 @@ public class QuestionService {
   private String fastApiBaseUrl;
 
   /**
-   * LLM을 사용하여 문제를 생성하는 메서드
+   * FastAPI를 호출하여 문제를 생성하는 메서드
    *
    * @param requestDto 문제 생성 요청 DTO
    * @return 생성된 문제 목록
@@ -51,21 +51,35 @@ public class QuestionService {
             .bodyValue(requestDto)
             .retrieve()
             .bodyToMono(QuestionResponse.class)
-            .block(); // 동기식 호출 (RestTemplate과 동일하게 처리)
+            .block(); // 동기식 호출
 
     ObjectMapper mapper = new ObjectMapper();
 
+    // ✅ 응답 확인 및 직렬화 로그 출력
     try {
-        log.info("🧪 RAW FastAPI Response: {}", mapper.writeValueAsString(response));
-        log.info("🧪 Deserialized DTO (1st Question): {}", mapper.writeValueAsString(response.getQuestions().get(0)));
-        log.info("🧪 grading_criteria: {}", mapper.writeValueAsString(response.getQuestions().get(0).getGrading_criteria()));
+      log.info("🧪 RAW FastAPI Response: {}", mapper.writeValueAsString(response));
+
+      if (response == null) {
+        log.error("❌ FastAPI 응답이 null입니다.");
+        return List.of();
+      }
+
+      if (response.getQuestions() == null || response.getQuestions().isEmpty()) {
+        log.warn("⚠️ FastAPI 응답에 questions가 null이거나 비어 있습니다.");
+        return List.of();
+      }
+
+      log.info(
+          "🧪 Deserialized DTO (1st Question): {}",
+          mapper.writeValueAsString(response.getQuestions().get(0)));
+      log.info(
+          "🧪 grading_criteria: {}",
+          mapper.writeValueAsString(response.getQuestions().get(0).getGrading_criteria()));
     } catch (Exception e) {
-        log.error("🛑 JSON 직렬화 중 오류 발생", e);
+      log.error("🛑 JSON 직렬화 중 오류 발생", e);
     }
 
-
-    if (response == null || response.getQuestions() == null) return List.of();
-
+    // ✅ 정상 처리
     List<Question> questions =
         response.getQuestions().stream().map(questionDtoConverter::convert).toList();
 
