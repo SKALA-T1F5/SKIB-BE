@@ -20,7 +20,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
   public void registerStompEndpoints(StompEndpointRegistry registry) {
     registry
         .addEndpoint("/ws") // 프론트가 연결할 WebSocket 엔드포인트
-        .setAllowedOrigins("*") // CORS 허용
+        .setAllowedOrigins(
+            "*",
+            "http://localhost:5173",
+            "https://skib-frontend.skala25a.project.skala-ai.com") // CORS 허용
         .withSockJS(); // SockJS fallback 지원
   }
 }

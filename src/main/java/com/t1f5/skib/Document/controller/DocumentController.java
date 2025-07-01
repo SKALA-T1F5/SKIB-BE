@@ -87,6 +87,13 @@ public class DocumentController {
   @PutMapping("/api/document/progress")
   public ResponseEntity<ResultDto<Void>> receiveProgressFromFastAPI(
       @RequestBody DocumentProgressDto dto) {
+
+    // ✅ 로그 출력
+    log.info(
+        "📥 [PROGRESS] Received progress update from FastAPI: documentId={}, status={}",
+        dto.getDocumentId(),
+        dto.getStatus());
+
     String message = mapStatusToMessage(dto.getStatus());
 
     SummaryNotification notification =
