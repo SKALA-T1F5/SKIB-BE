@@ -229,6 +229,11 @@ public class TestService {
       String documentIdStr = entry.getKey();
       List<Question> questionsForDoc = entry.getValue();
 
+      if (documentIdStr == null || documentIdStr.isBlank()) {
+        log.warn("문서 ID가 null 혹은 빈 문자열입니다. 해당 문제 수: {}", questionsForDoc.size());
+        continue;
+      }
+
       Integer documentId;
       try {
         documentId = Integer.parseInt(documentIdStr);
@@ -242,14 +247,31 @@ public class TestService {
               .findById(documentId)
               .orElseThrow(() -> new IllegalArgumentException("문서를 찾을 수 없습니다: " + documentId));
 
+      // ✅ 문제 타입 누락 여부 로깅
+      for (Question q : questionsForDoc) {
+        if (q.getType() == null) {
+          log.warn("문제 ID {} 의 type이 null입니다. 문서 ID: {}", q.getId(), documentId);
+        }
+      }
+
       int objCount =
-          (int) questionsForDoc.stream().filter(q -> q.getType() == QuestionType.OBJECTIVE).count();
+          (int)
+              questionsForDoc.stream()
+                  .filter(q -> QuestionType.OBJECTIVE.equals(q.getType()))
+                  .count();
 
       int subCount =
           (int)
-              questionsForDoc.stream().filter(q -> q.getType() == QuestionType.SUBJECTIVE).count();
+              questionsForDoc.stream()
+                  .filter(q -> QuestionType.SUBJECTIVE.equals(q.getType()))
+                  .count();
 
-      if (objCount + subCount == 0) continue;
+      log.info("📄 문서 {} - 객관식 {}개, 주관식 {}개", documentId, objCount, subCount);
+
+      if (objCount + subCount == 0) {
+        log.warn("문서 {} 에 연결된 문제 수는 있지만, 타입이 유효하지 않아 저장 생략", documentId);
+        continue;
+      }
 
       QuestionType type = objCount > 0 ? QuestionType.OBJECTIVE : QuestionType.SUBJECTIVE;
 
