@@ -1,12 +1,15 @@
 package com.t1f5.skib.document.domain;
 
 import com.t1f5.skib.global.domain.BaseTimeEntity;
+import com.t1f5.skib.global.enums.DocumentStatus;
 import com.t1f5.skib.project.domain.Project;
 import com.t1f5.skib.question.domain.DocumentQuestion;
 import com.t1f5.skib.test.domain.TestDocumentConfig;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -40,6 +43,10 @@ public class Document extends BaseTimeEntity {
 
   @Column(name = "url", nullable = true, length = 500)
   private String url;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "status", nullable = false, length = 50)
+  private DocumentStatus status;
 
   @Column(name = "file_size", nullable = false)
   private Long fileSize;

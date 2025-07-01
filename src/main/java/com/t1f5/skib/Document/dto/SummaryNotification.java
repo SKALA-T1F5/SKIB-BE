@@ -1,5 +1,6 @@
 package com.t1f5.skib.document.dto;
 
+import com.t1f5.skib.global.enums.DocumentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,5 +12,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class SummaryNotification {
   private Integer documentId;
-  private String message;
+  private DocumentStatus status;
 }

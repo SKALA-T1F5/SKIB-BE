@@ -35,12 +35,6 @@ public class SecurityConfig {
                 authz
                     .requestMatchers(HttpMethod.OPTIONS, "/**")
                     .permitAll()
-                    .requestMatchers("/ws/**")
-                    .permitAll() // ✅ SockJS endpoint
-                    .requestMatchers("/topic/**")
-                    .permitAll() // ✅ 메시지 브로커 수신
-                    .requestMatchers("/app/**")
-                    .permitAll() // ✅ 메시지 전송 prefix (추가 권장)
                     .requestMatchers(
                         "/api/auth/admin/login",
                         "/api/auth/user/login",
@@ -52,12 +46,10 @@ public class SecurityConfig {
                     .permitAll()
                     .anyRequest()
                     .authenticated())
-        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-        .headers(headers -> headers.frameOptions().disable()) // ✅ WebSocket에서 iframe 차단 방지
+        .cors(cors -> cors.configurationSource(corsConfigurationSource())) // CORS 적용
         .addFilterBefore(
             new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService),
             UsernamePasswordAuthenticationFilter.class);
-
     return http.build();
   }
 
@@ -72,10 +64,7 @@ public class SecurityConfig {
     CorsConfiguration config = new CorsConfiguration();
     config.setAllowCredentials(true); // 쿠키 허용
     config.setAllowedOrigins(
-        List.of(
-            "http://10.250.72.251:5173",
-            "http://localhost:5173",
-            "https://skib-frontend.skala25a.project.skala-ai.com")); // 구체적 origin 명시
+        List.of("http://10.250.72.251:5173", "http://localhost:5173")); // 구체적 origin 명시
     config.setAllowedHeaders(List.of("*"));
     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
     config.setExposedHeaders(List.of("Authorization"));

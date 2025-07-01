@@ -4,6 +4,7 @@ import com.t1f5.skib.document.domain.Document;
 import com.t1f5.skib.document.domain.Summary;
 import com.t1f5.skib.document.dto.SummaryDto;
 import com.t1f5.skib.document.dto.SummaryDtoConverter;
+import com.t1f5.skib.document.dto.SummaryNotification;
 import com.t1f5.skib.document.dto.responsedto.DocumentDtoConverter;
 import com.t1f5.skib.document.dto.responsedto.ResponseDocumentDto;
 import com.t1f5.skib.document.dto.responsedto.ResponseDocumentListDto;
@@ -11,6 +12,7 @@ import com.t1f5.skib.document.exception.DuplicateDocumentNameException;
 import com.t1f5.skib.document.repository.DocumentRepository;
 import com.t1f5.skib.document.repository.SummaryMongoRepository;
 import com.t1f5.skib.global.dtos.DtoConverter;
+import com.t1f5.skib.global.enums.DocumentStatus;
 import com.t1f5.skib.project.domain.Project;
 import com.t1f5.skib.project.repository.ProjectJpaRepository;
 import jakarta.transaction.Transactional;
@@ -135,6 +137,7 @@ public class DocumentService {
             .extension(getExtension(file.getOriginalFilename()))
             .isUploaded(false)
             .isDeleted(false)
+            .status(DocumentStatus.UPLOAD_COMPLETED) // 초기 상태는 UPLOAD_COMPLETED로 설정
             .project(project)
             .build();
 
@@ -213,6 +216,37 @@ public class DocumentService {
   }
 
   /**
+   * 문서 상태를 업데이트하는 메서드
+   *
+   * @param documentId 문서 ID
+   * @param status 업데이트할 상태
+   */
+  @Transactional
+  public void updateDocumentStatus(Integer documentId, DocumentStatus status) {
+    Document document =
+        documentRepository
+            .findById(documentId)
+            .orElseThrow(() -> new IllegalArgumentException("문서를 찾을 수 없습니다: " + documentId));
+    document.setStatus(status);
+    documentRepository.save(document);
+  }
+
+  /**
+   * 문서의 현재 상태(status)를 반환하는 메서드
+   *
+   * @param documentId 문서 ID
+   * @return 문서 상태
+   */
+  @Transactional
+  public DocumentStatus getDocumentStatus(Integer documentId) {
+    Document document =
+        documentRepository
+            .findById(documentId)
+            .orElseThrow(() -> new IllegalArgumentException("문서를 찾을 수 없습니다: " + documentId));
+    return document.getStatus();
+  }
+
+  /**
    * FastAPI로부터 SummaryDto를 받아 MongoDB에 저장하는 메서드
    *
    * @param documentId 문서 ID
@@ -222,7 +256,23 @@ public class DocumentService {
   public void saveSummaryFromFastAPI(Integer documentId, SummaryDto summaryDto) {
     Summary summary = summaryDtoConverter.convert(summaryDto, documentId);
     summaryMongoRepository.save(summary);
+
     log.info("🚀 Saving summary: {}", summary);
+  }
+
+  /**
+   * 문서 상태를 저장하는 메서드
+   *
+   * @param documentId 문서 ID
+   * @param status 업데이트할 상태
+   */
+  @Transactional
+  public void saveDocumentStatus(SummaryNotification summaryNotification) {
+    updateDocumentStatus(summaryNotification.getDocumentId(), summaryNotification.getStatus());
+    log.info(
+        "Document status updated: documentId={}, status={}",
+        summaryNotification.getDocumentId(),
+        summaryNotification.getStatus());
   }
 
   private String getExtension(String filename) {
