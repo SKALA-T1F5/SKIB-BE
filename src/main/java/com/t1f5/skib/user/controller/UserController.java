@@ -40,7 +40,7 @@ public class UserController {
   @SwaggerInternetServerError
   @PutMapping("/update")
   public ResponseEntity<?> updateUser(
-      @Valid @RequestBody RequestUpdateUserDto dto, Integer userId) {
+      @Valid @RequestBody RequestUpdateUserDto dto, @RequestParam Integer userId) {
     userService.updateUser(userId, dto);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "유저 정보 수정 완료"));
   }
