@@ -49,6 +49,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -392,8 +393,9 @@ public class TestService {
    * @param totalCount 생성할 총 문제 수
    * @return 랜덤으로 선택된 문제 리스트
    */
+  @Transactional(readOnly = true)
   public List<Question> generateRandomTest(int projectId, int totalCount) {
-    // 1. 각 문서별 실제 총 문제 수 계산
+    // 1. 문서별 생성된 문제 수 집계
     List<DocumentQuestionCountDto> docCounts = getDocumentQuestionCountsByProject(projectId);
 
     int totalAvailable =
@@ -403,14 +405,14 @@ public class TestService {
       throw new IllegalArgumentException("총 문제 수가 부족합니다.");
     }
 
-    // 2. 문서별로 배정할 문제 수 계산
+    // 2. 비율 기반 문서별 배분
     Map<Integer, Integer> questionCountPerDoc = new HashMap<>();
     for (DocumentQuestionCountDto dto : docCounts) {
       int allocated = Math.round(((float) dto.getQuestionCount() / totalAvailable) * totalCount);
       questionCountPerDoc.put(dto.getDocumentId(), allocated);
     }
 
-    // 3. 보정: 합이 totalCount와 다를 경우 가장 많은 문서에 보정
+    // 3. 총합 보정
     int currentSum = questionCountPerDoc.values().stream().mapToInt(Integer::intValue).sum();
     if (currentSum != totalCount) {
       int delta = totalCount - currentSum;
@@ -419,36 +421,52 @@ public class TestService {
       questionCountPerDoc.put(maxDocId, questionCountPerDoc.get(maxDocId) + delta);
     }
 
-    // 4. 각 문서별로 DocumentQuestion 리스트 조회 + 랜덤으로 문제 키 선택
-    List<Document> documents = documentRepository.findAllByProject_ProjectId(projectId);
-    Map<Integer, List<DocumentQuestion>> groupedQuestions = new HashMap<>();
-
-    for (Document doc : documents) {
-      List<DocumentQuestion> dqList =
-          documentQuestionRepository.findByDocument_DocumentId(doc.getDocumentId());
-      groupedQuestions.put(doc.getDocumentId(), dqList);
+    // 4. 문서별로 DocumentQuestion → questionKey 수집
+    Map<Integer, List<String>> docToQuestionKeys = new HashMap<>();
+    for (Integer docId : questionCountPerDoc.keySet()) {
+      List<DocumentQuestion> dqList = documentQuestionRepository.findByDocument_DocumentId(docId);
+      List<String> keys =
+          dqList.stream().map(DocumentQuestion::getQuestionKey).filter(Objects::nonNull).toList();
+      docToQuestionKeys.put(docId, keys);
     }
 
+    // 5. 랜덤하게 questionKey 선택
     List<String> selectedKeys = new ArrayList<>();
+    List<String> leftoverKeys = new ArrayList<>();
 
     for (Map.Entry<Integer, Integer> entry : questionCountPerDoc.entrySet()) {
       Integer docId = entry.getKey();
-      Integer pickCount = entry.getValue();
+      int count = entry.getValue();
+      List<String> available = new ArrayList<>(docToQuestionKeys.getOrDefault(docId, List.of()));
+      Collections.shuffle(available);
 
-      List<String> allKeys =
-          new ArrayList<>(
-              groupedQuestions.get(docId).stream().map(DocumentQuestion::getQuestionKey).toList());
-      Collections.shuffle(allKeys);
+      if (available.size() >= count) {
+        selectedKeys.addAll(available.subList(0, count));
+      } else {
+        selectedKeys.addAll(available);
+        log.warn("📉 문서 {} 에서 부족한 문제 수: {}", docId, count - available.size());
+      }
 
-      selectedKeys.addAll(allKeys.subList(0, Math.min(pickCount, allKeys.size())));
+      // 여분 키 저장 (다른 문서에서 부족분 채울 수 있도록)
+      leftoverKeys.addAll(available);
     }
 
-    // 5. MongoDB에서 문제 조회
+    // 6. 부족한 수량 보정 (다른 문서에서)
+    int remaining = totalCount - selectedKeys.size();
+    if (remaining > 0) {
+      Collections.shuffle(leftoverKeys);
+      for (String key : leftoverKeys) {
+        if (!selectedKeys.contains(key)) {
+          selectedKeys.add(key);
+          if (selectedKeys.size() == totalCount) break;
+        }
+      }
+    }
+
+    // 7. MongoDB에서 조회
     List<Question> selectedQuestions = questionMongoRepository.findAllById(selectedKeys);
 
-    // ✅ 테스트용 통계 출력 (optional)
-    log.info("🔍 총 선택된 문제 수: {}", selectedQuestions.size());
-
+    log.info("🔍 요청 문제 수: {}, 실제 조회 수: {}", totalCount, selectedQuestions.size());
     return selectedQuestions;
   }
 
