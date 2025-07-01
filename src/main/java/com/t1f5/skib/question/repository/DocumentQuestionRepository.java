@@ -11,4 +11,6 @@ public interface DocumentQuestionRepository extends JpaRepository<DocumentQuesti
   List<DocumentQuestion> findByDocument_DocumentId(Integer documentId);
 
   int countByDocument_DocumentId(Integer documentId);
+
+  List<DocumentQuestion> findByDocument_DocumentIdIn(List<Integer> documentIds);
 }

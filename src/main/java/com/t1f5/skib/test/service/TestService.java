@@ -449,14 +449,37 @@ public class TestService {
    * @return 문서별 문제 수 리스트
    */
   public List<DocumentQuestionCountDto> getDocumentQuestionCountsByProject(Integer projectId) {
+    // 1. 해당 프로젝트의 문서 목록
     List<Document> documents = documentRepository.findAllByProject_ProjectId(projectId);
+    List<Integer> documentIds = documents.stream().map(Document::getDocumentId).toList();
 
-    return documents.stream()
+    // 2. 문서 ID → 문서 객체 매핑
+    Map<Integer, Document> documentMap =
+        documents.stream().collect(Collectors.toMap(Document::getDocumentId, doc -> doc));
+
+    // 3. 해당 문서들에 대한 DocumentQuestion 전체 조회
+    List<DocumentQuestion> allDocumentQuestions =
+        documentQuestionRepository.findByDocument_DocumentIdIn(documentIds);
+
+    // 4. 문서별로 DocumentQuestion 합산
+    Map<Integer, List<DocumentQuestion>> grouped =
+        allDocumentQuestions.stream()
+            .collect(Collectors.groupingBy(dq -> dq.getDocument().getDocumentId()));
+
+    // 5. 최종 결과 구성
+    return grouped.entrySet().stream()
         .map(
-            doc -> {
-              int count =
-                  documentQuestionRepository.countByDocument_DocumentId(doc.getDocumentId());
-              return new DocumentQuestionCountDto(doc.getDocumentId(), doc.getName(), count);
+            entry -> {
+              Integer documentId = entry.getKey();
+              List<DocumentQuestion> dqList = entry.getValue();
+
+              int objTotal =
+                  dqList.stream().mapToInt(DocumentQuestion::getConfiguredObjectiveCount).sum();
+              int subTotal =
+                  dqList.stream().mapToInt(DocumentQuestion::getConfiguredSubjectiveCount).sum();
+
+              Document doc = documentMap.get(documentId);
+              return new DocumentQuestionCountDto(documentId, doc.getName(), objTotal + subTotal);
             })
         .collect(Collectors.toList());
   }
