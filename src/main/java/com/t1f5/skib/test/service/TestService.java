@@ -45,11 +45,11 @@ import com.t1f5.skib.user.model.User;
 import com.t1f5.skib.user.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -429,22 +429,31 @@ public class TestService {
       questionCountPerDoc.put(maxDocId, questionCountPerDoc.get(maxDocId) + delta);
     }
 
-    // 4. 문서별로 DocumentQuestion → questionKey 수집
+    // 4. 문서별로 DocumentQuestion → questionKey 파싱
     Map<Integer, List<String>> docToQuestionKeys = new HashMap<>();
     for (Integer docId : questionCountPerDoc.keySet()) {
       List<DocumentQuestion> dqList = documentQuestionRepository.findByDocument_DocumentId(docId);
-      List<String> keys =
-          dqList.stream().map(DocumentQuestion::getQuestionKey).filter(Objects::nonNull).toList();
-      docToQuestionKeys.put(docId, keys);
+
+      // 콤마로 분리된 questionKey를 개별 ID로 분해
+      List<String> allKeys =
+          dqList.stream()
+              .filter(dq -> dq.getQuestionKey() != null && !dq.getQuestionKey().isBlank())
+              .flatMap(dq -> Arrays.stream(dq.getQuestionKey().split(",")))
+              .map(String::trim)
+              .filter(s -> !s.isBlank())
+              .toList();
+
+      docToQuestionKeys.put(docId, allKeys);
     }
 
-    // 5. 랜덤하게 questionKey 선택
+    // 5. 랜덤 선택
     List<String> selectedKeys = new ArrayList<>();
     List<String> leftoverKeys = new ArrayList<>();
 
     for (Map.Entry<Integer, Integer> entry : questionCountPerDoc.entrySet()) {
       Integer docId = entry.getKey();
       int count = entry.getValue();
+
       List<String> available = new ArrayList<>(docToQuestionKeys.getOrDefault(docId, List.of()));
       Collections.shuffle(available);
 
@@ -455,7 +464,6 @@ public class TestService {
         log.warn("📉 문서 {} 에서 부족한 문제 수: {}", docId, count - available.size());
       }
 
-      // 여분 키 저장 (다른 문서에서 부족분 채울 수 있도록)
       leftoverKeys.addAll(available);
     }
 
