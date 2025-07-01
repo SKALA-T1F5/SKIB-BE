@@ -276,10 +276,18 @@ public class TestService {
 
       QuestionType type = objCount > 0 ? QuestionType.OBJECTIVE : QuestionType.SUBJECTIVE;
 
+      String joinedKeys =
+          String.join(
+              ",",
+              questionsForDoc.stream()
+                  .map(Question::getId)
+                  .map(String::valueOf)
+                  .collect(Collectors.toList()));
+
       documentQuestionRepository.save(
           DocumentQuestion.builder()
               .document(document)
-              .questionKey(UUID.randomUUID().toString())
+              .questionKey(joinedKeys)
               .questionType(type)
               .configuredObjectiveCount(objCount)
               .configuredSubjectiveCount(subCount)
