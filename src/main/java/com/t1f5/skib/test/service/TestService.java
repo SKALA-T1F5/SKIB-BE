@@ -680,7 +680,7 @@ public class TestService {
     }
 
     // 5. 테스트 + 문제 리스트 함께 반환
-    return getTestById(userId, lang);
+    return getTestById(test.getTestId(), lang);
   }
 
   // private void generateAndSaveQuestionsInParallel(Test test, RequestCreateTestDto requestDto) {
