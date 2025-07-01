@@ -21,6 +21,7 @@ public class ResponseQuestionDtoConverter implements DtoConverter<Question, Ques
             question.getDocumentId() != null ? Integer.valueOf(question.getDocumentId()) : null)
         .keywords(question.getKeywords())
         .tags(question.getTags())
+        .generationType(question.getGenerationType())
         .build();
   }
 }

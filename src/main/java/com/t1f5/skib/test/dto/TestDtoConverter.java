@@ -19,6 +19,7 @@ public class TestDtoConverter implements DtoConverter<Test, ResponseTestDto> {
         .testId(test.getTestId())
         .name(test.getName())
         .limitedTime(test.getLimitedTime())
+        .passScore(test.getPassScore())
         .createdAt(test.getCreatedDate())
         .build();
   }
