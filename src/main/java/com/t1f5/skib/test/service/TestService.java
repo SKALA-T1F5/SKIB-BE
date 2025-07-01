@@ -393,53 +393,63 @@ public class TestService {
    * @return 랜덤으로 선택된 문제 리스트
    */
   public List<Question> generateRandomTest(int projectId, int totalCount) {
-    // 1. 프로젝트에 해당하는 문서들 조회
-    List<Document> documents = documentRepository.findAllByProject_ProjectId(projectId);
+    // 1. 각 문서별 실제 총 문제 수 계산
+    List<DocumentQuestionCountDto> docCounts = getDocumentQuestionCountsByProject(projectId);
 
-    // 2. 각 문서별 DocumentQuestion 수 집계
-    Map<Integer, List<DocumentQuestion>> questionMap = new HashMap<>();
-    int totalAvailableQuestions = 0;
+    int totalAvailable =
+        docCounts.stream().mapToInt(DocumentQuestionCountDto::getQuestionCount).sum();
 
-    for (Document doc : documents) {
-      List<DocumentQuestion> dqList =
-          documentQuestionRepository.findByDocument_DocumentId(doc.getDocumentId());
-      questionMap.put(doc.getDocumentId(), dqList);
-      totalAvailableQuestions += dqList.size();
-    }
-
-    if (totalAvailableQuestions < totalCount) {
+    if (totalAvailable < totalCount) {
       throw new IllegalArgumentException("총 문제 수가 부족합니다.");
     }
 
-    // 3. 문서별 비율로 문제 수 배정
+    // 2. 문서별로 배정할 문제 수 계산
     Map<Integer, Integer> questionCountPerDoc = new HashMap<>();
-    for (Document doc : documents) {
-      int count = questionMap.get(doc.getDocumentId()).size();
-      int docQuestionCount = Math.round(((float) count / totalAvailableQuestions) * totalCount);
-      questionCountPerDoc.put(doc.getDocumentId(), docQuestionCount);
+    for (DocumentQuestionCountDto dto : docCounts) {
+      int allocated = Math.round(((float) dto.getQuestionCount() / totalAvailable) * totalCount);
+      questionCountPerDoc.put(dto.getDocumentId(), allocated);
     }
 
-    // 보정: 합이 totalCount 안 맞을 수 있으므로 가장 많은 문서에 부족분 보정
-    int sum = questionCountPerDoc.values().stream().mapToInt(i -> i).sum();
-    if (sum != totalCount) {
-      int delta = totalCount - sum;
+    // 3. 보정: 합이 totalCount와 다를 경우 가장 많은 문서에 보정
+    int currentSum = questionCountPerDoc.values().stream().mapToInt(Integer::intValue).sum();
+    if (currentSum != totalCount) {
+      int delta = totalCount - currentSum;
       Integer maxDocId =
           Collections.max(questionCountPerDoc.entrySet(), Map.Entry.comparingByValue()).getKey();
       questionCountPerDoc.put(maxDocId, questionCountPerDoc.get(maxDocId) + delta);
     }
 
-    // 4. 각 문서에서 랜덤으로 문제 선택
-    List<String> selectedQuestionKeys = new ArrayList<>();
+    // 4. 각 문서별로 DocumentQuestion 리스트 조회 + 랜덤으로 문제 키 선택
+    List<Document> documents = documentRepository.findAllByProject_ProjectId(projectId);
+    Map<Integer, List<DocumentQuestion>> groupedQuestions = new HashMap<>();
+
     for (Document doc : documents) {
-      List<DocumentQuestion> candidates = questionMap.get(doc.getDocumentId());
-      Collections.shuffle(candidates);
-      int pick = questionCountPerDoc.get(doc.getDocumentId());
-      selectedQuestionKeys.addAll(
-          candidates.stream().limit(pick).map(DocumentQuestion::getQuestionKey).toList());
+      List<DocumentQuestion> dqList =
+          documentQuestionRepository.findByDocument_DocumentId(doc.getDocumentId());
+      groupedQuestions.put(doc.getDocumentId(), dqList);
+    }
+
+    List<String> selectedKeys = new ArrayList<>();
+
+    for (Map.Entry<Integer, Integer> entry : questionCountPerDoc.entrySet()) {
+      Integer docId = entry.getKey();
+      Integer pickCount = entry.getValue();
+
+      List<String> allKeys =
+          new ArrayList<>(
+              groupedQuestions.get(docId).stream().map(DocumentQuestion::getQuestionKey).toList());
+      Collections.shuffle(allKeys);
+
+      selectedKeys.addAll(allKeys.subList(0, Math.min(pickCount, allKeys.size())));
     }
 
     // 5. MongoDB에서 문제 조회
-    return questionMongoRepository.findAllById(selectedQuestionKeys);
+    List<Question> selectedQuestions = questionMongoRepository.findAllById(selectedKeys);
+
+    // ✅ 테스트용 통계 출력 (optional)
+    log.info("🔍 총 선택된 문제 수: {}", selectedQuestions.size());
+
+    return selectedQuestions;
   }
 
   /**
