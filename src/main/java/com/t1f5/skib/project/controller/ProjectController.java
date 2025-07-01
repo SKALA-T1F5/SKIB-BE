@@ -10,7 +10,6 @@ import com.t1f5.skib.project.dto.ResponseProjectListDto;
 import com.t1f5.skib.project.dto.ResponseProjectUserDto;
 import com.t1f5.skib.project.service.ProjectService;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,8 +33,8 @@ public class ProjectController {
   @SwaggerInternetServerError
   @PostMapping
   public ResponseEntity<?> saveProject(
-      @RequestBody RequestCreateProjectDto dto, @RequestParam List<Integer> userIds) {
-    projectService.saveProject(userIds, dto);
+      @RequestBody RequestCreateProjectDto dto) {
+    projectService.saveProject(dto);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "프로젝트가 성공적으로 생성되었습니다."));
   }
 

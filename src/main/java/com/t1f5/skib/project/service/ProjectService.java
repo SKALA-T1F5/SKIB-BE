@@ -32,7 +32,7 @@ public class ProjectService {
    *
    * @param requestCreateProjectDto 프로젝트 생성 요청 DTO
    */
-  public void saveProject(List<Integer> userIds, RequestCreateProjectDto requestCreateProjectDto) {
+  public void saveProject(RequestCreateProjectDto requestCreateProjectDto) {
 
     Project project =
         Project.builder()
@@ -43,15 +43,15 @@ public class ProjectService {
 
     projectJpaRepository.save(project);
 
-    for (Integer userId : userIds) {
+    for (String email : requestCreateProjectDto.getTrainerEmails()) {
       User user =
           userRepository
-              .findById(userId)
-              .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+              .findByEmailAndIsDeletedFalse(email)
+              .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + email));
 
       ProjectUser projectUser =
           ProjectUser.builder()
-              .type(user.getType()) // TRAINER, TRAINEE
+              .type(user.getType()) // TRAINER
               .project(project)
               .user(user)
               .isDeleted(false)
