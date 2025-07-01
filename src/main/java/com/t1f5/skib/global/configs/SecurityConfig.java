@@ -35,6 +35,12 @@ public class SecurityConfig {
                 authz
                     .requestMatchers(HttpMethod.OPTIONS, "/**")
                     .permitAll()
+                    .requestMatchers("/ws/**")
+                    .permitAll() // ✅ SockJS endpoint
+                    .requestMatchers("/topic/**")
+                    .permitAll() // ✅ 메시지 브로커 수신
+                    .requestMatchers("/app/**")
+                    .permitAll() // ✅ 메시지 전송 prefix (추가 권장)
                     .requestMatchers(
                         "/api/auth/admin/login",
                         "/api/auth/user/login",
@@ -42,15 +48,16 @@ public class SecurityConfig {
                         "/v3/api-docs/**",
                         "/api/document/summary/**",
                         "/api/document/progress",
-                        "/ws/**",
                         "/api/admin")
                     .permitAll()
                     .anyRequest()
                     .authenticated())
-        .cors(cors -> cors.configurationSource(corsConfigurationSource())) // CORS 적용
+        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        .headers(headers -> headers.frameOptions().disable()) // ✅ WebSocket에서 iframe 차단 방지
         .addFilterBefore(
             new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService),
             UsernamePasswordAuthenticationFilter.class);
+
     return http.build();
   }
 
