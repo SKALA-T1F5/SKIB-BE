@@ -311,7 +311,7 @@ public class TestService {
    * @param dto
    */
   @Transactional
-  public void saveRandomTest(RequestSaveRandomTestDto dto) {
+  public ResponseTestInitDto saveRandomTest(RequestSaveRandomTestDto dto) {
     // 1. 프로젝트 확인
     var project =
         projectRepository
@@ -324,7 +324,7 @@ public class TestService {
             .name(dto.getName())
             .limitedTime(dto.getLimitedTime())
             .passScore(dto.getPassScore())
-            .summary("랜덤 테스트") // 또는 프론트에서 받아도 OK
+            .summary("랜덤 테스트")
             .isRetake(false)
             .isDeleted(false)
             .project(project)
@@ -336,12 +336,11 @@ public class TestService {
 
     // 4. TestQuestion 저장
     for (Question q : questions) {
-      TestQuestion tq =
-          TestQuestion.builder().test(test).questionId(q.getId()).isDeleted(false).build();
-      testQuestionRepository.save(tq);
+      testQuestionRepository.save(
+          TestQuestion.builder().test(test).questionId(q.getId()).isDeleted(false).build());
     }
 
-    // 5. 문서별로 objective/subjective 문제 수 계산 후 TestDocumentConfig + DocumentQuestion 저장
+    // 5. 문서별 그룹화 및 구성
     Map<String, List<Question>> groupedByDoc =
         questions.stream().collect(Collectors.groupingBy(Question::getDocumentId));
 
@@ -358,7 +357,6 @@ public class TestService {
       int subjective =
           (int) docQuestions.stream().filter(q -> q.getType() == QuestionType.SUBJECTIVE).count();
 
-      // TestDocumentConfig 저장
       testDocumentConfigRepository.save(
           TestDocumentConfig.builder()
               .test(test)
@@ -368,7 +366,6 @@ public class TestService {
               .isDeleted(false)
               .build());
 
-      // DocumentQuestion 저장
       QuestionType questionType = objective > 0 ? QuestionType.OBJECTIVE : QuestionType.SUBJECTIVE;
 
       documentQuestionRepository.save(
@@ -382,7 +379,10 @@ public class TestService {
               .build());
     }
 
-    log.info("✅ 랜덤 테스트 저장 완료: {}", test.getName());
+    return ResponseTestInitDto.builder()
+        .testId(test.getTestId())
+        .questions(questions) // or `.questions(questionDtos)` if you want to return DTOs
+        .build();
   }
 
   /**

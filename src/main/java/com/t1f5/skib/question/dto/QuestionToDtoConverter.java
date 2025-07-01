@@ -16,7 +16,7 @@ public class QuestionToDtoConverter {
         .grading_criteria(entity.getGradingCriteria())
         .documentId(
             entity.getDocumentId() != null ? Integer.parseInt(entity.getDocumentId()) : null)
-        .document_name(entity.getDocumentName())
+        .documentName(entity.getDocumentName())
         .keywords(entity.getKeywords())
         .tags(entity.getTags())
         .generationType(entity.getGenerationType())
