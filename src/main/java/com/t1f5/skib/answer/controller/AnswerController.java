@@ -9,7 +9,11 @@ import com.t1f5.skib.global.dtos.ResultDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
@@ -35,8 +39,9 @@ public class AnswerController {
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
   @GetMapping("/getResult")
-  public ResponseEntity<ResultDto<?>> getScoredAnswersByUserTestId(Integer userId, Integer testId) {
-    answerService.getScoredAnswersByUserTestId(userId, testId);
+  public ResponseEntity<ResultDto<?>> getScoredAnswersByUserTestId(
+      Integer userId, Integer testId, String lang) {
+    answerService.getScoredAnswersByUserTestId(userId, testId, lang);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "답변을 성공적으로 조회했습니다."));
   }
 }

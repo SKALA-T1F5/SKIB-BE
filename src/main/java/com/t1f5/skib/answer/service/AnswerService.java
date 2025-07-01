@@ -14,18 +14,22 @@ import com.t1f5.skib.answer.repository.SubjectiveAnswerRepository;
 import com.t1f5.skib.global.enums.QuestionType;
 import com.t1f5.skib.question.domain.Question;
 import com.t1f5.skib.question.dto.GradingCriteriaDto;
+import com.t1f5.skib.question.dto.QuestionDto;
+import com.t1f5.skib.question.dto.QuestionToDtoConverter;
 import com.t1f5.skib.question.repository.QuestionMongoRepository;
 import com.t1f5.skib.test.domain.UserTest;
+import com.t1f5.skib.test.dto.QuestionTranslator;
 import com.t1f5.skib.test.repository.UserTestRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.beans.factory.annotation.Value;
 import reactor.core.publisher.Mono;
 
 @RequiredArgsConstructor
@@ -38,9 +42,12 @@ public class AnswerService {
   private final QuestionMongoRepository questionMongoRepository;
   private final WebClient webClient;
   private final SubjectiveAnswerDtoConverter subjectiveAnswerDtoConverter;
+  private final QuestionToDtoConverter questionToDtoConverter;
+  @Autowired private QuestionTranslator questionTranslator;
 
   @Value("${fastapi.base-url}")
   private String fastApiBaseUrl;
+
   /**
    * 사용자가 제출한 답변을 저장합니다.
    *
@@ -111,7 +118,8 @@ public class AnswerService {
    * @param testId 테스트 ID
    * @return 사용자가 제출한 답변 목록
    */
-  public List<ScoredAnswerResultDto> getScoredAnswersByUserTestId(Integer userId, Integer testId) {
+  public List<ScoredAnswerResultDto> getScoredAnswersByUserTestId(
+      Integer userId, Integer testId, String lang) {
 
     List<Answer> answers = answerRepository.findByUserIdAndTestId(userId, testId);
 
@@ -124,6 +132,12 @@ public class AnswerService {
           questionMongoRepository
               .findById(questionId)
               .orElseThrow(() -> new IllegalArgumentException("해당 문제를 찾을 수 없습니다: " + questionId));
+
+      // 번역 적용
+      QuestionDto questionDto = questionToDtoConverter.convert(question);
+      if (!"ko".equalsIgnoreCase(lang)) {
+        questionDto = questionTranslator.translateQuestionDto(questionDto, lang);
+      }
 
       SubjectiveAnswer subjectiveAnswer = null;
       Integer score = 0;
