@@ -18,6 +18,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -100,6 +101,7 @@ public class ProjectService {
    *
    * @param projectId 삭제할 프로젝트의 ID
    */
+  @Transactional
   public void deleteProject(Integer projectId) {
     Project project =
         projectJpaRepository
@@ -107,9 +109,16 @@ public class ProjectService {
             .orElseThrow(
                 () -> new IllegalArgumentException("Project not found with id: " + projectId));
 
+    // 프로젝트 연관 사용자들 soft delete
+    if (project.getProjectTrainers() != null) {
+      project.getProjectTrainers().forEach(pu -> pu.setIsDeleted(true));
+    }
+
+    // 프로젝트 자체 soft delete
     project.setIsDeleted(true);
     projectJpaRepository.save(project);
-    log.info("Project deleted successfully: {}", project.getProjectName());
+
+    log.info("Project and associated users marked as deleted: {}", project.getProjectName());
   }
 
   /**
