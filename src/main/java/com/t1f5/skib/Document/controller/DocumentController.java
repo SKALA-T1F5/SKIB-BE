@@ -85,7 +85,7 @@ public class DocumentController {
   }
 
   @PutMapping("/api/document/progress")
-  public ResponseEntity<ResultDto<Void>> receiveProgressFromFastAPI(
+  public ResponseEntity<ResultDto<?>> receiveProgressFromFastAPI(
       @RequestBody DocumentProgressDto dto) {
 
     // ✅ 로그 출력
@@ -101,7 +101,8 @@ public class DocumentController {
 
     messagingTemplate.convertAndSend("/topic/summary", notification);
 
-    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "PROGRESS_UPDATED", null));
+    // FastAPI에서 기대하는 응답 구조에 맞춰 반환
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "PROGRESS_UPDATED", message));
   }
 
   private String mapStatusToMessage(String status) {
