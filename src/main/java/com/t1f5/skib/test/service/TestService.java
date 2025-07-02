@@ -10,10 +10,13 @@ import com.t1f5.skib.document.repository.DocumentRepository;
 import com.t1f5.skib.document.repository.SummaryMongoRepository;
 import com.t1f5.skib.global.dtos.DtoConverter;
 import com.t1f5.skib.global.enums.QuestionType;
+import com.t1f5.skib.global.enums.TestStatus;
+import com.t1f5.skib.project.domain.Project;
 import com.t1f5.skib.project.repository.ProjectJpaRepository;
 import com.t1f5.skib.question.domain.DocumentQuestion;
 import com.t1f5.skib.question.domain.Question;
 import com.t1f5.skib.question.dto.QuestionDto;
+import com.t1f5.skib.question.dto.QuestionToDtoConverter;
 import com.t1f5.skib.question.dto.ResponseQuestionDtoConverter;
 import com.t1f5.skib.question.repository.DocumentQuestionRepository;
 import com.t1f5.skib.question.repository.QuestionMongoRepository;
@@ -37,6 +40,7 @@ import com.t1f5.skib.test.dto.ResponseTestSummaryDto;
 import com.t1f5.skib.test.dto.ResponseTestSummaryListDto;
 import com.t1f5.skib.test.dto.TestDocumentConfigDto;
 import com.t1f5.skib.test.dto.TestDtoConverter;
+import com.t1f5.skib.test.dto.TestProgressNotification;
 import com.t1f5.skib.test.repository.InviteLinkRepository;
 import com.t1f5.skib.test.repository.TestDocumentConfigRepository;
 import com.t1f5.skib.test.repository.TestQuestionRepository;
@@ -67,6 +71,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Slf4j
 @Service
 public class TestService {
+
+  private final QuestionService questionService;
   private final TestRepository testRepository;
   private final ProjectJpaRepository projectRepository;
   private final InviteLinkRepository inviteLinkRepository;
@@ -77,12 +83,12 @@ public class TestService {
   private final TestDtoConverter testDtoConverter;
   private final ResponseQuestionDtoConverter questionDtoConverter;
   private final WebClient webClient;
-  private final QuestionService questionService;
   private final DocumentRepository documentRepository;
   private final SummaryMongoRepository summaryMongoRepository;
   private final TestDocumentConfigRepository testDocumentConfigRepository;
   private final DocumentQuestionRepository documentQuestionRepository;
   private final AnswerService answerService;
+  private final QuestionToDtoConverter questionToDtoConverter;
   @Autowired private QuestionTranslator questionTranslator;
 
   @Value("${fastapi.base-url}")
@@ -154,14 +160,64 @@ public class TestService {
   }
 
   /**
-   * 테스트를 저장하고 초대 링크를 생성합니다.
+   * 테스트 상태를 저장합니다.
    *
-   * @param projectId
-   * @param requestCreateTestDto
-   * @return
+   * @param notification 테스트 진행 상태 알림
    */
-  public ResponseTestInitDto saveTestWithQuestions(Integer projectId, RequestCreateTestDto dto) {
-    // 테스트 저장
+  @Transactional
+  public void saveTestStatus(TestProgressNotification notification) {
+    updateTestStatus(notification.getTestId(), notification.getStatus());
+    log.info(
+        "Test status updated: testId={}, status={}",
+        notification.getTestId(),
+        notification.getStatus());
+  }
+
+  /**
+   * 테스트 상태를 업데이트합니다.
+   *
+   * @param testId 테스트 ID
+   * @param status 업데이트할 상태
+   */
+  @Transactional
+  public void updateTestStatus(Integer testId, TestStatus status) {
+    Test test =
+        testRepository
+            .findById(testId)
+            .orElseThrow(() -> new IllegalArgumentException("테스트를 찾을 수 없습니다: " + testId));
+    test.setStatus(status);
+    testRepository.save(test);
+  }
+
+  /**
+   * 테스트의 현재 상태를 반환합니다.
+   *
+   * @param testId 테스트 ID
+   * @return 테스트 상태
+   */
+  @Transactional
+  public TestStatus getTestStatus(Integer testId) {
+    Test test =
+        testRepository
+            .findById(testId)
+            .orElseThrow(() -> new IllegalArgumentException("테스트를 찾을 수 없습니다: " + testId));
+    return test.getStatus();
+  }
+
+  /**
+   * 테스트를 생성합니다.
+   *
+   * @param dto 테스트 생성 요청 DTO
+   * @param projectId 프로젝트 ID
+   * @return 생성된 테스트의 ID
+   */
+  @Transactional
+  public Integer saveTest(Integer projectId, RequestCreateTestDto dto) {
+    Project project =
+        projectRepository
+            .findById(projectId)
+            .orElseThrow(() -> new IllegalArgumentException("프로젝트가 존재하지 않습니다: " + projectId));
+
     Test test =
         Test.builder()
             .name(dto.getName())
@@ -171,19 +227,24 @@ public class TestService {
             .passScore(dto.getPassScore())
             .isRetake(dto.getIsRetake())
             .isDeleted(false)
-            .project(projectRepository.findById(projectId).orElseThrow())
+            .status(TestStatus.TEST_GENERATION_STARTED)
+            .project(project)
             .build();
-    testRepository.save(test);
 
-    // 문제 생성 및 MongoDB 저장
-    List<Question> generatedQuestions = questionService.generateQuestions(dto);
+    testRepository.save(test); // ID 생성
 
-    // TestDocumentConfig만 저장 (DocumentQuestion은 나중에)
+    // TestDocumentConfig 저장
     for (TestDocumentConfigDto config : dto.getDocumentConfigs()) {
       TestDocumentConfig testDocumentConfig =
           TestDocumentConfig.builder()
               .test(test)
-              .document(documentRepository.findById(config.getDocumentId()).orElseThrow())
+              .document(
+                  documentRepository
+                      .findById(config.getDocumentId())
+                      .orElseThrow(
+                          () ->
+                              new IllegalArgumentException(
+                                  "문서를 찾을 수 없습니다: " + config.getDocumentId())))
               .configuredObjectiveCount(config.getConfiguredObjectiveCount())
               .configuredSubjectiveCount(config.getConfiguredSubjectiveCount())
               .isDeleted(false)
@@ -191,11 +252,67 @@ public class TestService {
       testDocumentConfigRepository.save(testDocumentConfig);
     }
 
-    return ResponseTestInitDto.builder()
-        .testId(test.getTestId())
-        .questions(generatedQuestions)
-        .build();
+    // FastAPI로 생성 요청 (testId 포함해서 전체 DTO 보냄)
+    RequestCreateTestDto dtoForFastAPI =
+        RequestCreateTestDto.builder()
+            .testId(test.getTestId())
+            .name(test.getName())
+            .summary(test.getSummary())
+            .difficultyLevel(test.getDifficultyLevel())
+            .limitedTime(test.getLimitedTime())
+            .passScore(test.getPassScore())
+            .isRetake(test.getIsRetake())
+            .documentConfigs(dto.getDocumentConfigs())
+            .build();
+
+    questionService.sendTestCreationRequest(dtoForFastAPI);
+
+    return test.getTestId();
   }
+
+  // /**
+  //  * 테스트를 저장하고 초대 링크를 생성합니다.
+  //  *
+  //  * @param projectId
+  //  * @param requestCreateTestDto
+  //  * @return
+  //  */
+  // public ResponseTestInitDto saveTestWithQuestions(Integer projectId, RequestCreateTestDto dto) {
+  //   // 테스트 저장
+  //   Test test =
+  //       Test.builder()
+  //           .name(dto.getName())
+  //           .summary(dto.getSummary())
+  //           .difficultyLevel(dto.getDifficultyLevel())
+  //           .limitedTime(dto.getLimitedTime())
+  //           .passScore(dto.getPassScore())
+  //           .isRetake(dto.getIsRetake())
+  //           .isDeleted(false)
+  //           .project(projectRepository.findById(projectId).orElseThrow())
+  //           .build();
+  //   testRepository.save(test);
+
+  //   // 문제 생성 및 MongoDB 저장
+  //   List<Question> generatedQuestions = questionService.generateQuestions(dto);
+
+  //   // TestDocumentConfig만 저장 (DocumentQuestion은 나중에)
+  //   for (TestDocumentConfigDto config : dto.getDocumentConfigs()) {
+  //     TestDocumentConfig testDocumentConfig =
+  //         TestDocumentConfig.builder()
+  //             .test(test)
+  //             .document(documentRepository.findById(config.getDocumentId()).orElseThrow())
+  //             .configuredObjectiveCount(config.getConfiguredObjectiveCount())
+  //             .configuredSubjectiveCount(config.getConfiguredSubjectiveCount())
+  //             .isDeleted(false)
+  //             .build();
+  //     testDocumentConfigRepository.save(testDocumentConfig);
+  //   }
+
+  //   return ResponseTestInitDto.builder()
+  //       .testId(test.getTestId())
+  //       .questions(generatedQuestions)
+  //       .build();
+  // }
 
   /**
    * 테스트를 최종화하고 초대 링크를 생성합니다.
@@ -256,7 +373,7 @@ public class TestService {
           log.warn("문제 ID {} 의 type이 null입니다. 문서 ID: {}", q.getId(), documentId);
         }
       }
-
+      청경채 최고!
       int objCount =
           (int)
               questionsForDoc.stream()
@@ -910,4 +1027,27 @@ public class TestService {
   //     executor.shutdown();
   //   }
   // }
+  /**
+   * 테스트 ID로 연결된 문제 리스트를 조회합니다.
+   *
+   * @param testId 테스트 ID
+   * @return 문제 리스트
+   */
+  @Transactional(readOnly = true)
+  public List<QuestionDto> getQuestionsByTestId(Integer testId) {
+    Test test =
+        testRepository
+            .findById(testId)
+            .orElseThrow(() -> new IllegalArgumentException("Test not found: " + testId));
+
+    String questionIdCsv = test.getQuestionIds(); // 예: "id1,id2,id3"
+    if (questionIdCsv == null || questionIdCsv.isBlank()) {
+      return List.of();
+    }
+
+    List<String> questionIds = Arrays.asList(questionIdCsv.split(","));
+    List<Question> questions = questionMongoRepository.findAllById(questionIds);
+
+    return questions.stream().map(questionToDtoConverter::convert).collect(Collectors.toList());
+  }
 }

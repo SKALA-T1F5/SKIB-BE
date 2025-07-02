@@ -4,16 +4,18 @@ import com.t1f5.skib.global.customAnnotations.SwaggerApiNotFoundError;
 import com.t1f5.skib.global.customAnnotations.SwaggerApiSuccess;
 import com.t1f5.skib.global.customAnnotations.SwaggerInternetServerError;
 import com.t1f5.skib.global.dtos.ResultDto;
+import com.t1f5.skib.global.enums.TestStatus;
 import com.t1f5.skib.question.domain.Question;
+import com.t1f5.skib.question.dto.QuestionDto;
 import com.t1f5.skib.test.dto.DocumentQuestionCountDto;
 import com.t1f5.skib.test.dto.RequestCreateTestDto;
 import com.t1f5.skib.test.dto.RequestFinalizeTestDto;
 import com.t1f5.skib.test.dto.RequestSaveRandomTestDto;
 import com.t1f5.skib.test.dto.ResponseCreateTestByLLMDto;
 import com.t1f5.skib.test.dto.ResponseTestDto;
-import com.t1f5.skib.test.dto.ResponseTestInitDto;
 import com.t1f5.skib.test.dto.ResponseTestListDto;
 import com.t1f5.skib.test.dto.ResponseTestSummaryListDto;
+import com.t1f5.skib.test.dto.TestProgressNotification;
 import com.t1f5.skib.test.service.TestService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
@@ -22,7 +24,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -47,14 +51,31 @@ public class TestController {
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", response));
   }
 
+  @SwaggerApiSuccess(summary = "테스트 상태 저장", description = "테스트의 현재 상태(status)를 저장합니다.")
+  @SwaggerApiNotFoundError
+  @SwaggerInternetServerError
+  @PutMapping("/progress")
+  public ResponseEntity<ResultDto<Void>> saveTestStatus(
+      @RequestBody TestProgressNotification notification) {
+    testService.saveTestStatus(notification);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", null));
+  }
+
+  @SwaggerApiSuccess(summary = "테스트 상태 조회", description = "테스트의 현재 상태(status)를 반환합니다.")
+  @GetMapping("/status")
+  public ResponseEntity<ResultDto<TestStatus>> getTestStatus(@RequestParam Integer testId) {
+    TestStatus status = testService.getTestStatus(testId);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", status));
+  }
+
   @SwaggerApiSuccess(summary = "테스트 생성", description = "새로운 테스트를 생성합니다.")
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
   @PostMapping
   public ResponseEntity<ResultDto<?>> saveTest(
       @RequestParam("projectId") Integer projectId, @RequestBody RequestCreateTestDto requestDto) {
-    ResponseTestInitDto response = testService.saveTestWithQuestions(projectId, requestDto);
-    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", response));
+    Integer testId = testService.saveTest(projectId, requestDto);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", testId));
   }
 
   @SwaggerApiSuccess(summary = "테스트 최종 확정", description = "테스트를 최종 확정합니다.")
@@ -165,5 +186,15 @@ public class TestController {
 
     ResponseTestDto response = testService.registerUserToTestAndReturnTest(token, userId, lang);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", response));
+  }
+
+  @SwaggerApiSuccess(summary = "테스트에 해당하는 질문들 조회", description = "테스트 ID로 연결된 문제 리스트를 조회합니다.")
+  @SwaggerApiNotFoundError
+  @SwaggerInternetServerError
+  @GetMapping("/{testId}/questions")
+  public ResponseEntity<ResultDto<List<QuestionDto>>> getQuestionsByTestId(
+      @PathVariable Integer testId) {
+    List<QuestionDto> questionList = testService.getQuestionsByTestId(testId);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", questionList));
   }
 }

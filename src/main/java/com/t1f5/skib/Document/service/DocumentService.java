@@ -15,7 +15,7 @@ import com.t1f5.skib.global.dtos.DtoConverter;
 import com.t1f5.skib.global.enums.DocumentStatus;
 import com.t1f5.skib.project.domain.Project;
 import com.t1f5.skib.project.repository.ProjectJpaRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
