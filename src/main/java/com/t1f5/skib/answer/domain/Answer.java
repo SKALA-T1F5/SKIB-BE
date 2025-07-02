@@ -42,7 +42,7 @@ public class Answer extends BaseTimeEntity {
   @Column(name = "response", nullable = false, length = 255)
   private String response;
 
-  @Column(name = "is_correct", nullable = true)
+  @Column(name = "is_correct", nullable = false)
   private Boolean isCorrect;
 
   @Column(name = "score", nullable = true)

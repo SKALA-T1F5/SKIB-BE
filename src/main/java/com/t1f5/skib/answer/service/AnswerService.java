@@ -82,7 +82,7 @@ public class AnswerService {
         SubjectiveScoringResponseDto response =
             scoreSubjectiveAnswer(item.getId(), gradingCriteria, item.getResponse());
         score = response.getScore();
-        isCorrect = null; // 주관식은 isCorrect 사용 안함
+        isCorrect = score >= 5;
       }
 
       Answer answer =
@@ -114,7 +114,11 @@ public class AnswerService {
       }
     }
 
+    int totalScore = answerRepository.sumScoreByUserTest(userTest);
+
     userTest.setIsTaken(true);
+    userTest.setScore(totalScore);
+    userTest.setIsPassed(totalScore >= userTest.getTest().getPassScore());
     userTestRepository.save(userTest);
   }
 

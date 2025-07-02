@@ -35,4 +35,9 @@ public interface AnswerRepository extends JpaRepository<Answer, Integer> {
   List<Answer> findAllByUserTest_UserTestId(Integer userTestId);
 
   List<Answer> findByUserTest(UserTest userTest);
+
+  @Query(
+      "SELECT COALESCE(SUM(a.score), 0) FROM Answer a WHERE a.userTest = :userTest AND a.isDeleted"
+          + " = false")
+  int sumScoreByUserTest(@Param("userTest") UserTest userTest);
 }
