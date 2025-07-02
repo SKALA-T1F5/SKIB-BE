@@ -3,8 +3,22 @@ package com.t1f5.skib.question.domain;
 import com.t1f5.skib.document.domain.Document;
 import com.t1f5.skib.global.domain.BaseTimeEntity;
 import com.t1f5.skib.global.enums.QuestionType;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "DOCUMENT_QUESTION")
@@ -18,7 +32,8 @@ public class DocumentQuestion extends BaseTimeEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Integer documentQuestionId;
 
-  @Column(name = "question_key", nullable = false, length = 100)
+  @Lob
+  @Column(name = "question_key", columnDefinition = "TEXT", nullable = false)
   private String questionKey;
 
   @Enumerated(EnumType.STRING)
