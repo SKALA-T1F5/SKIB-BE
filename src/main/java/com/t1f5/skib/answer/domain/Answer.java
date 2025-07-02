@@ -3,8 +3,22 @@ package com.t1f5.skib.answer.domain;
 import com.t1f5.skib.global.domain.BaseTimeEntity;
 import com.t1f5.skib.global.enums.QuestionType;
 import com.t1f5.skib.test.domain.UserTest;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.Where;
 
 @Entity
@@ -28,8 +42,11 @@ public class Answer extends BaseTimeEntity {
   @Column(name = "response", nullable = false, length = 255)
   private String response;
 
-  @Column(name = "is_correct", nullable = false)
+  @Column(name = "is_correct", nullable = true)
   private Boolean isCorrect;
+
+  @Column(name = "score", nullable = true)
+  private Integer score;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "type", nullable = false)

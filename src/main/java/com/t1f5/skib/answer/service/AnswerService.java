@@ -43,16 +43,18 @@ public class AnswerService {
   private final WebClient webClient;
   private final SubjectiveAnswerDtoConverter subjectiveAnswerDtoConverter;
   private final QuestionToDtoConverter questionToDtoConverter;
+
   @Autowired private QuestionTranslator questionTranslator;
 
   @Value("${fastapi.base-url}")
   private String fastApiBaseUrl;
 
   /**
-   * 사용자가 제출한 답변을 저장합니다.
+   * 사용자가 제출한 답변을 저장하는 메서드.
    *
-   * @param dto 사용자가 제출한 답변 DTO
-   * @param userTestId 사용자 테스트 ID
+   * @param dto RequestCreateAnswerDto - 사용자가 제출한 답변 DTO
+   * @param userId Integer - 사용자 ID
+   * @param testId Integer - 테스트 ID
    */
   public void saveAnswer(RequestCreateAnswerDto dto, Integer userId, Integer testId) {
     UserTest userTest =
@@ -60,12 +62,16 @@ public class AnswerService {
             .findByUser_UserIdAndTest_TestIdAndIsDeletedFalse(userId, testId)
             .orElseThrow(() -> new IllegalArgumentException("해당 유저의 테스트가 존재하지 않습니다."));
 
+    int totalQuestions = dto.getAnswers().size();
+    int pointPerQuestion = 100 / totalQuestions;
+
     for (AnswerRequest item : dto.getAnswers()) {
       Boolean isCorrect = null;
       int score = 0;
 
       if (item.getQuestionType() == QuestionType.OBJECTIVE) {
         isCorrect = getIsCorrectForMultipleChoice(item.getId(), item.getResponse());
+        score = Boolean.TRUE.equals(isCorrect) ? pointPerQuestion : 0;
       } else if (item.getQuestionType() == QuestionType.SUBJECTIVE) {
         Question question =
             questionMongoRepository
@@ -73,10 +79,10 @@ public class AnswerService {
                 .orElseThrow(() -> new IllegalArgumentException("해당 주관식 문제를 찾을 수 없습니다."));
 
         List<GradingCriteriaDto> gradingCriteria = question.getGradingCriteria();
-
         SubjectiveScoringResponseDto response =
             scoreSubjectiveAnswer(item.getId(), gradingCriteria, item.getResponse());
         score = response.getScore();
+        isCorrect = null; // 주관식은 isCorrect 사용 안함
       }
 
       Answer answer =
@@ -85,6 +91,7 @@ public class AnswerService {
               .questionId(item.getId())
               .response(item.getResponse())
               .isCorrect(isCorrect)
+              .score(score)
               .type(item.getQuestionType())
               .isDeleted(false)
               .build();
@@ -112,17 +119,17 @@ public class AnswerService {
   }
 
   /**
-   * 사용자가 제출한 답변을 조회합니다.
+   * 사용자가 제출한 답변을 조회하는 메서드.
    *
-   * @param userId 사용자 ID
-   * @param testId 테스트 ID
-   * @return 사용자가 제출한 답변 목록
+   * @param userId Integer - 사용자 ID
+   * @param testId Integer - 테스트 ID
+   * @param lang String - 언어 코드 (예: "ko", "en")
+   * @return List<ScoredAnswerResultDto> - 사용자의 답변 결과 리스트
    */
   public List<ScoredAnswerResultDto> getScoredAnswersByUserTestId(
       Integer userId, Integer testId, String lang) {
 
     List<Answer> answers = answerRepository.findByUserIdAndTestId(userId, testId);
-
     List<ScoredAnswerResultDto> results = new ArrayList<>();
 
     for (Answer answer : answers) {
@@ -133,33 +140,21 @@ public class AnswerService {
               .findById(questionId)
               .orElseThrow(() -> new IllegalArgumentException("해당 문제를 찾을 수 없습니다: " + questionId));
 
-      // 번역 적용
       QuestionDto questionDto = questionToDtoConverter.convert(question);
       if (!"ko".equalsIgnoreCase(lang)) {
         questionDto = questionTranslator.translateQuestionDto(questionDto, lang);
       }
 
       SubjectiveAnswer subjectiveAnswer = null;
-      Integer score = 0;
-
-      if (answer.getType() == QuestionType.SUBJECTIVE) {
-        subjectiveAnswer =
-            subjectiveAnswerRepository
-                .findByUserAnswerId(String.valueOf(answer.getUserAnswerId()))
-                .orElse(null);
-
-        if (subjectiveAnswer != null) {
-          score = subjectiveAnswer.getScore();
-        }
-      }
+      Integer score = answer.getScore();
 
       ScoredAnswerResultDto dto =
           ScoredAnswerResultDto.builder()
               .questionId(answer.getQuestionId())
               .type(answer.getType())
-              .question(question.getQuestion())
-              .options(question.getOptions())
-              .explanation(question.getExplanation())
+              .question(questionDto.getQuestion())
+              .options(questionDto.getOptions())
+              .explanation(questionDto.getExplanation())
               .response(answer.getResponse())
               .answer(question.getAnswer())
               .isCorrect(Boolean.TRUE.equals(answer.getIsCorrect()))
@@ -210,20 +205,17 @@ public class AnswerService {
   }
 
   /**
-   * 유저테스트 엔티티로 해당 유저테스트의 답변을 삭제(soft delete)합니다.
+   * 사용자가 제출한 답변을 삭제하는 메서드.
    *
-   * @param userTest 유저테스트 엔티티
+   * @param userTest UserTest - 사용자 테스트 정보
    */
   public void deleteAnswersByUserTest(UserTest userTest) {
-    // 1. 해당 유저테스트의 답변 전체 조회
     List<Answer> answers = answerRepository.findByUserTest(userTest);
 
     for (Answer answer : answers) {
-      // 2. 답변 soft delete 처리
       answer.setIsDeleted(true);
       answerRepository.save(answer);
 
-      // 3. 주관식 채점 결과도 삭제 (있는 경우에만)
       if (answer.getType() == QuestionType.SUBJECTIVE) {
         SubjectiveAnswer subjectiveAnswer =
             subjectiveAnswerRepository
