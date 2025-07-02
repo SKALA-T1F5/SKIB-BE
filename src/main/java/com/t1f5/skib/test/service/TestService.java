@@ -2,6 +2,7 @@ package com.t1f5.skib.test.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.t1f5.skib.answer.service.AnswerService;
 import com.t1f5.skib.document.domain.Document;
 import com.t1f5.skib.document.domain.Summary;
 import com.t1f5.skib.document.dto.SummaryDto;
@@ -81,6 +82,7 @@ public class TestService {
   private final SummaryMongoRepository summaryMongoRepository;
   private final TestDocumentConfigRepository testDocumentConfigRepository;
   private final DocumentQuestionRepository documentQuestionRepository;
+  private final AnswerService answerService;
   @Autowired private QuestionTranslator questionTranslator;
 
   @Value("${fastapi.base-url}")
@@ -731,6 +733,11 @@ public class TestService {
     List<TestQuestion> questions = testQuestionRepository.findAllByTest(test);
     questions.forEach(q -> q.setIsDeleted(true));
     testQuestionRepository.saveAll(questions);
+
+    // 연관된 userAnswers 논리 삭제
+    for (UserTest userTest : userTests) {
+      answerService.deleteAnswersByUserTest(userTest);
+    }
 
     // Test 자체 논리 삭제
     test.setIsDeleted(true);
