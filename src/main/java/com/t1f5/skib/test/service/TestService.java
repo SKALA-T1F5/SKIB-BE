@@ -107,7 +107,7 @@ public class TestService {
     List<Document> documents =
         documentRepository.findByProject_ProjectIdAndIsDeletedFalse(projectId);
     List<Integer> documentIds =
-        documents.stream().map(Document::getDocumentId).collect(Collectors.toList());
+        documents.stream().map(Document::getDocumentId).distinct().collect(Collectors.toList());
 
     // 3. MongoDB에서 문서 요약 정보 조회
     List<Summary> summaries = summaryMongoRepository.findByDocumentIdIn(documentIds);
@@ -123,6 +123,7 @@ public class TestService {
                         .summary(summary.getSummary())
                         .keywords(summary.getKeywords())
                         .build())
+            .distinct()
             .collect(Collectors.toList());
 
     // 5. FastAPI로 보낼 DTO 구성
