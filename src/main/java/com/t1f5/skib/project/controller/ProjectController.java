@@ -32,8 +32,7 @@ public class ProjectController {
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
   @PostMapping
-  public ResponseEntity<?> saveProject(
-      @RequestBody RequestCreateProjectDto dto) {
+  public ResponseEntity<?> saveProject(@RequestBody RequestCreateProjectDto dto) {
     projectService.saveProject(dto);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "프로젝트가 성공적으로 생성되었습니다."));
   }
@@ -80,7 +79,7 @@ public class ProjectController {
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
   @DeleteMapping("/deleteProject")
-  public ResponseEntity<?> deleteProject(Integer projectId) {
+  public ResponseEntity<?> deleteProject(@RequestParam("projectId") Integer projectId) {
     projectService.deleteProject(projectId);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "프로젝트가 성공적으로 삭제되었습니다."));
   }

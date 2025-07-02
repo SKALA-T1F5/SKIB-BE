@@ -11,6 +11,7 @@ import com.t1f5.skib.project.dto.ResponseProjectListDto;
 import com.t1f5.skib.project.dto.ResponseProjectUserDto;
 import com.t1f5.skib.project.repository.ProjectJpaRepository;
 import com.t1f5.skib.project.repository.ProjectTrainerRepository;
+import com.t1f5.skib.test.service.TestService;
 import com.t1f5.skib.user.dto.responsedto.UserDtoConverter;
 import com.t1f5.skib.user.model.User;
 import com.t1f5.skib.user.repository.UserRepository;
@@ -27,6 +28,7 @@ public class ProjectService {
   private final ProjectJpaRepository projectJpaRepository;
   private final ProjectTrainerRepository projectTrainerRepository;
   private final UserRepository userRepository;
+  private final TestService testService;
 
   /**
    * 프로젝트를 생성하는 메서드
@@ -113,6 +115,9 @@ public class ProjectService {
     if (project.getProjectTrainers() != null) {
       project.getProjectTrainers().forEach(pu -> pu.setIsDeleted(true));
     }
+
+    // 프로젝트 연관 테스트 삭제
+    testService.deleteTestsByProjectId(projectId);
 
     // 프로젝트 자체 soft delete
     project.setIsDeleted(true);

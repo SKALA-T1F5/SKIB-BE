@@ -747,6 +747,30 @@ public class TestService {
   }
 
   /**
+   * 프로젝트 ID로 연결된 모든 테스트를 논리 삭제합니다.
+   *
+   * @param projectId 삭제 대상 프로젝트 ID
+   */
+  public void deleteTestsByProjectId(Integer projectId) {
+    log.info("Deleting all tests for project ID: {}", projectId);
+
+    // 1. 프로젝트에 연결된 테스트들 조회
+    List<Test> tests = testRepository.findAllByProject_ProjectIdAndIsDeletedFalse(projectId);
+    if (tests.isEmpty()) {
+      log.warn("해당 프로젝트에 연결된 테스트가 없습니다. projectId={}", projectId);
+      return;
+    }
+
+    // 2. 각 테스트 삭제 (기존 deleteTest 재사용)
+    for (Test test : tests) {
+      log.info("Deleting test via service: {} - {}", test.getTestId(), test.getName());
+      this.deleteTest(test.getTestId()); // ✅ 핵심 변경
+    }
+
+    log.info("✅ Project ID {}에 연결된 모든 테스트가 삭제되었습니다.", projectId);
+  }
+
+  /**
    * 초대 링크와 이메일을 기반으로 유저를 유저테스트에 등록합니다.
    *
    * @param token 초대 토큰
