@@ -7,6 +7,10 @@ import org.springframework.stereotype.Component;
 public class QuestionToDtoConverter {
   public QuestionDto convert(Question entity) {
     return QuestionDto.builder()
+        .id(
+            entity.getId() != null
+                ? entity.getId().toString()
+                : null) // Convert Integer ID to String
         .type(entity.getType().name())
         .difficulty_level(entity.getDifficultyLevel())
         .question(entity.getQuestion())

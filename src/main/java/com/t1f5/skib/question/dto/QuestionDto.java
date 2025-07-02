@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class QuestionDto {
+  private String id;
   private String type;
   private DifficultyLevel difficulty_level;
   private String question;
