@@ -138,7 +138,12 @@ public class AnswerService {
   public List<ScoredAnswerResultDto> getScoredAnswersByUserTestId(
       Integer userId, Integer testId, String lang) {
 
-    List<Answer> answers = answerRepository.findByUserIdAndTestId(userId, testId);
+    UserTest userTest =
+        userTestRepository
+            .findByUser_UserIdAndTest_TestIdAndIsDeletedFalse(userId, testId)
+            .orElseThrow(() -> new IllegalArgumentException("해당 유저의 테스트가 존재하지 않습니다."));
+
+    List<Answer> answers = answerRepository.findByUserTest(userTest);
 
     List<ScoredAnswerResultDto> results = new ArrayList<>();
 
@@ -157,7 +162,7 @@ public class AnswerService {
       }
 
       SubjectiveAnswer subjectiveAnswer = null;
-      Integer score = 0;
+      Integer score = answer.getScore();
 
       if (answer.getType() == QuestionType.SUBJECTIVE) {
         subjectiveAnswer =
