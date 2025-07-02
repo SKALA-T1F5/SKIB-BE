@@ -11,4 +11,6 @@ public interface TestQuestionRepository extends JpaRepository<TestQuestion, Inte
   List<TestQuestion> findByTest_TestId(Integer testId); // ← testId에 해당하는 문제 목록 조회
 
   List<TestQuestion> findByTest_TestIdAndIsDeletedFalse(Integer testId);
+
+  List<TestQuestion> findAllByTest(Test test);
 }

@@ -151,7 +151,7 @@ public class TestController {
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
   @DeleteMapping("/deleteTest")
-  public ResponseEntity<ResultDto<String>> deleteTest(@RequestParam Integer testId) {
+  public ResponseEntity<ResultDto<String>> deleteTest(@RequestParam("testId") Integer testId) {
     testService.deleteTest(testId);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "테스트가 성공적으로 삭제되었습니다."));
   }

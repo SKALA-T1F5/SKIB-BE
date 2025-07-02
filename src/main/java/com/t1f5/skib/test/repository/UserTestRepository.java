@@ -1,5 +1,6 @@
 package com.t1f5.skib.test.repository;
 
+import com.t1f5.skib.test.domain.Test;
 import com.t1f5.skib.test.domain.UserTest;
 import java.util.List;
 import java.util.Optional;
@@ -13,4 +14,6 @@ public interface UserTestRepository extends JpaRepository<UserTest, Integer> {
 
   Optional<UserTest> findByUser_UserIdAndTest_TestIdAndIsDeletedFalse(
       Integer userId, Integer testId);
+
+  List<UserTest> findAllByTest(Test test);
 }

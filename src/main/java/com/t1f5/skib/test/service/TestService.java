@@ -712,9 +712,31 @@ public class TestService {
             .findById(testId)
             .orElseThrow(() -> new IllegalArgumentException("해당 테스트를 찾을 수 없습니다: " + testId));
 
+    // 연관된 UserTest 논리 삭제
+    List<UserTest> userTests = userTestRepository.findAllByTest(test);
+    userTests.forEach(u -> u.setIsDeleted(true));
+    userTestRepository.saveAll(userTests);
+
+    // 연관된 InviteLink 논리 삭제
+    List<InviteLink> inviteLinks = inviteLinkRepository.findAllByTest(test);
+    inviteLinks.forEach(i -> i.setIsDeleted(true));
+    inviteLinkRepository.saveAll(inviteLinks);
+
+    // 연관된 TestDocumentConfig 논리 삭제
+    List<TestDocumentConfig> configs = testDocumentConfigRepository.findAllByTest(test);
+    configs.forEach(c -> c.setIsDeleted(true));
+    testDocumentConfigRepository.saveAll(configs);
+
+    // 연관된 TestQuestion 논리 삭제
+    List<TestQuestion> questions = testQuestionRepository.findAllByTest(test);
+    questions.forEach(q -> q.setIsDeleted(true));
+    testQuestionRepository.saveAll(questions);
+
+    // Test 자체 논리 삭제
     test.setIsDeleted(true);
     testRepository.save(test);
-    log.info("Test deleted successfully: {}", test.getName());
+
+    log.info("Test and all related entities deleted successfully: {}", test.getName());
   }
 
   /**
