@@ -374,7 +374,7 @@ public class TestService {
           log.warn("문제 ID {} 의 type이 null입니다. 문서 ID: {}", q.getId(), documentId);
         }
       }
-      청경채 최고!
+
       int objCount =
           (int)
               questionsForDoc.stream()
