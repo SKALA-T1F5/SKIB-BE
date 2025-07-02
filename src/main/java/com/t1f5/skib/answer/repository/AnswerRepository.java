@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface AnswerRepository extends JpaRepository<Answer, Integer> {
+  boolean existsByUserTestAndQuestionId(UserTest userTest, String questionId);
+
   List<Answer> findByUserTest_UserTestId(Integer userTestId);
 
   @Query(

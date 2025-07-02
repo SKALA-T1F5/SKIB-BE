@@ -49,23 +49,23 @@ public class AnswerService {
   @Value("${fastapi.base-url}")
   private String fastApiBaseUrl;
 
-  /**
-   * 사용자가 제출한 답변을 저장하는 메서드.
-   *
-   * @param dto RequestCreateAnswerDto - 사용자가 제출한 답변 DTO
-   * @param userId Integer - 사용자 ID
-   * @param testId Integer - 테스트 ID
-   */
   public void saveAnswer(RequestCreateAnswerDto dto, Integer userId, Integer testId) {
     UserTest userTest =
         userTestRepository
             .findByUser_UserIdAndTest_TestIdAndIsDeletedFalse(userId, testId)
             .orElseThrow(() -> new IllegalArgumentException("해당 유저의 테스트가 존재하지 않습니다."));
 
+    int totalScore = 0;
     int totalQuestions = dto.getAnswers().size();
     int pointPerQuestion = 100 / totalQuestions;
 
     for (AnswerRequest item : dto.getAnswers()) {
+      if (answerRepository.existsByUserTestAndQuestionId(userTest, item.getId())) {
+        log.warn(
+            "❗ 이미 저장된 답변입니다: questionId={}, userTestId={}", item.getId(), userTest.getUserTestId());
+        continue;
+      }
+
       Boolean isCorrect = null;
       int score = 0;
 
@@ -84,6 +84,8 @@ public class AnswerService {
         score = response.getScore();
         isCorrect = score >= 5;
       }
+
+      totalScore += score;
 
       Answer answer =
           Answer.builder()
@@ -114,26 +116,20 @@ public class AnswerService {
       }
     }
 
-    int totalScore = answerRepository.sumScoreByUserTest(userTest);
-
-    userTest.setIsTaken(true);
     userTest.setScore(totalScore);
-    userTest.setIsPassed(totalScore >= userTest.getTest().getPassScore());
+    userTest.setIsTaken(true);
     userTestRepository.save(userTest);
   }
 
-  /**
-   * 사용자가 제출한 답변을 조회하는 메서드.
-   *
-   * @param userId Integer - 사용자 ID
-   * @param testId Integer - 테스트 ID
-   * @param lang String - 언어 코드 (예: "ko", "en")
-   * @return List<ScoredAnswerResultDto> - 사용자의 답변 결과 리스트
-   */
   public List<ScoredAnswerResultDto> getScoredAnswersByUserTestId(
       Integer userId, Integer testId, String lang) {
 
-    List<Answer> answers = answerRepository.findByUserIdAndTestId(userId, testId);
+    UserTest userTest =
+        userTestRepository
+            .findByUser_UserIdAndTest_TestIdAndIsDeletedFalse(userId, testId)
+            .orElseThrow(() -> new IllegalArgumentException("해당 유저 테스트 없음"));
+
+    List<Answer> answers = answerRepository.findByUserTest(userTest);
     List<ScoredAnswerResultDto> results = new ArrayList<>();
 
     for (Answer answer : answers) {
@@ -149,7 +145,6 @@ public class AnswerService {
         questionDto = questionTranslator.translateQuestionDto(questionDto, lang);
       }
 
-      SubjectiveAnswer subjectiveAnswer = null;
       Integer score = answer.getScore();
 
       ScoredAnswerResultDto dto =
@@ -208,11 +203,6 @@ public class AnswerService {
         .block();
   }
 
-  /**
-   * 사용자가 제출한 답변을 삭제하는 메서드.
-   *
-   * @param userTest UserTest - 사용자 테스트 정보
-   */
   public void deleteAnswersByUserTest(UserTest userTest) {
     List<Answer> answers = answerRepository.findByUserTest(userTest);
 
