@@ -90,13 +90,11 @@ public class FeedbackService {
     long incorrectCount =
         answers.stream().filter(a -> Boolean.FALSE.equals(a.getIsCorrect())).count();
 
-    // 4. 점수 정보
-    Integer totalScore = userTest.getScore();
     Integer passScore = testRepository.findPassScoreByTestId(testId).orElse(0);
 
     // 5. 결과 DTO 반환
     return ResponseFeedbackAllDto.builder()
-        .totalScore(totalScore)
+        .totalScore(userTest.getScore())
         .passScore(passScore)
         .correctCount(correctCount)
         .incorrectCount(incorrectCount)
@@ -162,23 +160,26 @@ public class FeedbackService {
     }
 
     // 7. 결과 변환
-    return documentStats.entrySet().stream()
-        .map(
-            entry -> {
-              Integer docId = entry.getKey();
-              long correct = entry.getValue()[0];
-              long total = entry.getValue()[1];
-              double accuracy = total > 0 ? (100.0 * correct / total) : 0.0;
+    List<ResponseFeedbackDocDto> result =
+        documentStats.entrySet().stream()
+            .map(
+                entry -> {
+                  Integer docId = entry.getKey();
+                  long correct = entry.getValue()[0];
+                  long total = entry.getValue()[1];
+                  double accuracy = total > 0 ? (100.0 * correct / total) : 0.0;
 
-              return ResponseFeedbackDocDto.builder()
-                  .documentId(docId.toString())
-                  .documentName(documentIdToNameMap.getOrDefault(docId, "Unknown"))
-                  .accuracyRate(accuracy)
-                  .correctCount(correct)
-                  .totalCount(total)
-                  .build();
-            })
-        .collect(Collectors.toList());
+                  return ResponseFeedbackDocDto.builder()
+                      .documentId(docId.toString())
+                      .documentName(documentIdToNameMap.getOrDefault(docId, "Unknown"))
+                      .accuracyRate(accuracy)
+                      .correctCount(correct)
+                      .totalCount(total)
+                      .build();
+                })
+            .collect(Collectors.toList());
+
+    return result;
   }
 
   /**
