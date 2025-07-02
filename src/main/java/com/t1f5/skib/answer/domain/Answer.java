@@ -25,7 +25,7 @@ public class Answer extends BaseTimeEntity {
   @Column(name = "question_id", nullable = false, length = 100)
   private String questionId; // MongoDB question _id
 
-  @Column(name = "response", nullable = false, length = 255)
+  @Column(name = "response", nullable = true, length = 255)
   private String response;
 
   @Column(name = "is_correct", nullable = false)
