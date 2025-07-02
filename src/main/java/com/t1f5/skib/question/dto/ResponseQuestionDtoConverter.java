@@ -10,6 +10,10 @@ public class ResponseQuestionDtoConverter implements DtoConverter<Question, Ques
   @Override
   public QuestionDto convert(Question question) {
     return QuestionDto.builder()
+        .id(
+            question.getId() != null
+                ? question.getId().toString()
+                : null) // Convert Integer ID to String
         .type(question.getType().name())
         .difficulty_level(question.getDifficultyLevel())
         .question(question.getQuestion())
