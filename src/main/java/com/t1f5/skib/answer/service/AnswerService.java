@@ -49,6 +49,13 @@ public class AnswerService {
   @Value("${fastapi.base-url}")
   private String fastApiBaseUrl;
 
+  /**
+   * 사용자가 제출한 답변을 저장합니다.
+   *
+   * @param dto 답변 생성 요청 DTO
+   * @param userId 사용자 ID
+   * @param testId 테스트 ID
+   */
   public void saveAnswer(RequestCreateAnswerDto dto, Integer userId, Integer testId) {
     UserTest userTest =
         userTestRepository
@@ -121,15 +128,18 @@ public class AnswerService {
     userTestRepository.save(userTest);
   }
 
+  /**
+   * 사용자가 제출한 답변을 조회합니다.
+   *
+   * @param userId 사용자 ID
+   * @param testId 테스트 ID
+   * @return 사용자가 제출한 답변 목록
+   */
   public List<ScoredAnswerResultDto> getScoredAnswersByUserTestId(
       Integer userId, Integer testId, String lang) {
 
-    UserTest userTest =
-        userTestRepository
-            .findByUser_UserIdAndTest_TestIdAndIsDeletedFalse(userId, testId)
-            .orElseThrow(() -> new IllegalArgumentException("해당 유저 테스트 없음"));
+    List<Answer> answers = answerRepository.findByUserIdAndTestId(userId, testId);
 
-    List<Answer> answers = answerRepository.findByUserTest(userTest);
     List<ScoredAnswerResultDto> results = new ArrayList<>();
 
     for (Answer answer : answers) {
@@ -140,20 +150,33 @@ public class AnswerService {
               .findById(questionId)
               .orElseThrow(() -> new IllegalArgumentException("해당 문제를 찾을 수 없습니다: " + questionId));
 
+      // 번역 적용
       QuestionDto questionDto = questionToDtoConverter.convert(question);
       if (!"ko".equalsIgnoreCase(lang)) {
         questionDto = questionTranslator.translateQuestionDto(questionDto, lang);
       }
 
-      Integer score = answer.getScore();
+      SubjectiveAnswer subjectiveAnswer = null;
+      Integer score = 0;
+
+      if (answer.getType() == QuestionType.SUBJECTIVE) {
+        subjectiveAnswer =
+            subjectiveAnswerRepository
+                .findByUserAnswerId(String.valueOf(answer.getUserAnswerId()))
+                .orElse(null);
+
+        if (subjectiveAnswer != null) {
+          score = subjectiveAnswer.getScore();
+        }
+      }
 
       ScoredAnswerResultDto dto =
           ScoredAnswerResultDto.builder()
               .questionId(answer.getQuestionId())
               .type(answer.getType())
-              .question(questionDto.getQuestion())
-              .options(questionDto.getOptions())
-              .explanation(questionDto.getExplanation())
+              .question(question.getQuestion())
+              .options(question.getOptions())
+              .explanation(question.getExplanation())
               .response(answer.getResponse())
               .answer(question.getAnswer())
               .isCorrect(Boolean.TRUE.equals(answer.getIsCorrect()))
@@ -203,6 +226,11 @@ public class AnswerService {
         .block();
   }
 
+  /**
+   * 사용자 테스트에 대한 모든 답변을 삭제합니다.
+   *
+   * @param userTest 사용자 테스트
+   */
   public void deleteAnswersByUserTest(UserTest userTest) {
     List<Answer> answers = answerRepository.findByUserTest(userTest);
 
