@@ -208,4 +208,34 @@ public class AnswerService {
         .bodyToMono(SubjectiveScoringResponseDto.class)
         .block();
   }
+
+  /**
+   * 유저테스트 엔티티로 해당 유저테스트의 답변을 삭제(soft delete)합니다.
+   *
+   * @param userTest 유저테스트 엔티티
+   */
+  public void deleteAnswersByUserTest(UserTest userTest) {
+    // 1. 해당 유저테스트의 답변 전체 조회
+    List<Answer> answers = answerRepository.findByUserTest(userTest);
+
+    for (Answer answer : answers) {
+      // 2. 답변 soft delete 처리
+      answer.setIsDeleted(true);
+      answerRepository.save(answer);
+
+      // 3. 주관식 채점 결과도 삭제 (있는 경우에만)
+      if (answer.getType() == QuestionType.SUBJECTIVE) {
+        SubjectiveAnswer subjectiveAnswer =
+            subjectiveAnswerRepository
+                .findByUserAnswerId(String.valueOf(answer.getUserAnswerId()))
+                .orElse(null);
+
+        if (subjectiveAnswer != null) {
+          subjectiveAnswerRepository.delete(subjectiveAnswer);
+          log.info("주관식 채점 결과 삭제됨: {}", subjectiveAnswer.getId());
+        }
+      }
+      log.info("답변 삭제 완료: userAnswerId={}", answer.getUserAnswerId());
+    }
+  }
 }

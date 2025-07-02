@@ -1,6 +1,7 @@
 package com.t1f5.skib.answer.repository;
 
 import com.t1f5.skib.answer.domain.Answer;
+import com.t1f5.skib.test.domain.UserTest;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -32,4 +33,6 @@ public interface AnswerRepository extends JpaRepository<Answer, Integer> {
   List<QuestionCorrectRateProjection> findCorrectRatesByTestId(@Param("testId") Integer testId);
 
   List<Answer> findAllByUserTest_UserTestId(Integer userTestId);
+
+  List<Answer> findByUserTest(UserTest userTest);
 }
