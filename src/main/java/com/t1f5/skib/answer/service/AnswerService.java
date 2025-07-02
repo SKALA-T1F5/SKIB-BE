@@ -172,14 +172,14 @@ public class AnswerService {
     return results;
   }
 
-  private Boolean getIsCorrectForMultipleChoice(String questionId, String userResponse) {
+  private Boolean getIsCorrectForMultipleChoice(String questionId, String response) {
     Question question =
         questionMongoRepository
             .findById(questionId)
             .orElseThrow(() -> new IllegalArgumentException("해당 문제를 찾을 수 없습니다."));
 
     String correctAnswer = question.getAnswer();
-    return checkCorrectAnswer(correctAnswer, userResponse);
+    return checkCorrectAnswer(correctAnswer, response);
   }
 
   private boolean checkCorrectAnswer(String correct, String user) {
