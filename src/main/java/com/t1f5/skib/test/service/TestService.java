@@ -9,6 +9,7 @@ import com.t1f5.skib.document.dto.SummaryDto;
 import com.t1f5.skib.document.repository.DocumentRepository;
 import com.t1f5.skib.document.repository.SummaryMongoRepository;
 import com.t1f5.skib.global.dtos.DtoConverter;
+import com.t1f5.skib.global.enums.DocumentStatus;
 import com.t1f5.skib.global.enums.QuestionType;
 import com.t1f5.skib.global.enums.TestStatus;
 import com.t1f5.skib.project.domain.Project;
@@ -111,7 +112,8 @@ public class TestService {
 
     // 2. DBMS에서 프로젝트에 속한 문서 목록 조회
     List<Document> documents =
-        documentRepository.findByProject_ProjectIdAndIsDeletedFalse(projectId);
+        documentRepository.findByProject_ProjectIdAndStatusAndIsDeletedFalse(
+            projectId, DocumentStatus.SUMMARY_COMPLETED);
     List<Integer> documentIds =
         documents.stream().map(Document::getDocumentId).distinct().collect(Collectors.toList());
 
