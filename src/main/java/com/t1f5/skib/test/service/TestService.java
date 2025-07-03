@@ -793,10 +793,12 @@ public class TestService {
   }
 
   /**
-   * 초대 링크와 이메일을 기반으로 유저를 유저테스트에 등록합니다.
+   * 초대 토큰으로 유저를 테스트에 등록하고, 테스트 정보를 반환합니다.
    *
    * @param token 초대 토큰
-   * @param email 유저 이메일
+   * @param userId 유저 ID
+   * @param lang 언어 코드 (예: "ko", "en")
+   * @return ResponseTestDto (문제 리스트 포함)
    */
   public ResponseTestDto registerUserToTestAndReturnTest(
       String token, Integer userId, String lang) {
@@ -844,7 +846,7 @@ public class TestService {
     }
 
     // 5. 테스트 + 문제 리스트 함께 반환
-    return getTestById(test.getTestId(), lang);
+    return buildTestDtoWithQuestions(test, lang);
   }
 
   /**
