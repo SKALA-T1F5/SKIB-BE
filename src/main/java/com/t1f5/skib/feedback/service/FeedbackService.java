@@ -25,6 +25,7 @@ import com.t1f5.skib.test.domain.TestQuestion;
 import com.t1f5.skib.test.domain.UserTest;
 import com.t1f5.skib.test.repository.TestQuestionRepository;
 import com.t1f5.skib.test.repository.TestRepository;
+import com.t1f5.skib.test.repository.UserTestRepository;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -32,6 +33,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -54,6 +56,7 @@ public class FeedbackService {
   private final QuestionMongoRepository questionMongoRepository;
   private final AnswerRepository answerRepository;
   private final TestRepository testRepository;
+  private final UserTestRepository userTestRepository;
   private final WebClient webClient;
   private final TestQuestionRepository testQuestionRepository;
 
@@ -365,29 +368,50 @@ public class FeedbackService {
   }
 
   public ResponseAnswerMatrixDto getAnswerMatrix(Integer testId) {
-    List<AnswerMatrixProjection> rows =
-        feedbackUserAnswerRepository.findAnswerMatrixByTestId(testId);
+    // 0. 먼저 유저 ID 전체 조회 (이 테스트에 참여한 유저들)
+    List<UserTest> userTests = userTestRepository.findByTest_TestId(testId);
 
-    // 1. 문제 번호 정렬
-    List<Integer> questionNumbers =
-        rows.stream().map(AnswerMatrixProjection::getQuestionNumber).distinct().sorted().toList();
-
-    // 2. 사용자별 문제번호 → 정답 여부 Map 구성
-    Map<Integer, Map<Integer, Boolean>> userMap = new LinkedHashMap<>();
-
-    for (AnswerMatrixProjection row : rows) {
-      Integer userId = row.getUserId(); // 👈 userId로 키 구성
-      userMap
-          .computeIfAbsent(userId, k -> new HashMap<>())
-          .put(row.getQuestionNumber(), row.getIsCorrect());
+    // 1. userId → userTestId 매핑
+    Map<Integer, Integer> userToTestMap = new HashMap<>();
+    for (UserTest ut : userTests) {
+      userToTestMap.put(ut.getUser().getUserId(), ut.getUserTestId());
     }
 
-    // ✅ 3. DTO 변환: 반드시 AnswerRow 타입으로!
+    // 2. 모든 user_test_id로 정답 정보 가져오기
+    List<AnswerMatrixProjection> rows =
+        feedbackUserAnswerRepository.findAnswerMatrixByUserTestIds(
+            new ArrayList<>(userToTestMap.values()));
+
+    // 3. 문제 번호 추출
+    List<Integer> questionNumbers =
+        rows.stream()
+            .map(AnswerMatrixProjection::getQuestionNumber)
+            .filter(Objects::nonNull)
+            .distinct()
+            .sorted()
+            .toList();
+
+    // 4. user_test_id 기준으로 정답 맵 구성
+    Map<Integer, Map<Integer, Boolean>> userTestMap = new LinkedHashMap<>();
+    Map<Integer, Integer> testToUserMap = new HashMap<>();
+
+    for (AnswerMatrixProjection row : rows) {
+      Integer userTestId = row.getUserTestId();
+      Integer userId = row.getUserId();
+
+      userTestMap
+          .computeIfAbsent(userTestId, k -> new HashMap<>())
+          .put(row.getQuestionNumber(), row.getIsCorrect());
+
+      testToUserMap.putIfAbsent(userTestId, userId);
+    }
+
+    // 5. DTO로 변환
     List<ResponseAnswerMatrixDto.AnswerRow> userAnswers =
-        userMap.entrySet().stream()
+        userTestMap.entrySet().stream()
             .map(
                 entry -> {
-                  Integer userId = entry.getKey();
+                  Integer userTestId = entry.getKey();
                   Map<Integer, Boolean> answerMap = entry.getValue();
 
                   List<Boolean> correctnessList =
@@ -396,16 +420,15 @@ public class FeedbackService {
                           .toList();
 
                   return new ResponseAnswerMatrixDto.AnswerRow(
-                      userId, correctnessList); // ✅ AnswerRow 사용
+                      testToUserMap.get(userTestId), correctnessList);
                 })
             .toList();
 
-    // 4. 최종 DTO 반환
     List<String> questionLabels = questionNumbers.stream().map(qn -> "문제" + qn).toList();
 
     return ResponseAnswerMatrixDto.builder()
         .questionLabels(questionLabels)
-        .userAnswers(userAnswers) // 👈 AnswerRow 기반 리스트
+        .userAnswers(userAnswers)
         .build();
   }
 

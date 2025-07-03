@@ -43,4 +43,20 @@ public interface FeedbackUserAnswerRepository extends JpaRepository<Answer, Inte
   List<Object[]> findQuestionIdAndIsCorrectByUserTestId(@Param("userTestId") Integer userTestId);
 
   List<Answer> findByUserTest_UserTestId(Integer userTestId);
+
+  @Query(
+"""
+    SELECT
+        ua.userTest.user.userId AS userId,
+        ua.userTest.userTestId AS userTestId,
+        tq.questionNumber AS questionNumber,
+        ua.isCorrect AS isCorrect
+    FROM Answer ua
+    JOIN TestQuestion tq
+      ON tq.test.testId = ua.userTest.test.testId
+     AND tq.questionId = ua.questionId
+    WHERE ua.userTest.userTestId IN :userTestIds
+""")
+  List<AnswerMatrixProjection> findAnswerMatrixByUserTestIds(
+      @Param("userTestIds") List<Integer> userTestIds);
 }

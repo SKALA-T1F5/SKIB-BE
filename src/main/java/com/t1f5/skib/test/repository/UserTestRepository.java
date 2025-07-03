@@ -4,7 +4,6 @@ import com.t1f5.skib.test.domain.Test;
 import com.t1f5.skib.test.domain.UserTest;
 import java.util.List;
 import java.util.Optional;
-
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -19,4 +18,6 @@ public interface UserTestRepository extends JpaRepository<UserTest, Integer> {
       Integer userId, Integer testId);
 
   List<UserTest> findAllByTest(Test test);
+
+  List<UserTest> findByTest_TestId(Integer testId);
 }
