@@ -11,5 +11,7 @@ import lombok.NoArgsConstructor;
 public class AnswerRequest {
   private String id;
   private String response;
+  private Integer documentId;
+  private String documentName;
   private QuestionType questionType;
 }
