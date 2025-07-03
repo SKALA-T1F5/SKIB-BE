@@ -14,6 +14,7 @@ public class QuestionTranslator {
 
   public QuestionDto translateQuestionDto(QuestionDto original, String targetLang) {
     return QuestionDto.builder()
+        .id(targetLang.equals("ko") ? original.getId() : null) // ID는 번역하지 않음
         .type(original.getType())
         .difficulty_level(original.getDifficulty_level())
         // ✅ 번역 필드
@@ -35,6 +36,7 @@ public class QuestionTranslator {
 
   public QuestionDto translateAllQuestionDto(QuestionDto original, String targetLang) {
     return QuestionDto.builder()
+        .id(targetLang.equals("ko") ? original.getId() : null) // ID는 번역하지 않음
         .type(original.getType())
         .difficulty_level(original.getDifficulty_level())
         .question(translateText(original.getQuestion(), targetLang))
