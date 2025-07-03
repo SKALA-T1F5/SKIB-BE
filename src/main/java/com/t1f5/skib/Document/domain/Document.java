@@ -32,7 +32,13 @@ import org.hibernate.annotations.Where;
 @AllArgsConstructor
 @Builder
 @Where(clause = "is_deleted = false")
-@Table(name = "DOCUMENT")
+@Table(
+    name = "DOCUMENT",
+    uniqueConstraints = {
+      @jakarta.persistence.UniqueConstraint(
+          name = "document_unique_constraint",
+          columnNames = {"project_id", "name"})
+    })
 public class Document extends BaseTimeEntity {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
