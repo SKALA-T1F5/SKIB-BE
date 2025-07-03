@@ -67,7 +67,8 @@ public class AnswerService {
     int pointPerQuestion = 100 / totalQuestions;
 
     for (AnswerRequest item : dto.getAnswers()) {
-      if (answerRepository.existsByUserTestAndQuestionId(userTest, item.getId())) {
+      if (!userTest.getRetake() // 최초 시험일 경우만 중복 방지
+          && answerRepository.existsByUserTestAndQuestionId(userTest, item.getId())) {
         log.warn(
             "❗ 이미 저장된 답변입니다: questionId={}, userTestId={}", item.getId(), userTest.getUserTestId());
         continue;
@@ -143,11 +144,12 @@ public class AnswerService {
             .findByUser_UserIdAndTest_TestIdAndIsDeletedFalse(userId, testId)
             .orElseThrow(() -> new IllegalArgumentException("해당 유저의 테스트가 존재하지 않습니다."));
 
-    List<Answer> answers = answerRepository.findByUserTest(userTest);
+    List<Answer> answers = answerRepository.findByUserTest_UserTestId(userTest.getUserTestId());
 
     List<ScoredAnswerResultDto> results = new ArrayList<>();
 
     for (Answer answer : answers) {
+      log.info("🔍 Answer에서 꺼낸 questionId = {}", answer.getQuestionId());
       String questionId = answer.getQuestionId();
 
       Question question =

@@ -1,18 +1,23 @@
 package com.t1f5.skib.answer.controller;
 
 import com.t1f5.skib.answer.dto.RequestCreateAnswerDto;
+import com.t1f5.skib.answer.dto.ScoredAnswerResultDto;
 import com.t1f5.skib.answer.service.AnswerService;
 import com.t1f5.skib.global.customAnnotations.SwaggerApiNotFoundError;
 import com.t1f5.skib.global.customAnnotations.SwaggerApiSuccess;
 import com.t1f5.skib.global.customAnnotations.SwaggerInternetServerError;
 import com.t1f5.skib.global.dtos.ResultDto;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -40,8 +45,11 @@ public class AnswerController {
   @SwaggerInternetServerError
   @GetMapping("/getResult")
   public ResponseEntity<ResultDto<?>> getScoredAnswersByUserTestId(
-      Integer userId, Integer testId, String lang) {
-    answerService.getScoredAnswersByUserTestId(userId, testId, lang);
-    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "답변을 성공적으로 조회했습니다."));
+      @RequestParam Integer userId,
+      @RequestParam Integer testId,
+      @RequestParam(required = false, defaultValue = "ko") String lang) {
+    List<ScoredAnswerResultDto> result =
+        answerService.getScoredAnswersByUserTestId(userId, testId, lang);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "답변을 성공적으로 조회했습니다.", result));
   }
 }
