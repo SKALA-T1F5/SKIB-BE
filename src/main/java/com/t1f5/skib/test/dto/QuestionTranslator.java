@@ -14,7 +14,7 @@ public class QuestionTranslator {
 
   public QuestionDto translateQuestionDto(QuestionDto original, String targetLang) {
     return QuestionDto.builder()
-        .id(targetLang.equals("ko") ? original.getId() : null) // ID는 번역하지 않음
+        .id(original.getId()) // ID는 번역하지 않음
         .type(original.getType())
         .difficulty_level(original.getDifficulty_level())
         // ✅ 번역 필드
@@ -29,8 +29,7 @@ public class QuestionTranslator {
         .answer(original.getAnswer())
         .explanation(original.getExplanation())
         .grading_criteria(original.getGrading_criteria())
-        .documentName(
-            targetLang.equals("ko") ? original.getDocumentName() : null) // 문서 이름은 한국어로만 유지
+        .documentName(original.getDocumentName()) // 문서 이름은 한국어로만 유지
         .keywords(original.getKeywords())
         .documentId(original.getDocumentId())
         .tags(original.getTags())
@@ -39,7 +38,7 @@ public class QuestionTranslator {
 
   public QuestionDto translateAllQuestionDto(QuestionDto original, String targetLang) {
     return QuestionDto.builder()
-        .id(targetLang.equals("ko") ? original.getId() : null) // ID는 번역하지 않음
+        .id(original.getId()) // ID는 번역하지 않음
         .type(original.getType())
         .difficulty_level(original.getDifficulty_level())
         .question(translateText(original.getQuestion(), targetLang))
@@ -72,10 +71,7 @@ public class QuestionTranslator {
                     .collect(Collectors.toList())
                 : null)
         .documentId(original.getDocumentId())
-        .documentName(
-            targetLang.equals("ko")
-                ? original.getDocumentName()
-                : translateText(original.getDocumentName(), targetLang))
+        .documentName(original.getDocumentName())
         .keywords(
             original.getKeywords() != null
                 ? original.getKeywords().stream()
