@@ -25,6 +25,7 @@ public class ResponseAnswerMatrixDto {
   @Builder
   public static class AnswerRow {
     private Integer userId; // 학습자 ID
+    private String userName; // 학습자 이름
     private List<Boolean> correctnessList; // 문제별 정답 여부: true(정답), false(오답)
   }
 }

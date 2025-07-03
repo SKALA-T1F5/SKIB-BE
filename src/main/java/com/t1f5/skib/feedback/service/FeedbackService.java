@@ -26,6 +26,8 @@ import com.t1f5.skib.test.domain.UserTest;
 import com.t1f5.skib.test.repository.TestQuestionRepository;
 import com.t1f5.skib.test.repository.TestRepository;
 import com.t1f5.skib.test.repository.UserTestRepository;
+import com.t1f5.skib.user.model.User;
+import com.t1f5.skib.user.repository.UserRepository;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -55,6 +57,7 @@ public class FeedbackService {
   private final FeedbackUserTestRepository feedbackUserTestRepository;
   private final QuestionMongoRepository questionMongoRepository;
   private final AnswerRepository answerRepository;
+  private final UserRepository userRepository;
   private final TestRepository testRepository;
   private final UserTestRepository userTestRepository;
   private final WebClient webClient;
@@ -407,6 +410,7 @@ public class FeedbackService {
     }
 
     // 5. DTO로 변환
+    // DTO 변환
     List<ResponseAnswerMatrixDto.AnswerRow> userAnswers =
         userTestMap.entrySet().stream()
             .map(
@@ -414,13 +418,20 @@ public class FeedbackService {
                   Integer userTestId = entry.getKey();
                   Map<Integer, Boolean> answerMap = entry.getValue();
 
+                  // userId 매핑
+                  Integer userId = testToUserMap.get(userTestId);
+
+                  // ✅ 정답 여부
                   List<Boolean> correctnessList =
                       questionNumbers.stream()
                           .map(qNum -> answerMap.getOrDefault(qNum, false))
                           .toList();
 
-                  return new ResponseAnswerMatrixDto.AnswerRow(
-                      testToUserMap.get(userTestId), correctnessList);
+                  // ✅ 이름 조회 (없으면 "이름없음")
+                  String userName =
+                      userRepository.findById(userId).map(User::getName).orElse("이름없음");
+
+                  return new ResponseAnswerMatrixDto.AnswerRow(userId, userName, correctnessList);
                 })
             .toList();
 
