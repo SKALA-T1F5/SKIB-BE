@@ -74,7 +74,7 @@ public class TranslationService {
       log.debug("Translating text to language: {}", targetLang);
 
       Translation translation =
-          translate.translate(text, Translate.TranslateOption.targetLanguage(targetLang));
+          translate.translate(text, Translate.TranslateOption.targetLanguage(targetLang), Translate.TranslateOption.format("text"));
 
       String result = translation.getTranslatedText();
       log.debug("Translation completed successfully");
