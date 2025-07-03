@@ -42,6 +42,8 @@ public class SecurityConfig {
                         "/v3/api-docs/**",
                         "/api/document/summary/**",
                         "/api/document/progress",
+                        "/api/test/progress",
+                        "/api/questions/result",
                         "/api/admin")
                     .permitAll()
                     .anyRequest()
@@ -64,7 +66,10 @@ public class SecurityConfig {
     CorsConfiguration config = new CorsConfiguration();
     config.setAllowCredentials(true); // 쿠키 허용
     config.setAllowedOrigins(
-        List.of("http://10.250.72.251:5173", "http://localhost:5173")); // 구체적 origin 명시
+        List.of(
+            "http://10.250.72.251:5173",
+            "http://localhost:5173",
+            "https://skib-frontend.skala25a.project.skala-ai.com/**")); // 구체적 origin 명시
     config.setAllowedHeaders(List.of("*"));
     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
     config.setExposedHeaders(List.of("Authorization"));
