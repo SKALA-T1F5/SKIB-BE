@@ -1,6 +1,7 @@
 package com.t1f5.skib.answer.domain;
 
 import com.t1f5.skib.global.domain.BaseTimeEntity;
+import com.t1f5.skib.global.enums.AttemptType;
 import com.t1f5.skib.global.enums.QuestionType;
 import com.t1f5.skib.test.domain.UserTest;
 import jakarta.persistence.Column;
@@ -58,8 +59,9 @@ public class Answer extends BaseTimeEntity {
   @Column(name = "document_name", nullable = true)
   private String documentName;
 
-  @Column(name = "is_retake", nullable = false)
-  private Boolean isRetake = false;
+  @Enumerated(EnumType.STRING)
+  @Column(name = "attempt_type", nullable = false)
+  private AttemptType attemptType;
 
   @Column(name = "is_deleted", nullable = false)
   private Boolean isDeleted;
