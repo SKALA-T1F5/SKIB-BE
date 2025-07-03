@@ -29,6 +29,9 @@ public class QuestionTranslator {
         .answer(original.getAnswer())
         .explanation(original.getExplanation())
         .grading_criteria(original.getGrading_criteria())
+        .documentName(
+            targetLang.equals("ko") ? original.getDocumentName() : null) // 문서 이름은 한국어로만 유지
+        .keywords(original.getKeywords())
         .documentId(original.getDocumentId())
         .tags(original.getTags())
         .build();
@@ -69,6 +72,16 @@ public class QuestionTranslator {
                     .collect(Collectors.toList())
                 : null)
         .documentId(original.getDocumentId())
+        .documentName(
+            targetLang.equals("ko")
+                ? original.getDocumentName()
+                : translateText(original.getDocumentName(), targetLang))
+        .keywords(
+            original.getKeywords() != null
+                ? original.getKeywords().stream()
+                    .map(keyword -> translateText(keyword, targetLang))
+                    .collect(Collectors.toList())
+                : null)
         .tags(original.getTags())
         .build();
   }
