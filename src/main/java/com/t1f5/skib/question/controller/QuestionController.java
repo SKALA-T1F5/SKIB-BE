@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,7 +33,7 @@ public class QuestionController {
   }
 
   @SwaggerApiSuccess(summary = "문제 저장", description = "MongoDB에 문제를 저장합니다.")
-  @PutMapping("test/result")
+  @PostMapping("test/result")
   public ResponseEntity<ResultDto<Void>> receiveTestResult(@RequestBody TestResultDto resultDto) {
     questionService.saveGeneratedQuestions(resultDto);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", null));
