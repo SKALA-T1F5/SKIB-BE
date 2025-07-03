@@ -4,6 +4,8 @@ import com.t1f5.skib.test.domain.Test;
 import com.t1f5.skib.test.domain.UserTest;
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserTestRepository extends JpaRepository<UserTest, Integer> {
@@ -12,6 +14,7 @@ public interface UserTestRepository extends JpaRepository<UserTest, Integer> {
 
   List<UserTest> findAllByUser_UserIdAndIsDeletedFalse(Integer userId);
 
+  @EntityGraph(attributePaths = {"test"})
   Optional<UserTest> findByUser_UserIdAndTest_TestIdAndIsDeletedFalse(
       Integer userId, Integer testId);
 

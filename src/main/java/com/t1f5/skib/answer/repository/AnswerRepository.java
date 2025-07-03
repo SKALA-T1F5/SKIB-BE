@@ -1,6 +1,7 @@
 package com.t1f5.skib.answer.repository;
 
 import com.t1f5.skib.answer.domain.Answer;
+import com.t1f5.skib.global.enums.AttemptType;
 import com.t1f5.skib.test.domain.UserTest;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,6 +10,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface AnswerRepository extends JpaRepository<Answer, Integer> {
   boolean existsByUserTestAndQuestionId(UserTest userTest, String questionId);
+
+  boolean existsByUserTestAndQuestionIdAndAttemptType(UserTest userTest, String questionId, AttemptType attemptType);
 
   List<Answer> findByUserTest_UserTestId(Integer userTestId);
 
