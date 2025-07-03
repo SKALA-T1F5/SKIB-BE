@@ -27,17 +27,12 @@ public interface FeedbackUserAnswerRepository extends JpaRepository<Answer, Inte
   @Query(
 """
     SELECT
-        u.name AS userName,
-        tq.questionNumber AS questionNumber,
+        a.userTest.user.userId AS userId,
+        a.questionNumber AS questionNumber,
         a.isCorrect AS isCorrect
     FROM Answer a
-    JOIN a.userTest ut
-    JOIN ut.user u
-    JOIN TestQuestion tq ON tq.test = ut.test AND tq.questionId = a.questionId
-    WHERE ut.test.testId = :testId
-      AND ut.isDeleted = false
-      AND a.isDeleted = false
-      AND tq.isDeleted = false
+    WHERE a.userTest.test.testId = :testId
+    AND a.isDeleted = false
 """)
   List<AnswerMatrixProjection> findAnswerMatrixByTestId(@Param("testId") Integer testId);
 

@@ -1,5 +1,6 @@
 package com.t1f5.skib.feedback.controller;
 
+import com.t1f5.skib.feedback.dto.FeedbackGenerationResponseDto;
 import com.t1f5.skib.feedback.dto.ResponseAnswerMatrixDto;
 import com.t1f5.skib.feedback.dto.ResponseFeedbackAllDto;
 import com.t1f5.skib.feedback.dto.ResponseFeedbackDistributionDto;
@@ -135,8 +136,8 @@ public class FeedbackController {
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
   @PostMapping("/trainer-feedback")
-  public ResponseEntity<ResultDto<String>> generateFeedbackForTest(@RequestParam Integer testId) {
-    String response = feedbackService.generateFeedbackForTest(testId);
+  public ResponseEntity<ResultDto<FeedbackGenerationResponseDto>> generateFeedbackForTest(@RequestParam Integer testId) {
+    FeedbackGenerationResponseDto response = feedbackService.generateFeedbackForTest(testId);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "트레이너 피드백 생성 성공", response));
   }
 

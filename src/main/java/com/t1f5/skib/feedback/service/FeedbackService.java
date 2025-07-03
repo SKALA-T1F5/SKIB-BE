@@ -3,9 +3,9 @@ package com.t1f5.skib.feedback.service;
 import com.t1f5.skib.answer.domain.Answer;
 import com.t1f5.skib.answer.repository.AnswerRepository;
 import com.t1f5.skib.answer.repository.QuestionCorrectRateProjection;
+import com.t1f5.skib.feedback.dto.FeedbackGenerationResponseDto;
 import com.t1f5.skib.feedback.dto.RequestFeedbackForLLMDto;
 import com.t1f5.skib.feedback.dto.ResponseAnswerMatrixDto;
-import com.t1f5.skib.feedback.dto.ResponseAnswerMatrixDto.AnswerRow;
 import com.t1f5.skib.feedback.dto.ResponseFeedbackAllDto;
 import com.t1f5.skib.feedback.dto.ResponseFeedbackDistributionDto;
 import com.t1f5.skib.feedback.dto.ResponseFeedbackDocDto;
@@ -296,12 +296,12 @@ public class FeedbackService {
   }
 
   /**
-   * 트레이너가 특정 테스트에 대한 피드백을 생성합니다.
+   * 특정 테스트에 대한 문제별 피드백을 가져옵니다.
    *
    * @param testId 테스트의 ID
-   * @return FastAPI로부터 받은 피드백 문자열
+   * @return TrainerFeedBackDto 리스트에 문제 번호, ID, 텍스트, 난이도, 유형, 정답률 등을 포함
    */
-  public String generateFeedbackForTest(Integer testId) {
+  public FeedbackGenerationResponseDto generateFeedbackForTest(Integer testId) {
     List<TrainerFeedBackDto> feedbackList = getQuestionFeedbackListWithoutSorting(testId);
     if (feedbackList.isEmpty()) {
       throw new IllegalArgumentException("해당 테스트에 대한 피드백을 생성할 수 없습니다. 문제나 답변이 없습니다.");
@@ -313,18 +313,20 @@ public class FeedbackService {
             .orElseThrow(() -> new IllegalArgumentException("해당 테스트가 존재하지 않습니다."));
 
     try {
-      String response =
+      FeedbackGenerationResponseDto response =
           sendFeedbackRequest(new RequestFeedbackForLLMDto(feedbackList, test.getSummary()))
-              .block();
-      log.info("FastAPI 응답: {}", response);
+              .block(); // ⬅️ 이 줄에서 바로 DTO로 받도록 수정
+
+      log.info("FastAPI 응답 수신 성공: {}", response);
       return response;
+
     } catch (Exception e) {
       log.error("FastAPI 호출 실패: {}", e.getMessage(), e);
       throw new RuntimeException("FastAPI 서버 호출 중 오류가 발생했습니다.", e);
     }
   }
 
-  private Mono<String> sendFeedbackRequest(RequestFeedbackForLLMDto dto) {
+  private Mono<FeedbackGenerationResponseDto> sendFeedbackRequest(RequestFeedbackForLLMDto dto) {
     return webClient
         .post()
         .uri(fastApiBaseUrl + "api/feedback/generate")
@@ -334,7 +336,7 @@ public class FeedbackService {
         .onStatus(
             status -> !status.is2xxSuccessful(),
             clientResponse -> clientResponse.bodyToMono(String.class).map(RuntimeException::new))
-        .bodyToMono(String.class);
+        .bodyToMono(FeedbackGenerationResponseDto.class);
   }
 
   /**
@@ -362,12 +364,6 @@ public class FeedbackService {
         .build();
   }
 
-  /**
-   * 특정 테스트에 대한 학습자별 문제별 정답 현황을 가져옵니다.
-   *
-   * @param testId 테스트 ID
-   * @return ResponseAnswerMatrixDto 객체에 문제 레이블과 학습자별 정답 여부 리스트를 포함
-   */
   public ResponseAnswerMatrixDto getAnswerMatrix(Integer testId) {
     List<AnswerMatrixProjection> rows =
         feedbackUserAnswerRepository.findAnswerMatrixByTestId(testId);
@@ -377,29 +373,39 @@ public class FeedbackService {
         rows.stream().map(AnswerMatrixProjection::getQuestionNumber).distinct().sorted().toList();
 
     // 2. 사용자별 문제번호 → 정답 여부 Map 구성
-    Map<String, Map<Integer, Boolean>> userMap = new LinkedHashMap<>();
+    Map<Integer, Map<Integer, Boolean>> userMap = new LinkedHashMap<>();
+
     for (AnswerMatrixProjection row : rows) {
+      Integer userId = row.getUserId(); // 👈 userId로 키 구성
       userMap
-          .computeIfAbsent(row.getUserName(), k -> new HashMap<>())
+          .computeIfAbsent(userId, k -> new HashMap<>())
           .put(row.getQuestionNumber(), row.getIsCorrect());
     }
 
-    // 3. DTO 변환
-    List<AnswerRow> userAnswers = new ArrayList<>();
-    for (Map.Entry<String, Map<Integer, Boolean>> entry : userMap.entrySet()) {
-      List<Boolean> correctnessList =
-          questionNumbers.stream().map(qn -> entry.getValue().getOrDefault(qn, false)).toList();
+    // ✅ 3. DTO 변환: 반드시 AnswerRow 타입으로!
+    List<ResponseAnswerMatrixDto.AnswerRow> userAnswers =
+        userMap.entrySet().stream()
+            .map(
+                entry -> {
+                  Integer userId = entry.getKey();
+                  Map<Integer, Boolean> answerMap = entry.getValue();
 
-      userAnswers.add(
-          AnswerRow.builder().userName(entry.getKey()).correctnessList(correctnessList).build());
-    }
+                  List<Boolean> correctnessList =
+                      questionNumbers.stream()
+                          .map(qNum -> answerMap.getOrDefault(qNum, false))
+                          .toList();
+
+                  return new ResponseAnswerMatrixDto.AnswerRow(
+                      userId, correctnessList); // ✅ AnswerRow 사용
+                })
+            .toList();
 
     // 4. 최종 DTO 반환
     List<String> questionLabels = questionNumbers.stream().map(qn -> "문제" + qn).toList();
 
     return ResponseAnswerMatrixDto.builder()
         .questionLabels(questionLabels)
-        .userAnswers(userAnswers)
+        .userAnswers(userAnswers) // 👈 AnswerRow 기반 리스트
         .build();
   }
 
