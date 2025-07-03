@@ -45,7 +45,7 @@ public class QuestionService {
     try {
       webClient
           .post()
-          .uri(fastApiBaseUrl + "/api/test")
+          .uri(fastApiBaseUrl + "/api/test/generate")
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(dto)
           .retrieve()
