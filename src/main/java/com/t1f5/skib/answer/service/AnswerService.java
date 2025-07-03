@@ -101,7 +101,7 @@ public class AnswerService {
 
       QuestionDto questionDto = questionToDtoConverter.convert(question);
       if (!"ko".equalsIgnoreCase(lang)) {
-        questionDto = questionTranslator.translateQuestionDto(questionDto, lang);
+        questionDto = questionTranslator.translateAllQuestionDto(questionDto, lang);
       }
 
       SubjectiveAnswer subjectiveAnswer = null;
