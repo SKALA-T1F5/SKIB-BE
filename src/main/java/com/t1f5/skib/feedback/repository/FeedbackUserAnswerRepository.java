@@ -45,4 +45,6 @@ public interface FeedbackUserAnswerRepository extends JpaRepository<Answer, Inte
 
   @Query("SELECT a.questionId, a.isCorrect FROM Answer a WHERE a.userTest.userTestId = :userTestId")
   List<Object[]> findQuestionIdAndIsCorrectByUserTestId(@Param("userTestId") Integer userTestId);
+
+  List<Answer> findByUserTest_UserTestId(Integer userTestId);
 }

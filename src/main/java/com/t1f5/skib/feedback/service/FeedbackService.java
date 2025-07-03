@@ -3,7 +3,6 @@ package com.t1f5.skib.feedback.service;
 import com.t1f5.skib.answer.domain.Answer;
 import com.t1f5.skib.answer.repository.AnswerRepository;
 import com.t1f5.skib.answer.repository.QuestionCorrectRateProjection;
-import com.t1f5.skib.document.domain.Document;
 import com.t1f5.skib.feedback.dto.RequestFeedbackForLLMDto;
 import com.t1f5.skib.feedback.dto.ResponseAnswerMatrixDto;
 import com.t1f5.skib.feedback.dto.ResponseAnswerMatrixDto.AnswerRow;
@@ -20,7 +19,6 @@ import com.t1f5.skib.feedback.repository.FeedbackDocumentQueryRepository;
 import com.t1f5.skib.feedback.repository.FeedbackQuestionMongoRepository;
 import com.t1f5.skib.feedback.repository.FeedbackUserAnswerRepository;
 import com.t1f5.skib.feedback.repository.FeedbackUserTestRepository;
-import com.t1f5.skib.question.domain.DocumentQuestion;
 import com.t1f5.skib.question.domain.Question;
 import com.t1f5.skib.question.repository.DocumentQuestionRepository;
 import com.t1f5.skib.question.repository.QuestionMongoRepository;
@@ -33,7 +31,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,10 +52,8 @@ public class FeedbackService {
 
   private final FeedbackUserAnswerRepository feedbackUserAnswerRepository;
   private final FeedbackQuestionMongoRepository feedbackQuestionMongoRepository;
-  private final FeedbackDocumentQueryRepository feedbackDocumentQueryRepository;
   private final FeedbackUserTestRepository feedbackUserTestRepository;
   private final QuestionMongoRepository questionMongoRepository;
-  private final DocumentQuestionRepository documentQuestionRepository;
   private final AnswerRepository answerRepository;
   private final TestRepository testRepository;
   private final WebClient webClient;
@@ -116,50 +111,33 @@ public class FeedbackService {
       return Collections.emptyList();
     }
 
-    // 2. Answer에서 (questionId, isCorrect) 리스트 조회
-    List<Object[]> answers =
-        feedbackUserAnswerRepository.findQuestionIdAndIsCorrectByUserTestId(userTestId);
+    // 2. Answer에서 documentId, documentName, isCorrect 가져오기
+    List<Answer> answers = feedbackUserAnswerRepository.findByUserTest_UserTestId(userTestId);
 
     if (answers.isEmpty()) {
       return Collections.emptyList();
     }
 
-    // 3. questionId → documentId 매핑을 위해 questionId set 수집
-    Set<String> questionIds =
-        answers.stream().map(row -> String.valueOf(row[0])).collect(Collectors.toSet());
-
-    // 4. DocumentQuestion에서 questionKey 기준으로 documentId 조회
-    Map<String, Integer> questionToDocumentIdMap =
-        documentQuestionRepository.findByQuestionKeyIn(questionIds).stream()
-            .collect(
-                Collectors.toMap(
-                    DocumentQuestion::getQuestionKey, dq -> dq.getDocument().getDocumentId()));
-
-    // 5. 문서 이름 조회용 documentId set 구성
-    Set<Integer> documentIds = new HashSet<>(questionToDocumentIdMap.values());
-
-    Map<Integer, String> documentIdToNameMap =
-        feedbackDocumentQueryRepository.findByDocumentIdIn(documentIds).stream()
-            .collect(Collectors.toMap(Document::getDocumentId, Document::getName));
-
-    // 6. 문서별 정답률 집계
+    // 3. 문서별 정답률 집계
     Map<Integer, long[]> documentStats = new HashMap<>();
+    Map<Integer, String> documentNames = new HashMap<>();
 
-    for (Object[] row : answers) {
-      String questionId = String.valueOf(row[0]);
-      boolean isCorrect = (Boolean) row[1];
-
-      Integer documentId = questionToDocumentIdMap.get(questionId);
+    for (Answer answer : answers) {
+      Integer documentId = answer.getDocumentId();
       if (documentId == null) continue;
 
       documentStats.putIfAbsent(documentId, new long[2]);
       long[] stats = documentStats.get(documentId);
 
-      if (isCorrect) stats[0]++;
-      stats[1]++;
+      if (Boolean.TRUE.equals(answer.getIsCorrect())) {
+        stats[0]++; // correct count
+      }
+      stats[1]++; // total count
+
+      documentNames.putIfAbsent(documentId, answer.getDocumentName());
     }
 
-    // 7. 결과 변환
+    // 4. 결과 변환
     List<ResponseFeedbackDocDto> result =
         documentStats.entrySet().stream()
             .map(
@@ -171,7 +149,7 @@ public class FeedbackService {
 
                   return ResponseFeedbackDocDto.builder()
                       .documentId(docId.toString())
-                      .documentName(documentIdToNameMap.getOrDefault(docId, "Unknown"))
+                      .documentName(documentNames.getOrDefault(docId, "Unknown"))
                       .accuracyRate(accuracy)
                       .correctCount(correct)
                       .totalCount(total)
