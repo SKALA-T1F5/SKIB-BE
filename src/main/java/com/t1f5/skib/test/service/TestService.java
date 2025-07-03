@@ -271,50 +271,6 @@ public class TestService {
     return test.getTestId();
   }
 
-  // /**
-  //  * 테스트를 저장하고 초대 링크를 생성합니다.
-  //  *
-  //  * @param projectId
-  //  * @param requestCreateTestDto
-  //  * @return
-  //  */
-  // public ResponseTestInitDto saveTestWithQuestions(Integer projectId, RequestCreateTestDto dto) {
-  //   // 테스트 저장
-  //   Test test =
-  //       Test.builder()
-  //           .name(dto.getName())
-  //           .summary(dto.getSummary())
-  //           .difficultyLevel(dto.getDifficultyLevel())
-  //           .limitedTime(dto.getLimitedTime())
-  //           .passScore(dto.getPassScore())
-  //           .isRetake(dto.getIsRetake())
-  //           .isDeleted(false)
-  //           .project(projectRepository.findById(projectId).orElseThrow())
-  //           .build();
-  //   testRepository.save(test);
-
-  //   // 문제 생성 및 MongoDB 저장
-  //   List<Question> generatedQuestions = questionService.generateQuestions(dto);
-
-  //   // TestDocumentConfig만 저장 (DocumentQuestion은 나중에)
-  //   for (TestDocumentConfigDto config : dto.getDocumentConfigs()) {
-  //     TestDocumentConfig testDocumentConfig =
-  //         TestDocumentConfig.builder()
-  //             .test(test)
-  //             .document(documentRepository.findById(config.getDocumentId()).orElseThrow())
-  //             .configuredObjectiveCount(config.getConfiguredObjectiveCount())
-  //             .configuredSubjectiveCount(config.getConfiguredSubjectiveCount())
-  //             .isDeleted(false)
-  //             .build();
-  //     testDocumentConfigRepository.save(testDocumentConfig);
-  //   }
-
-  //   return ResponseTestInitDto.builder()
-  //       .testId(test.getTestId())
-  //       .questions(generatedQuestions)
-  //       .build();
-  // }
-
   /**
    * 테스트를 최종화하고 초대 링크를 생성합니다.
    *
@@ -709,14 +665,14 @@ public class TestService {
   }
 
   /**
-   * 유저 ID와 테스트 ID로 테스트 정보를 조회합니다.
+   * 유저 ID와 테스트 ID로 특정 테스트를 조회합니다.
    *
    * @param userId 유저 ID
    * @param testId 테스트 ID
-   * @return ResponseTestDto (문제 리스트 포함)
+   * @return ResponseTestDto (문제 리스트 포함, 일부 필드 번역 적용)
    */
-  public ResponseTestDto getTestByUserTestId(Integer userId, Integer testId) {
-    log.info("Fetching test with ID: {}", userId, testId);
+  public ResponseTestDto getTestByUserTestId(Integer userId, Integer testId, String lang) {
+    log.info("Fetching test with ID: {}, userId: {}", testId, userId);
 
     UserTest userTest =
         userTestRepository
@@ -726,45 +682,18 @@ public class TestService {
                     new IllegalArgumentException(
                         "해당 유저테스트를 찾을 수 없습니다: userId=" + userId + ", testId=" + testId));
 
-    // ✅ 재응시(retake)가 false일 때만 허용
     if (Boolean.TRUE.equals(userTest.getRetake())) {
       throw new IllegalStateException("해당 테스트는 재응시 상태입니다. 접근할 수 없습니다.");
     }
 
-    Test test =
-        testRepository
-            .findById(userTest.getTest().getTestId())
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        "해당 테스트를 찾을 수 없습니다: " + userTest.getTest().getTestId()));
-
-    // 1. TestQuestion → questionId 수집
-    List<TestQuestion> testQuestions = testQuestionRepository.findByTest(test);
-    List<String> questionIds =
-        testQuestions.stream().map(TestQuestion::getQuestionId).collect(Collectors.toList());
-
-    // 2. MongoDB에서 실제 문제 조회
-    List<Question> questions = questionMongoRepository.findAllById(questionIds);
-
-    // 3. Question → QuestionDto 변환
-    List<QuestionDto> questionDtos =
-        questions.stream().map(questionDtoConverter::convert).collect(Collectors.toList());
-
-    // 4. Test → ResponseTestDto 변환
-    ResponseTestDto responseDto = testDtoConverter.convert(test);
-    responseDto.setQuestions(questionDtos);
-
-    responseDto.setPassScore(test.getPassScore());
-
-    return responseDto;
+    return buildTestDtoWithQuestions(userTest.getTest(), lang);
   }
 
   /**
-   * 테스트 ID로 테스트 정보를 조회합니다.
+   * 테스트 ID로 테스트를 조회하고, 문제 리스트를 포함한 DTO를 반환합니다.
    *
    * @param testId 테스트 ID
-   * @param lang 사용 언어 코드 (예: "ko", "en", "vi")
+   * @param lang 언어 코드 (예: "ko", "en")
    * @return ResponseTestDto (문제 리스트 포함, 일부 필드 번역 적용)
    */
   public ResponseTestDto getTestById(Integer testId, String lang) {
@@ -775,32 +704,7 @@ public class TestService {
             .findById(testId)
             .orElseThrow(() -> new IllegalArgumentException("해당 테스트를 찾을 수 없습니다: " + testId));
 
-    // 1. TestQuestion → questionId 수집
-    List<TestQuestion> testQuestions = testQuestionRepository.findByTest(test);
-    List<String> questionIds =
-        testQuestions.stream().map(TestQuestion::getQuestionId).collect(Collectors.toList());
-
-    // 2. MongoDB에서 실제 문제 조회
-    List<Question> questions = questionMongoRepository.findAllById(questionIds);
-
-    // 3. Question → QuestionDto 변환 + 조건적 번역
-    List<QuestionDto> questionDtos =
-        questions.stream()
-            .map(questionDtoConverter::convert)
-            .map(
-                questionDto -> {
-                  if (!"ko".equalsIgnoreCase(lang)) {
-                    return questionTranslator.translateQuestionDto(questionDto, lang); // 🔧 수정
-                  }
-                  return questionDto;
-                })
-            .collect(Collectors.toList());
-
-    // 4. Test → ResponseTestDto 변환
-    ResponseTestDto responseDto = testDtoConverter.convert(test);
-    responseDto.setQuestions(questionDtos);
-
-    return responseDto;
+    return buildTestDtoWithQuestions(test, lang);
   }
 
   /**
@@ -943,91 +847,6 @@ public class TestService {
     return getTestById(test.getTestId(), lang);
   }
 
-  // private void generateAndSaveQuestionsInParallel(Test test, RequestCreateTestDto requestDto) {
-  //   ExecutorService executor = Executors.newFixedThreadPool(4);
-  //   List<Future<Pair<TestDocumentConfigDto, List<Question>>>> futures = new ArrayList<>();
-
-  //   for (TestDocumentConfigDto config : requestDto.getDocumentConfigs()) {
-  //     futures.add(
-  //         executor.submit(
-  //             () -> {
-  //               RequestCreateQuestionDto dto =
-  //                   RequestCreateQuestionDto.builder()
-  //                       .name(requestDto.getName())
-  //                       .summary(requestDto.getSummary())
-  //                       .difficultyLevel(requestDto.getDifficultyLevel())
-  //                       .limitedTime(requestDto.getLimitedTime())
-  //                       .passScore(requestDto.getPassScore())
-  //                       .isRetake(requestDto.getIsRetake())
-  //                       .documentId(config.getDocumentId())
-  //                       .keywords(config.getKeywords())
-  //                       .configuredObjectiveCount(config.getConfiguredObjectiveCount())
-  //                       .configuredSubjectiveCount(config.getConfiguredSubjectiveCount())
-  //                       .build();
-
-  //               List<Question> questions = questionService.generateQuestions(List.of(dto));
-  //               return Pair.of(config, questions);
-  //             }));
-  //   }
-
-  //   try {
-  //     for (Future<Pair<TestDocumentConfigDto, List<Question>>> future : futures) {
-  //       Pair<TestDocumentConfigDto, List<Question>> result = future.get();
-
-  //       TestDocumentConfigDto config = result.getLeft();
-  //       List<Question> questions = result.getRight();
-
-  //       // 1. 각 문제를 TestQuestion에 저장
-  //       for (Question q : questions) {
-  //         TestQuestion testQuestion =
-  //             TestQuestion.builder().test(test).questionId(q.getId()).isDeleted(false).build();
-  //         testQuestionRepository.save(testQuestion);
-  //       }
-
-  //       // 2. TestDocumentConfig 저장
-  //       TestDocumentConfig testDocumentConfig =
-  //           TestDocumentConfig.builder()
-  //               .test(test)
-  //               .document(documentRepository.findById(config.getDocumentId()).orElseThrow())
-  //               .configuredObjectiveCount(config.getConfiguredObjectiveCount())
-  //               .configuredSubjectiveCount(config.getConfiguredSubjectiveCount())
-  //               .isDeleted(false)
-  //               .build();
-  //       testDocumentConfigRepository.save(testDocumentConfig);
-
-  //       // 3. DocumentQuestion 저장
-  //       int objectiveCount =
-  //           (int) questions.stream().filter(q -> q.getType() == QuestionType.OBJECTIVE).count();
-  //       int subjectiveCount =
-  //           (int) questions.stream().filter(q -> q.getType() == QuestionType.SUBJECTIVE).count();
-
-  //       QuestionType questionType;
-  //       if (objectiveCount > 0) {
-  //         questionType = QuestionType.OBJECTIVE;
-  //       } else {
-  //         questionType = QuestionType.SUBJECTIVE;
-  //       }
-
-  //       DocumentQuestion documentQuestion =
-  //           DocumentQuestion.builder()
-  //               .document(documentRepository.findById(config.getDocumentId()).orElseThrow())
-  //               .questionKey(UUID.randomUUID().toString())
-  //               .questionType(questionType)
-  //               .configuredObjectiveCount(objectiveCount)
-  //               .configuredSubjectiveCount(subjectiveCount)
-  //               .isDeleted(false)
-  //               .build();
-
-  //       documentQuestionRepository.save(documentQuestion);
-  //     }
-
-  //   } catch (InterruptedException | ExecutionException e) {
-  //     log.error("문제 병렬 생성 중 오류 발생", e);
-  //     throw new RuntimeException("문제 생성 실패", e);
-  //   } finally {
-  //     executor.shutdown();
-  //   }
-  // }
   /**
    * 테스트 ID로 연결된 문제 리스트를 조회합니다.
    *
@@ -1050,5 +869,33 @@ public class TestService {
     List<Question> questions = questionMongoRepository.findAllById(questionIds);
 
     return questions.stream().map(questionToDtoConverter::convert).collect(Collectors.toList());
+  }
+
+  private ResponseTestDto buildTestDtoWithQuestions(Test test, String lang) {
+    // 1. TestQuestion → questionId 수집
+    List<TestQuestion> testQuestions = testQuestionRepository.findByTest(test);
+    List<String> questionIds =
+        testQuestions.stream().map(TestQuestion::getQuestionId).collect(Collectors.toList());
+
+    // 2. MongoDB에서 실제 문제 조회
+    List<Question> questions = questionMongoRepository.findAllById(questionIds);
+
+    // 3. Question → QuestionDto 변환 + 번역
+    List<QuestionDto> questionDtos =
+        questions.stream()
+            .map(questionDtoConverter::convert)
+            .map(
+                q ->
+                    !"ko".equalsIgnoreCase(lang)
+                        ? questionTranslator.translateQuestionDto(q, lang)
+                        : q)
+            .collect(Collectors.toList());
+
+    // 4. Test → ResponseTestDto 변환
+    ResponseTestDto responseDto = testDtoConverter.convert(test);
+    responseDto.setQuestions(questionDtos);
+    responseDto.setPassScore(test.getPassScore());
+
+    return responseDto;
   }
 }
