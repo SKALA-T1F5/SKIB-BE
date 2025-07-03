@@ -10,9 +10,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GradingCriteriaDto {
-    private Integer score;
-    private String criteria;
-    private String example;
-    private String note;
-    
+  private Integer score;
+  private String criteria;
+  private String example;
+  private String note;
 }

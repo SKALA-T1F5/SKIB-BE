@@ -1,6 +1,7 @@
 package com.t1f5.skib.test.dto;
 
 import com.t1f5.skib.global.services.TranslationService;
+import com.t1f5.skib.question.dto.GradingCriteriaDto;
 import com.t1f5.skib.question.dto.QuestionDto;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,44 @@ public class QuestionTranslator {
         .answer(original.getAnswer())
         .explanation(original.getExplanation())
         .grading_criteria(original.getGrading_criteria())
+        .documentId(original.getDocumentId())
+        .tags(original.getTags())
+        .build();
+  }
+
+  public QuestionDto translateAllQuestionDto(QuestionDto original, String targetLang) {
+    return QuestionDto.builder()
+        .type(original.getType())
+        .difficulty_level(original.getDifficulty_level())
+        .question(translateText(original.getQuestion(), targetLang))
+        .options(
+            original.getOptions() != null
+                ? original.getOptions().stream()
+                    .map(opt -> translateText(opt, targetLang))
+                    .collect(Collectors.toList())
+                : null)
+        .answer(
+            original.getAnswer() != null ? translateText(original.getAnswer(), targetLang) : null)
+        .explanation(
+            original.getExplanation() != null
+                ? translateText(original.getExplanation(), targetLang)
+                : null)
+        .grading_criteria(
+            original.getGrading_criteria() != null
+                ? original.getGrading_criteria().stream()
+                    .map(
+                        c -> {
+                          GradingCriteriaDto.GradingCriteriaDtoBuilder builder =
+                              GradingCriteriaDto.builder();
+                          return builder
+                              .score(c.getScore())
+                              .criteria(translateText(c.getCriteria(), targetLang))
+                              .example(translateText(c.getExample(), targetLang))
+                              .note(translateText(c.getNote(), targetLang))
+                              .build();
+                        })
+                    .collect(Collectors.toList())
+                : null)
         .documentId(original.getDocumentId())
         .tags(original.getTags())
         .build();
