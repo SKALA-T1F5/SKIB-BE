@@ -52,6 +52,9 @@ public class Answer extends BaseTimeEntity {
   @Column(name = "type", nullable = false)
   private QuestionType type;
 
+  @Column(name = "is_retake", nullable = false)
+  private Boolean isRetake = false;
+
   @Column(name = "is_deleted", nullable = false)
   private Boolean isDeleted;
 
