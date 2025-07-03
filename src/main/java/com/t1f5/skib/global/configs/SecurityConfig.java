@@ -69,7 +69,7 @@ public class SecurityConfig {
         List.of(
             "http://10.250.72.251:5173",
             "http://localhost:5173",
-            "https://skib-frontend.skala25a.project.skala-ai.com/**")); // 구체적 origin 명시
+            "https://skib-frontend.skala25a.project.skala-ai.com")); // 구체적 origin 명시
     config.setAllowedHeaders(List.of("*"));
     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
     config.setExposedHeaders(List.of("Authorization"));
