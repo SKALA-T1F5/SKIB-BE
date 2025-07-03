@@ -62,6 +62,9 @@ public class QuestionService {
     List<Question> questions =
         dto.getQuestions().stream().map(questionDtoConverter::convert).toList();
 
+    // Question에 대한 로그 찍기
+    questions.forEach(question -> log.info("✅ 생성된 문제: {}", question));
+
     // 2. MongoDB에 저장
     questionMongoRepository.saveAll(questions);
 

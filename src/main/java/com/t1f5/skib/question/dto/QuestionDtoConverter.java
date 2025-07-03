@@ -16,10 +16,10 @@ public class QuestionDtoConverter {
         .explanation(dto.getExplanation())
         .gradingCriteria(dto.getGrading_criteria())
         .documentId(String.valueOf(dto.getDocumentId()))
-        .documentName(dto.getDocumentName())
+        .documentName(dto.getDocumentName() != null ? dto.getDocumentName() : null)
         .keywords(dto.getKeywords())
         .tags(dto.getTags())
-        .generationType(dto.getGenerationType())
+        .generationType(dto.getGenerationType() != null ? dto.getGenerationType() : null)
         .build();
   }
 }

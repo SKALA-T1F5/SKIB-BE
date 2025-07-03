@@ -20,12 +20,13 @@ public class ResponseQuestionDtoConverter implements DtoConverter<Question, Ques
         .options(question.getOptions())
         .answer(question.getAnswer())
         .grading_criteria(question.getGradingCriteria())
+        .documentName(question.getDocumentName() != null ? question.getDocumentName() : null)
         .explanation(question.getExplanation())
         .documentId(
             question.getDocumentId() != null ? Integer.valueOf(question.getDocumentId()) : null)
         .keywords(question.getKeywords())
         .tags(question.getTags())
-        .generationType(question.getGenerationType())
+        .generationType(question.getGenerationType() != null ? question.getGenerationType() : null)
         .build();
   }
 }

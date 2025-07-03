@@ -20,10 +20,10 @@ public class QuestionToDtoConverter {
         .grading_criteria(entity.getGradingCriteria())
         .documentId(
             entity.getDocumentId() != null ? Integer.parseInt(entity.getDocumentId()) : null)
-        .documentName(entity.getDocumentName())
+        .documentName(entity.getDocumentName() != null ? entity.getDocumentName() : null)
         .keywords(entity.getKeywords())
         .tags(entity.getTags())
-        .generationType(entity.getGenerationType())
+        .generationType(entity.getGenerationType() != null ? entity.getGenerationType() : null)
         .build();
   }
 }
