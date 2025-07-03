@@ -58,7 +58,8 @@ public class Test extends BaseTimeEntity {
   @Column(name = "pass_score", nullable = false)
   private Integer passScore;
 
-  @Column(name = "question_ids", length = 1000)
+  @Lob
+  @Column(name = "question_ids", columnDefinition = "TEXT", nullable = false)
   private String questionIds; // "test_id1,test_id4,test_id6" 과 같은 형태로 저장
 
   @Column(name = "is_retake", nullable = false)
