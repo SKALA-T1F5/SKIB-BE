@@ -24,11 +24,12 @@ public interface FeedbackUserAnswerRepository extends JpaRepository<Answer, Inte
           + "WHERE a.userTest.userTestId = :userTestId AND a.isDeleted = false")
   List<Object[]> getAnswersByUserTestId(@Param("userTestId") Integer userTestId);
 
+  // Repository
   @Query(
 """
     SELECT
         a.userTest.user.userId AS userId,
-        a.questionNumber AS questionNumber,
+        a.questionId AS questionId,
         a.isCorrect AS isCorrect
     FROM Answer a
     WHERE a.userTest.test.testId = :testId
