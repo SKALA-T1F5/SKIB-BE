@@ -9,10 +9,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/questions")
+@RequestMapping("/api")
 @Tag(name = "Question API", description = "문제 관련 API")
 @RequiredArgsConstructor
 public class QuestionController {
@@ -27,8 +31,8 @@ public class QuestionController {
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", null));
   }
 
-  @SwaggerApiSuccess(summary="문제 저장", description="MongoDB에 문제를 저장합니다.")
-  @PutMapping("/result")
+  @SwaggerApiSuccess(summary = "문제 저장", description = "MongoDB에 문제를 저장합니다.")
+  @PutMapping("test/result")
   public ResponseEntity<ResultDto<Void>> receiveTestResult(@RequestBody TestResultDto resultDto) {
     questionService.saveGeneratedQuestions(resultDto);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", null));

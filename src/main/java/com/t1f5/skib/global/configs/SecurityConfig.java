@@ -43,7 +43,7 @@ public class SecurityConfig {
                         "/api/document/summary/**",
                         "/api/document/progress",
                         "/api/test/progress",
-                        "/api/questions/result",
+                        "/api/test/result",
                         "/api/admin")
                     .permitAll()
                     .anyRequest()

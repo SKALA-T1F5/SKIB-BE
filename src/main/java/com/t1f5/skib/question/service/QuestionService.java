@@ -11,9 +11,6 @@ import com.t1f5.skib.question.repository.QuestionMongoRepository;
 import com.t1f5.skib.test.domain.Test;
 import com.t1f5.skib.test.dto.RequestCreateTestDto;
 import com.t1f5.skib.test.repository.TestRepository;
-
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +22,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
@@ -84,57 +82,6 @@ public class QuestionService {
 
     log.info("✅ 문제 저장 완료: testId={}, questions={}", dto.getTestId(), questionIds);
   }
-
-  // /**
-  //  * FastAPI를 호출하여 문제를 생성하는 메서드
-  //  *
-  //  * @param requestDto 문제 생성 요청 DTO
-  //  * @return 생성된 문제 목록
-  //  */
-  // public List<Question> generateQuestions(RequestCreateTestDto requestDto) {
-  //   QuestionResponse response =
-  //       webClient
-  //           .post()
-  //           .uri(fastApiBaseUrl + "api/test")
-  //           .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-  //           .bodyValue(requestDto)
-  //           .retrieve()
-  //           .bodyToMono(QuestionResponse.class)
-  //           .block(); // 동기식 호출
-
-  //   ObjectMapper mapper = new ObjectMapper();
-
-  //   // ✅ 응답 확인 및 직렬화 로그 출력
-  //   try {
-  //     log.info("🧪 RAW FastAPI Response: {}", mapper.writeValueAsString(response));
-
-  //     if (response == null) {
-  //       log.error("❌ FastAPI 응답이 null입니다.");
-  //       return List.of();
-  //     }
-
-  //     if (response.getQuestions() == null || response.getQuestions().isEmpty()) {
-  //       log.warn("⚠️ FastAPI 응답에 questions가 null이거나 비어 있습니다.");
-  //       return List.of();
-  //     }
-
-  //     log.info(
-  //         "🧪 Deserialized DTO (1st Question): {}",
-  //         mapper.writeValueAsString(response.getQuestions().get(0)));
-  //     log.info(
-  //         "🧪 grading_criteria: {}",
-  //         mapper.writeValueAsString(response.getQuestions().get(0).getGrading_criteria()));
-  //   } catch (Exception e) {
-  //     log.error("🛑 JSON 직렬화 중 오류 발생", e);
-  //   }
-
-  //   // ✅ 정상 처리
-  //   List<Question> questions =
-  //       response.getQuestions().stream().map(questionDtoConverter::convert).toList();
-
-  //   questionMongoRepository.saveAll(questions);
-  //   return questions;
-  // }
 
   /*
    * 문제를 수정하는 메서드
