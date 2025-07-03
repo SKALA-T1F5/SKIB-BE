@@ -42,7 +42,8 @@ pipeline {
                     def FINAL_IMAGE_TAG = "${IMAGE_TAG}-${BUILD_NUMBER}-${hashcode}"
                     echo "Final Image Tag: ${FINAL_IMAGE_TAG}"
 
-                    docker.withRegistry("https://${IMAGE_REGISTRY}", "${DOCKER_CREDENTIAL_ID}") {
+                    def registryUrl = IMAGE_REGISTRY.split('/')[0]
+                    docker.withRegistry("https://${registryUrl}", "${DOCKER_CREDENTIAL_ID}") {
                         def appImage = docker.build("${IMAGE_REGISTRY}/${IMAGE_NAME}:${FINAL_IMAGE_TAG}", "--platform linux/amd64 .")
                         appImage.push()
                     }
