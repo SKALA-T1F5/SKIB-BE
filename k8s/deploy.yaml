@@ -20,7 +20,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: sk-team-09-backend
-          image: docker.io/yoonalim2003/sk-team-09-backend:1.0.0-4-91158796d051
+          image: docker.io/yoonalim2003/sk-team-09-backend:1.0.0-5-5ae920a12fd3
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
