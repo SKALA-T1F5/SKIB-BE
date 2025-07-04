@@ -102,9 +102,10 @@ public class TestController {
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
   @PostMapping("/random/save")
-  public ResponseEntity<ResultDto<Void>> saveRandomTest(@RequestBody RequestSaveRandomTestDto dto) {
-    testService.saveRandomTest(dto);
-    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", null));
+  public ResponseEntity<ResultDto<String>> saveRandomTest(
+      @RequestBody RequestSaveRandomTestDto dto) {
+    String result = testService.saveRandomTest(dto);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", result));
   }
 
   @SwaggerApiSuccess(summary = "문서별 문제 수 조회", description = "특정 프로젝트의 문서별 문제 수를 조회합니다.")

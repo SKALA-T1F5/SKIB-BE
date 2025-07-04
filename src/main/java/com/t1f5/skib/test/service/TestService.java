@@ -35,7 +35,6 @@ import com.t1f5.skib.test.dto.RequestFinalizeTestDto;
 import com.t1f5.skib.test.dto.RequestSaveRandomTestDto;
 import com.t1f5.skib.test.dto.ResponseCreateTestByLLMDto;
 import com.t1f5.skib.test.dto.ResponseTestDto;
-import com.t1f5.skib.test.dto.ResponseTestInitDto;
 import com.t1f5.skib.test.dto.ResponseTestListDto;
 import com.t1f5.skib.test.dto.ResponseTestSummaryDto;
 import com.t1f5.skib.test.dto.ResponseTestSummaryListDto;
@@ -397,7 +396,7 @@ public class TestService {
    * @param dto
    */
   @Transactional
-  public ResponseTestInitDto saveRandomTest(RequestSaveRandomTestDto dto) {
+  public String saveRandomTest(RequestSaveRandomTestDto dto) {
     // 1. 프로젝트 확인
     var project =
         projectRepository
@@ -469,10 +468,18 @@ public class TestService {
               .build());
     }
 
-    return ResponseTestInitDto.builder()
-        .testId(test.getTestId())
-        .questions(questions) // or `.questions(questionDtos)` if you want to return DTOs
-        .build();
+    // ✅ 초대 링크 생성 및 반환
+    String token = UUID.randomUUID().toString();
+    InviteLink inviteLink =
+        InviteLink.builder()
+            .test(test)
+            .token(token)
+            .expiresAt(LocalDateTime.now().plusDays(7))
+            .isDeleted(false)
+            .build();
+    inviteLinkRepository.save(inviteLink);
+
+    return token;
   }
 
   /**
