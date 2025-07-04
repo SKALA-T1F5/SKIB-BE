@@ -695,10 +695,6 @@ public class TestService {
                     new IllegalArgumentException(
                         "해당 유저테스트를 찾을 수 없습니다: userId=" + userId + ", testId=" + testId));
 
-    if (Boolean.TRUE.equals(userTest.getRetake())) {
-      throw new IllegalStateException("해당 테스트는 재응시 상태입니다. 접근할 수 없습니다.");
-    }
-
     return buildTestDtoWithQuestions(userTest.getTest(), lang);
   }
 
