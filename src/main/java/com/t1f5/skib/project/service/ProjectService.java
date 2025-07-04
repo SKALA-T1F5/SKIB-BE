@@ -167,4 +167,42 @@ public class ProjectService {
 
     return new ResponseProjectListDto(resultList.size(), resultList);
   }
+
+  /**
+   * 프로젝트에 유저를 추가하는 메서드 (userId 기반)
+   *
+   * @param projectId 추가할 대상 프로젝트 ID
+   * @param userId 추가할 유저의 ID
+   */
+  @Transactional
+  public void addUserToProject(Integer projectId, Integer userId) {
+    Project project =
+        projectJpaRepository
+            .findById(projectId)
+            .orElseThrow(
+                () -> new IllegalArgumentException("Project not found with id: " + projectId));
+
+    User user =
+        userRepository
+            .findByIdAndIsDeletedFalse(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+
+    // 중복 체크: 이미 이 프로젝트에 등록되어 있는지 확인
+    boolean exists =
+        projectTrainerRepository.existsByProjectAndUserAndIsDeletedFalse(project, user);
+    if (exists) {
+      throw new IllegalStateException("User is already added to this project.");
+    }
+
+    ProjectUser projectUser =
+        ProjectUser.builder()
+            .type(user.getType()) // TRAINER 또는 TRAINEE
+            .project(project)
+            .user(user)
+            .isDeleted(false)
+            .build();
+
+    projectTrainerRepository.save(projectUser);
+    log.info("User [{}] added to project [{}]", user.getUserId(), project.getProjectName());
+  }
 }

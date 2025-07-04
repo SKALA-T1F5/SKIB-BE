@@ -2,6 +2,7 @@ package com.t1f5.skib.project.repository;
 
 import com.t1f5.skib.project.domain.Project;
 import com.t1f5.skib.project.domain.ProjectUser;
+import com.t1f5.skib.user.model.User;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -9,4 +10,6 @@ public interface ProjectTrainerRepository extends JpaRepository<ProjectUser, Int
   List<ProjectUser> findByProjectAndIsDeletedFalse(Project project);
 
   List<ProjectUser> findByUser_UserIdAndIsDeletedFalse(Integer userId);
+
+  boolean existsByProjectAndUserAndIsDeletedFalse(Project project, User user);
 }
