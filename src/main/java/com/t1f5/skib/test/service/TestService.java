@@ -651,7 +651,7 @@ public class TestService {
   public ResponseTestSummaryListDto getUserTestList(Integer userId) {
     log.info("Fetching user test list for user ID: {}", userId);
 
-    List<UserTest> userTests = userTestRepository.findAllByUser_UserIdAndIsDeletedFalse(userId);
+    List<UserTest> userTests = userTestRepository.findAllByUserIdAndTestNotDeleted(userId);
 
     if (userTests.isEmpty()) {
       throw new IllegalArgumentException("해당 유저의 테스트가 없습니다: " + userId);
