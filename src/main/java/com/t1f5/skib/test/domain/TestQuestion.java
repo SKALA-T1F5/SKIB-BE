@@ -1,6 +1,9 @@
 package com.t1f5.skib.test.domain;
 
+import org.hibernate.annotations.Where;
+
 import com.t1f5.skib.global.domain.BaseTimeEntity;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -14,7 +17,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.Where;
 
 @Entity
 @Getter
@@ -29,7 +31,7 @@ public class TestQuestion extends BaseTimeEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Integer testQuestionId;
 
-  @Column(name = "question_number", nullable = true)
+  @Column(name = "question_number", nullable = false)
   private Integer questionNumber;
 
   @Column(name = "is_deleted", nullable = false)

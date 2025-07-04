@@ -422,9 +422,15 @@ public class TestService {
     List<Question> questions = questionMongoRepository.findAllById(dto.getQuestionIds());
 
     // 4. TestQuestion 저장
+    int questionNumber = 1;
     for (Question q : questions) {
       testQuestionRepository.save(
-          TestQuestion.builder().test(test).questionId(q.getId()).isDeleted(false).build());
+          TestQuestion.builder()
+              .test(test)
+              .questionNumber(questionNumber++)
+              .questionId(q.getId())
+              .isDeleted(false)
+              .build());
     }
 
     // 5. 문서별 그룹화 및 구성
@@ -452,7 +458,6 @@ public class TestService {
               .configuredSubjectiveCount(subjective)
               .isDeleted(false)
               .build());
-
 
       documentQuestionRepository.save(
           DocumentQuestion.builder()
