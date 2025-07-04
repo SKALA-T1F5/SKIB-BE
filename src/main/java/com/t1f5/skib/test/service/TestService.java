@@ -659,6 +659,7 @@ public class TestService {
 
     List<ResponseTestSummaryDto> responseList =
         userTests.stream()
+            .filter(userTest -> userTest.getTest() != null && !userTest.getTest().getIsDeleted())
             .map(
                 userTest -> {
                   Test test = userTest.getTest();
@@ -676,7 +677,6 @@ public class TestService {
                       .build();
                 })
             .collect(Collectors.toList());
-
     return new ResponseTestSummaryListDto(responseList.size(), responseList);
   }
 
