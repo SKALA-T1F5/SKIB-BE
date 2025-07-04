@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      IMAGE_REGISTRY: amdp-registry.skala-ai.com/skala25a
+      IMAGE_REGISTRY: docker.io/yoonalim2003
       IMAGE_NAME: sk-team-09-backend
       IMAGE_TAG_BASE: 1.0.0
       K8S_NAMESPACE: default
