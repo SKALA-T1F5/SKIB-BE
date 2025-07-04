@@ -15,7 +15,6 @@ import com.t1f5.skib.global.dtos.DtoConverter;
 import com.t1f5.skib.global.enums.DocumentStatus;
 import com.t1f5.skib.project.domain.Project;
 import com.t1f5.skib.project.repository.ProjectJpaRepository;
-import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,6 +26,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -173,67 +173,6 @@ public class DocumentService {
   }
 
   /**
-   * FastAPI로 파일을 업로드하고, SummaryDto[]를 요청하여 MongoDB에 저장하는 메서드
-   *
-   * @param file 업로드할 파일
-   * @param projectId 프로젝트 ID
-   * @param documentId 문서 ID
-   * @param name 파일 이름
-   * @return 업로드된 파일의 경로
-   */
-  private String sendFileToFastAPI(
-      MultipartFile file, Integer projectId, Integer documentId, String name) {
-    try {
-      MultipartBodyBuilder builder = new MultipartBodyBuilder();
-
-      // ⚠️ file은 MultipartFile에서 직접 바이트 배열로 받거나 Resource로 전환
-      builder.part("file", file.getResource());
-      builder.part("document_id", documentId.toString());
-      builder.part("project_id", projectId.toString());
-      builder.part("name", name);
-
-      Map<String, Object> response =
-          webClient
-              .post()
-              .uri(fastApiBaseUrl + "api/document/upload")
-              .contentType(MediaType.MULTIPART_FORM_DATA)
-              .body(BodyInserters.fromMultipartData(builder.build()))
-              .retrieve()
-              .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-              .block();
-
-      log.info("FastAPI 업로드 완료: {}", response);
-
-      String filePath = (String) response.get("file_path");
-      if (filePath == null) {
-        throw new IllegalStateException("file_path가 응답에 없습니다.");
-      }
-
-      return filePath;
-
-    } catch (Exception e) {
-      log.error("FastAPI 연동 실패: {}", e.getMessage(), e);
-      throw new RuntimeException("FastAPI 연동 실패", e);
-    }
-  }
-
-  /**
-   * 문서 상태를 업데이트하는 메서드
-   *
-   * @param documentId 문서 ID
-   * @param status 업데이트할 상태
-   */
-  @Transactional
-  public void updateDocumentStatus(Integer documentId, DocumentStatus status) {
-    Document document =
-        documentRepository
-            .findById(documentId)
-            .orElseThrow(() -> new IllegalArgumentException("문서를 찾을 수 없습니다: " + documentId));
-    document.setStatus(status);
-    documentRepository.save(document);
-  }
-
-  /**
    * 문서의 현재 상태(status)를 반환하는 메서드
    *
    * @param documentId 문서 ID
@@ -277,6 +216,42 @@ public class DocumentService {
         summaryNotification.getStatus());
   }
 
+  private String sendFileToFastAPI(
+      MultipartFile file, Integer projectId, Integer documentId, String name) {
+    try {
+      MultipartBodyBuilder builder = new MultipartBodyBuilder();
+
+      // ⚠️ file은 MultipartFile에서 직접 바이트 배열로 받거나 Resource로 전환
+      builder.part("file", file.getResource());
+      builder.part("document_id", documentId.toString());
+      builder.part("project_id", projectId.toString());
+      builder.part("name", name);
+
+      Map<String, Object> response =
+          webClient
+              .post()
+              .uri(fastApiBaseUrl + "api/document/upload")
+              .contentType(MediaType.MULTIPART_FORM_DATA)
+              .body(BodyInserters.fromMultipartData(builder.build()))
+              .retrieve()
+              .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+              .block();
+
+      log.info("FastAPI 업로드 완료: {}", response);
+
+      String filePath = (String) response.get("file_path");
+      if (filePath == null) {
+        throw new IllegalStateException("file_path가 응답에 없습니다.");
+      }
+
+      return filePath;
+
+    } catch (Exception e) {
+      log.error("FastAPI 연동 실패: {}", e.getMessage(), e);
+      throw new RuntimeException("FastAPI 연동 실패", e);
+    }
+  }
+
   private String getExtension(String filename) {
     int dotIndex = filename.lastIndexOf('.');
     return (dotIndex != -1) ? filename.substring(dotIndex + 1) : "";
@@ -287,5 +262,15 @@ public class DocumentService {
     int lastDotIndex = filename.lastIndexOf(".");
     if (lastDotIndex == -1) return filename; // 확장자 없음
     return filename.substring(0, lastDotIndex);
+  }
+
+  @Transactional
+  public void updateDocumentStatus(Integer documentId, DocumentStatus status) {
+    Document document =
+        documentRepository
+            .findById(documentId)
+            .orElseThrow(() -> new IllegalArgumentException("문서를 찾을 수 없습니다: " + documentId));
+    document.setStatus(status);
+    documentRepository.save(document);
   }
 }
