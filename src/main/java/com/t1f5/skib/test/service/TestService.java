@@ -411,6 +411,7 @@ public class TestService {
             .limitedTime(dto.getLimitedTime())
             .passScore(dto.getPassScore())
             .summary("랜덤 테스트")
+            .status(TestStatus.COMPLETED)
             .isRetake(false)
             .isDeleted(false)
             .project(project)

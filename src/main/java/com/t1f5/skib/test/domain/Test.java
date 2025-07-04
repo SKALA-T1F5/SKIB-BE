@@ -45,7 +45,7 @@ public class Test extends BaseTimeEntity {
   private String summary;
 
   @Enumerated(EnumType.STRING)
-  @Column(name = "difficulty_level", nullable = false)
+  @Column(name = "difficulty_level", nullable = true)
   private DifficultyLevel difficultyLevel;
 
   @Enumerated(EnumType.STRING)
