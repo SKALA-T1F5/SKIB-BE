@@ -11,7 +11,8 @@ import org.springframework.data.repository.query.Param;
 public interface AnswerRepository extends JpaRepository<Answer, Integer> {
   boolean existsByUserTestAndQuestionId(UserTest userTest, String questionId);
 
-  boolean existsByUserTestAndQuestionIdAndAttemptType(UserTest userTest, String questionId, AttemptType attemptType);
+  boolean existsByUserTestAndQuestionIdAndAttemptType(
+      UserTest userTest, String questionId, AttemptType attemptType);
 
   List<Answer> findByUserTest_UserTestId(Integer userTestId);
 
@@ -39,7 +40,10 @@ public interface AnswerRepository extends JpaRepository<Answer, Integer> {
       nativeQuery = true)
   List<QuestionCorrectRateProjection> findCorrectRatesByTestId(@Param("testId") Integer testId);
 
-  List<Answer> findAllByUserTest_UserTestId(Integer userTestId);
+  @Query(
+      "SELECT a FROM Answer a WHERE a.userTest.userTestId = :userTestId AND a.attemptType ="
+          + " 'FIRST'")
+  List<Answer> findFirstAttemptAnswers(@Param("userTestId") Integer userTestId);
 
   List<Answer> findByUserTest(UserTest userTest);
 
