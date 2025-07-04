@@ -201,13 +201,13 @@ public class AnswerService {
    * @return 채점된 답변 결과 리스트
    */
   public List<ScoredAnswerResultDto> getScoredAnswersByUserTestId(
-      Integer userId, Integer testId, String lang) {
+      Integer userId, Integer testId, String lang, AttemptType attemptType) {
     UserTest userTest =
         userTestRepository
             .findByUser_UserIdAndTest_TestIdAndIsDeletedFalse(userId, testId)
             .orElseThrow(() -> new IllegalArgumentException("해당 유저의 테스트가 존재하지 않습니다."));
 
-    List<Answer> answers = answerRepository.findByUserTest_UserTestId(userTest.getUserTestId());
+    List<Answer> answers = answerRepository.findByUserTest_UserTestIdAndAttemptType(userTest.getUserTestId(), attemptType);
     List<ScoredAnswerResultDto> results = new ArrayList<>();
 
     for (Answer answer : answers) {
@@ -281,65 +281,6 @@ public class AnswerService {
       log.info("답변 삭제 완료: userAnswerId={}", answer.getUserAnswerId());
     }
   }
-
-  // private int handleAnswer(
-  //     AnswerRequest item, UserTest userTest, int pointPerQuestion, boolean isRetake) {
-  //   Boolean isCorrect = null;
-  //   int score = 0;
-
-  //   if (item.getQuestionType() == QuestionType.OBJECTIVE) {
-  //     isCorrect = getIsCorrectForMultipleChoice(item.getId(), item.getResponse());
-  //     score = Boolean.TRUE.equals(isCorrect) ? pointPerQuestion : 0;
-  //   } else if (item.getQuestionType() == QuestionType.SUBJECTIVE) {
-  //     Question question =
-  //         questionMongoRepository
-  //             .findById(item.getId())
-  //             .orElseThrow(() -> new IllegalArgumentException("해당 주관식 문제를 찾을 수 없습니다."));
-  //     List<GradingCriteriaDto> gradingCriteria = question.getGradingCriteria();
-  //     SubjectiveScoringResponseDto response =
-  //         scoreSubjectiveAnswer(item.getId(), gradingCriteria, item.getResponse());
-  //     score = response.getScore();
-  //     isCorrect = score >= 5;
-  //   }
-
-  //   Answer answer =
-  //       Answer.builder()
-  //           .userTest(userTest)
-  //           .questionId(item.getId())
-  //           .response(item.getResponse())
-  //           .isCorrect(isCorrect)
-  //           .score(score)
-  //           .type(item.getQuestionType())
-  //           .isRetake(isRetake)
-  //           .isDeleted(false)
-  //           .build();
-
-  //   Answer saved = answerRepository.save(answer);
-
-  //   if (item.getQuestionType() == QuestionType.SUBJECTIVE) {
-  //     SubjectiveAnswer subjectiveAnswer =
-  //         SubjectiveAnswer.builder()
-  //             .userAnswerId(String.valueOf(saved.getUserAnswerId()))
-  //             .questionId(item.getId())
-  //             .score(score)
-  //             .build();
-
-  //     subjectiveAnswerRepository.save(subjectiveAnswer);
-  //     ResponseSubjectiveAnswerDto dtoResult =
-  //         subjectiveAnswerDtoConverter.convert(subjectiveAnswer);
-  //     log.info("주관식 DTO 변환 결과: {}", dtoResult);
-  //   }
-
-  //   return score;
-  // }
-
-  // private Boolean getIsCorrectForMultipleChoice(String questionId, String response) {
-  //   Question question =
-  //       questionMongoRepository
-  //           .findById(questionId)
-  //           .orElseThrow(() -> new IllegalArgumentException("해당 문제를 찾을 수 없습니다."));
-  //   return checkCorrectAnswer(question.getAnswer(), response);
-  // }
 
   private boolean checkCorrectAnswer(String correct, String user) {
     if (Objects.isNull(correct) || Objects.isNull(user)) return false;

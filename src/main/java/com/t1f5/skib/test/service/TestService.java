@@ -366,7 +366,6 @@ public class TestService {
           DocumentQuestion.builder()
               .document(document)
               .questionKey(joinedKeys)
-              .questionType(type)
               .configuredObjectiveCount(objCount)
               .configuredSubjectiveCount(subCount)
               .isDeleted(false)
@@ -453,13 +452,11 @@ public class TestService {
               .isDeleted(false)
               .build());
 
-      QuestionType questionType = objective > 0 ? QuestionType.OBJECTIVE : QuestionType.SUBJECTIVE;
 
       documentQuestionRepository.save(
           DocumentQuestion.builder()
               .document(document)
               .questionKey(UUID.randomUUID().toString())
-              .questionType(questionType)
               .configuredObjectiveCount(objective)
               .configuredSubjectiveCount(subjective)
               .isDeleted(false)

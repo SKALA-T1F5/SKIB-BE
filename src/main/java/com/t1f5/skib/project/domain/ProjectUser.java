@@ -1,5 +1,6 @@
 package com.t1f5.skib.project.domain;
 
+import com.t1f5.skib.global.domain.BaseTimeEntity;
 import com.t1f5.skib.global.enums.UserType;
 import com.t1f5.skib.user.model.User;
 import jakarta.persistence.Column;
@@ -25,7 +26,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 @Table(name = "PROJECT_USER")
-public class ProjectUser {
+public class ProjectUser extends BaseTimeEntity {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Integer projectUserId;
