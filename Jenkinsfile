@@ -7,10 +7,10 @@ pipeline {
         GIT_ID = 'skala-github-yoonali'
         GIT_USER_NAME = 'yoonali'
         GIT_USER_EMAIL = 'yoonalim2003@gmail.com'
-        IMAGE_REGISTRY = 'amdp-registry.skala-ai.com/skala25a'
+        IMAGE_REGISTRY = 'docker.io/yoonalim2003'
         IMAGE_NAME = 'sk-team-09-backend'
         IMAGE_TAG = '1.0.0'
-        DOCKER_CREDENTIAL_ID = 'skala-image-registry-id'
+        DOCKER_CREDENTIAL_ID = 'docker-hub-credentials-id'
     }
 
     stages {
