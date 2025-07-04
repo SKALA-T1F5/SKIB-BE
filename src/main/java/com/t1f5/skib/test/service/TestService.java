@@ -13,7 +13,9 @@ import com.t1f5.skib.global.enums.DocumentStatus;
 import com.t1f5.skib.global.enums.QuestionType;
 import com.t1f5.skib.global.enums.TestStatus;
 import com.t1f5.skib.project.domain.Project;
+import com.t1f5.skib.project.domain.ProjectUser;
 import com.t1f5.skib.project.repository.ProjectJpaRepository;
+import com.t1f5.skib.project.repository.ProjectTrainerRepository;
 import com.t1f5.skib.question.domain.DocumentQuestion;
 import com.t1f5.skib.question.domain.Question;
 import com.t1f5.skib.question.dto.QuestionDto;
@@ -85,6 +87,7 @@ public class TestService {
   private final WebClient webClient;
   private final DocumentRepository documentRepository;
   private final SummaryMongoRepository summaryMongoRepository;
+  private final ProjectTrainerRepository projectTrainerRepository;
   private final TestDocumentConfigRepository testDocumentConfigRepository;
   private final DocumentQuestionRepository documentQuestionRepository;
   private final AnswerService answerService;
@@ -798,12 +801,29 @@ public class TestService {
 
     // 2. 테스트 및 유저 조회
     Test test = inviteLink.getTest();
+    Project project = test.getProject(); // 테스트에 연관된 프로젝트
     User user =
         userRepository
             .findById(userId)
             .orElseThrow(() -> new IllegalArgumentException("해당 유저가 존재하지 않습니다."));
 
-    // 3. 이미 등록된 UserTest 있는지 확인
+    // 3. 해당 프로젝트에 유저가 등록되어 있는지 확인
+    boolean existsInProject =
+        projectTrainerRepository.existsByProjectAndUserAndIsDeletedFalse(project, user);
+
+    if (!existsInProject) {
+      ProjectUser projectUser =
+          ProjectUser.builder()
+              .type(user.getType()) // 예: TRAINER 또는 TRAINEE
+              .project(project)
+              .user(user)
+              .isDeleted(false)
+              .build();
+      projectTrainerRepository.save(projectUser);
+      log.info("유저 [{}]가 프로젝트 [{}]에 등록되었습니다.", user.getUserId(), project.getProjectName());
+    }
+
+    // 4. 이미 등록된 UserTest 있는지 확인
     Optional<UserTest> existing =
         userTestRepository.findByTest_TestIdAndUser_UserIdAndIsDeletedFalse(
             test.getTestId(), user.getUserId());
@@ -814,7 +834,7 @@ public class TestService {
       log.info("이미 등록된 유저입니다.");
       userTest = existing.get();
     } else {
-      // 4. 새로 등록
+      // 5. 새로 등록
       userTest =
           UserTest.builder()
               .test(test)
@@ -829,7 +849,7 @@ public class TestService {
       userTestRepository.save(userTest);
     }
 
-    // 5. 테스트 + 문제 리스트 함께 반환
+    // 6. 테스트 + 문제 리스트 함께 반환
     return buildTestDtoWithQuestions(test, lang);
   }
 
