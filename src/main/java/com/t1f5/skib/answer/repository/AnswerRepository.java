@@ -15,6 +15,8 @@ public interface AnswerRepository extends JpaRepository<Answer, Integer> {
 
   List<Answer> findByUserTest_UserTestId(Integer userTestId);
 
+  List<Answer> findByUserTest_UserTestIdAndAttemptType(Integer userTestId, AttemptType attemptType);
+
   @Query(
       "SELECT a FROM Answer a WHERE a.userTest.user.userId = :userId AND a.userTest.test.testId ="
           + " :testId AND a.isDeleted = false")

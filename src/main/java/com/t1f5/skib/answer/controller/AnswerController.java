@@ -7,6 +7,8 @@ import com.t1f5.skib.global.customAnnotations.SwaggerApiNotFoundError;
 import com.t1f5.skib.global.customAnnotations.SwaggerApiSuccess;
 import com.t1f5.skib.global.customAnnotations.SwaggerInternetServerError;
 import com.t1f5.skib.global.dtos.ResultDto;
+import com.t1f5.skib.global.enums.AttemptType;
+
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -40,16 +42,17 @@ public class AnswerController {
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "답변이 성공적으로 저장되었습니다."));
   }
 
-  @SwaggerApiSuccess(summary = "채점 결과 조회", description = "사용자의 채점결과를 반환합니다.")
+  @SwaggerApiSuccess(summary = "채점 결과 조회", description = "사용자의 특정 시도 (FIRST 또는 RETRY)에 대한 채점 결과를 반환합니다.")
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
   @GetMapping("/getResult")
   public ResponseEntity<ResultDto<?>> getScoredAnswersByUserTestId(
       @RequestParam Integer userId,
       @RequestParam Integer testId,
-      @RequestParam(required = false, defaultValue = "ko") String lang) {
+      @RequestParam(required = false, defaultValue = "ko") String lang,
+      @RequestParam AttemptType attemptType) {
     List<ScoredAnswerResultDto> result =
-        answerService.getScoredAnswersByUserTestId(userId, testId, lang);
+        answerService.getScoredAnswersByUserTestId(userId, testId, lang, attemptType);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "답변을 성공적으로 조회했습니다.", result));
   }
 }
