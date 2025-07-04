@@ -83,4 +83,14 @@ public class ProjectController {
     projectService.deleteProject(projectId);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "프로젝트가 성공적으로 삭제되었습니다."));
   }
+
+  @SwaggerApiSuccess(summary = "프로젝트에 유저 추가", description = "특정 프로젝트에 유저를 추가합니다.")
+  @SwaggerApiNotFoundError
+  @SwaggerInternetServerError
+  @PostMapping("/addUser")
+  public ResponseEntity<ResultDto<?>> addUserToProject(
+      @RequestParam Integer projectId, @RequestParam Integer userId) {
+    projectService.addUserToProject(projectId, userId);
+    return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", "유저가 프로젝트에 성공적으로 추가되었습니다."));
+  }
 }
