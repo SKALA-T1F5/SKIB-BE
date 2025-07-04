@@ -186,7 +186,7 @@ public class TestController {
   public ResponseEntity<ResultDto<ResponseTestDto>> registerUserToTest(
       @RequestParam String token, Integer userId, @RequestParam(defaultValue = "ko") String lang) {
 
-    ResponseTestDto response = testService.registerUserToTestAndReturnTest(token, userId, lang);
+    ResponseTestDto response = testService.registerUserToTest(token, userId, lang);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "SUCCESS", response));
   }
 

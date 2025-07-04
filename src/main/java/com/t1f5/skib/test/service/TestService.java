@@ -799,7 +799,7 @@ public class TestService {
    * @param lang 언어 코드 (예: "ko", "en")
    * @return ResponseTestDto (문제 리스트 포함)
    */
-  public ResponseTestDto registerUserToTestAndReturnTest(
+  public ResponseTestDto registerUserToTest(
       String token, Integer userId, String lang) {
     // 1. 초대 토큰으로 InviteLink 찾기
     InviteLink inviteLink =
