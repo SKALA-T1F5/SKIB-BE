@@ -59,14 +59,17 @@ jobs:
           echo "Updated deploy.yaml:"
           cat ./k8s/deploy.yaml
 
-      - name: Push updated YAMLs
+      - name: Commit and Push updated deploy.yaml
         run: |
-          git config user.name "yoonali"
-          git config user.email "yoonalim2003@gmail.com"
-          git remote set-url origin https://yoonali:${{ secrets.GH_PAT }}@github.com/SKALA-T1F5/SKIB-BE.git
-          git add ./k8s/*.yaml
-          git commit -m "[AUTO] Update image"
-          git push origin main
+          git config user.name "${{ env.GIT_USER_NAME }}"
+          git config user.email "${{ env.GIT_USER_EMAIL }}"
+          git add ./k8s/deploy.yaml || true
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "[AUTO] Update deploy.yaml with image $FINAL_IMAGE_TAG"
+            git push
+          fi
 
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
