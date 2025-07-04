@@ -184,7 +184,7 @@ public class ProjectService {
 
     User user =
         userRepository
-            .findByIdAndIsDeletedFalse(userId)
+            .findByUserIdAndIsDeletedFalse(userId)
             .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
 
     // 중복 체크: 이미 이 프로젝트에 등록되어 있는지 확인
