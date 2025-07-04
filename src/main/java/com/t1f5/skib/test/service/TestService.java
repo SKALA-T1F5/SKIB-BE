@@ -410,6 +410,7 @@ public class TestService {
             .limitedTime(dto.getLimitedTime())
             .passScore(dto.getPassScore())
             .summary("랜덤 테스트")
+            .difficultyLevel(dto.getDifficultyLevel())
             .status(TestStatus.COMPLETED)
             .isRetake(false)
             .isDeleted(false)
