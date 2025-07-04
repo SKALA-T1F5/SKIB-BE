@@ -13,7 +13,7 @@ jobs:
       IMAGE_REGISTRY: docker.io/yoonalim2003
       IMAGE_NAME: sk-team-09-backend
       IMAGE_TAG_BASE: 1.0.0
-      K8S_NAMESPACE: default
+      K8S_NAMESPACE: sk-team-09
       GIT_USER_NAME: yoonali
       GIT_USER_EMAIL: yoonalim2003@gmail.com
 
