@@ -43,7 +43,7 @@ public class FeedbackController {
       @RequestParam(value = "userId") Integer userId,
       @RequestParam(value = "testId") Integer testId) {
 
-    ResponseFeedbackAllDto response = feedbackService.getFeedbackSummary(userId, testId);
+    ResponseFeedbackAllDto response = feedbackService.getAllFeedback(userId, testId);
 
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "테스트 결과 요약 조회 성공", response));
   }
@@ -59,7 +59,7 @@ public class FeedbackController {
       @RequestParam(value = "testId") Integer testId) {
 
     List<ResponseFeedbackDocDto> response =
-        feedbackService.getDocumentAccuracyRates(userId, testId);
+        feedbackService.getDocumentFeedback(userId, testId);
 
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "문서별 정답률 조회 성공", response));
   }
@@ -73,7 +73,7 @@ public class FeedbackController {
   public ResponseEntity<ResultDto<List<ResponseFeedbackTagDto>>> getTagFeedback(
       @RequestParam Integer userId, @RequestParam Integer testId) {
 
-    List<ResponseFeedbackTagDto> response = feedbackService.getTagAccuracyRates(userId, testId);
+    List<ResponseFeedbackTagDto> response = feedbackService.getTagFeedback(userId, testId);
 
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "태그별 정답률 조회 성공", response));
   }
@@ -136,7 +136,8 @@ public class FeedbackController {
   @SwaggerApiNotFoundError
   @SwaggerInternetServerError
   @PostMapping("/trainer-feedback")
-  public ResponseEntity<ResultDto<FeedbackGenerationResponseDto>> generateFeedbackForTest(@RequestParam Integer testId) {
+  public ResponseEntity<ResultDto<FeedbackGenerationResponseDto>> generateFeedbackForTest(
+      @RequestParam Integer testId) {
     FeedbackGenerationResponseDto response = feedbackService.generateFeedbackForTest(testId);
     return ResponseEntity.ok(ResultDto.res(HttpStatus.OK, "트레이너 피드백 생성 성공", response));
   }

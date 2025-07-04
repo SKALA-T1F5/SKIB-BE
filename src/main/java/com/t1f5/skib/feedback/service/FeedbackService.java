@@ -74,14 +74,14 @@ public class FeedbackService {
    * @return 정확도 비율, 정답 개수, 총 문항 수를 포함하는 ResponseFeedbackAllDto
    */
   @Transactional(readOnly = true)
-  public ResponseFeedbackAllDto getFeedbackSummary(Integer userId, Integer testId) {
+  public ResponseFeedbackAllDto getAllFeedback(Integer userId, Integer testId) {
     // 1. 유저 테스트 가져오기
     UserTest userTest = feedbackUserTestRepository.findByUserIdAndTestId(userId, testId);
     Integer userTestId = userTest.getUserTestId();
     System.out.println("🎯 userTestId = " + userTestId);
 
     // 2. 해당 유저 테스트에 연결된 Answer 리스트 조회
-    List<Answer> answers = answerRepository.findAllByUserTest_UserTestId(userTestId);
+    List<Answer> answers = answerRepository.findFirstAttemptAnswers(userTestId);
 
     // 3. 정답/오답 개수 계산
     long correctCount = answers.stream().filter(a -> Boolean.TRUE.equals(a.getIsCorrect())).count();
@@ -107,7 +107,7 @@ public class FeedbackService {
    * @param testId 테스트의 ID
    * @return 문서 정확도 비율을 포함하는 ResponseFeedbackDocDto 리스트
    */
-  public List<ResponseFeedbackDocDto> getDocumentAccuracyRates(Integer userId, Integer testId) {
+  public List<ResponseFeedbackDocDto> getDocumentFeedback(Integer userId, Integer testId) {
     // 1. 유저 테스트 조회
     Integer userTestId = feedbackUserTestRepository.findUserTestIdByUserIdAndTestId(userId, testId);
 
@@ -171,7 +171,7 @@ public class FeedbackService {
    * @param testId 테스트의 ID
    * @return 태그 정확도 비율을 포함하는 ResponseFeedbackTagDto 리스트
    */
-  public List<ResponseFeedbackTagDto> getTagAccuracyRates(Integer userId, Integer testId) {
+  public List<ResponseFeedbackTagDto> getTagFeedback(Integer userId, Integer testId) {
     Integer userTestId = feedbackUserTestRepository.findUserTestIdByUserIdAndTestId(userId, testId);
 
     List<Object[]> answers = feedbackUserAnswerRepository.getAnswersByUserTestId(userTestId);
