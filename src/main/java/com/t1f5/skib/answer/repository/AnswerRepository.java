@@ -51,4 +51,6 @@ public interface AnswerRepository extends JpaRepository<Answer, Integer> {
       "SELECT COALESCE(SUM(a.score), 0) FROM Answer a WHERE a.userTest = :userTest AND a.isDeleted"
           + " = false")
   int sumScoreByUserTest(@Param("userTest") UserTest userTest);
+
+  boolean existsByUserTestAndAttemptType(UserTest userTest, AttemptType attemptType);
 }

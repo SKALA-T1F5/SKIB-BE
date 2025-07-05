@@ -52,13 +52,6 @@ public class AnswerService {
   @Value("${fastapi.base-url}")
   private String fastApiBaseUrl;
 
-  /**
-   * 유저의 답변을 저장합니다. retake 여부에 따라 다른 로직을 적용합니다.
-   *
-   * @param dto 답변 요청 DTO
-   * @param userId 유저 ID
-   * @param testId 테스트 ID
-   */
   public void saveAnswer(RequestCreateAnswerDto dto, Integer userId, Integer testId) {
     UserTest userTest =
         userTestRepository
@@ -66,13 +59,13 @@ public class AnswerService {
             .orElse(null);
 
     if (userTest == null) {
-      // 1차 응시: UserTest 새로 생성
+      // 안전장치: 혹시 register 없이 직접 접근했을 경우
       userTest =
           UserTest.builder()
               .user(User.builder().userId(userId).build())
               .test(Test.builder().testId(testId).build())
               .isTaken(true)
-              .isPassed(false) // 기본값
+              .isPassed(false)
               .retake(false)
               .takenDate(LocalDateTime.now())
               .score(0)
@@ -80,24 +73,31 @@ public class AnswerService {
               .build();
       userTestRepository.save(userTest);
       saveAnswersByAttempt(dto, userTest, AttemptType.FIRST);
+      return;
+    }
 
+    boolean hasFirstAttempt =
+        answerRepository.existsByUserTestAndAttemptType(userTest, AttemptType.FIRST);
+
+    if (!hasFirstAttempt) {
+      // 첫 응시
+      userTest.setIsTaken(true);
+      saveAnswersByAttempt(dto, userTest, AttemptType.FIRST);
     } else if (!userTest.getRetake()) {
-      // 🔍 재응시 가능 여부를 test에서 확인
+      // 재응시 전 첫 응시 끝난 상태
       Test test = userTest.getTest();
       if (test == null || !Boolean.TRUE.equals(test.getIsRetake())) {
         throw new IllegalStateException("이 테스트는 재응시가 허용되지 않습니다.");
       }
 
-      // 재응시 시도
       userTest.setRetake(true);
       userTest.setIsTaken(true);
       saveAnswersByAttempt(dto, userTest, AttemptType.RETRY);
-      userTestRepository.save(userTest);
-
     } else {
-      // 이미 재응시까지 끝난 상태
       throw new IllegalStateException("이미 재응시까지 완료된 시험입니다.");
     }
+
+    userTestRepository.save(userTest);
   }
 
   private void saveAnswersByAttempt(
@@ -207,7 +207,9 @@ public class AnswerService {
             .findByUser_UserIdAndTest_TestIdAndIsDeletedFalse(userId, testId)
             .orElseThrow(() -> new IllegalArgumentException("해당 유저의 테스트가 존재하지 않습니다."));
 
-    List<Answer> answers = answerRepository.findByUserTest_UserTestIdAndAttemptType(userTest.getUserTestId(), attemptType);
+    List<Answer> answers =
+        answerRepository.findByUserTest_UserTestIdAndAttemptType(
+            userTest.getUserTestId(), attemptType);
     List<ScoredAnswerResultDto> results = new ArrayList<>();
 
     for (Answer answer : answers) {
