@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      IMAGE_REGISTRY: amdp-registry.skala-ai.com/skala25a
+      IMAGE_REGISTRY: docker.io/yoonalim2003
       IMAGE_NAME: sk-team-09-backend
       IMAGE_TAG_BASE: 1.0.0
       K8S_NAMESPACE: sk-team-09
@@ -44,7 +44,7 @@ jobs:
       - name: Login to DockerHub
         uses: docker/login-action@v2
         with:
-          registry: amdp-registry.skala-ai.com
+          registry: docker.io
           username: ${{ secrets.REGISTRY_USERNAME_SKALA }} # 예: yoonalim2003
           password: ${{ secrets.REGISTRY_PASSWORD_SKALA }} # 비밀번호 또는 PAT
 
