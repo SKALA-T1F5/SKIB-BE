@@ -53,6 +53,8 @@ public class AnswerService {
   private String fastApiBaseUrl;
 
   public void saveAnswer(RequestCreateAnswerDto dto, Integer userId, Integer testId) {
+    String lang = dto.getLang();
+
     UserTest userTest =
         userTestRepository
             .findByUser_UserIdAndTest_TestIdAndIsDeletedFalse(userId, testId)
@@ -72,7 +74,7 @@ public class AnswerService {
               .isDeleted(false)
               .build();
       userTestRepository.save(userTest);
-      saveAnswersByAttempt(dto, userTest, AttemptType.FIRST);
+      saveAnswersByAttempt(dto, userTest, AttemptType.FIRST, lang);
       return;
     }
 
@@ -82,7 +84,7 @@ public class AnswerService {
     if (!hasFirstAttempt) {
       // 첫 응시
       userTest.setIsTaken(true);
-      saveAnswersByAttempt(dto, userTest, AttemptType.FIRST);
+      saveAnswersByAttempt(dto, userTest, AttemptType.FIRST, lang);
     } else if (!userTest.getRetake()) {
       // 재응시 전 첫 응시 끝난 상태
       Test test = userTest.getTest();
@@ -92,7 +94,7 @@ public class AnswerService {
 
       userTest.setRetake(true);
       userTest.setIsTaken(true);
-      saveAnswersByAttempt(dto, userTest, AttemptType.RETRY);
+      saveAnswersByAttempt(dto, userTest, AttemptType.RETRY, lang);
     } else {
       throw new IllegalStateException("이미 재응시까지 완료된 시험입니다.");
     }
@@ -101,7 +103,7 @@ public class AnswerService {
   }
 
   private void saveAnswersByAttempt(
-      RequestCreateAnswerDto dto, UserTest userTest, AttemptType attemptType) {
+      RequestCreateAnswerDto dto, UserTest userTest, AttemptType attemptType, String lang) {
     int totalScore = 0;
     int pointPerQuestion = 100 / dto.getAnswers().size();
 
@@ -119,7 +121,7 @@ public class AnswerService {
         continue;
       }
 
-      int score = handleAnswer(item, userTest, pointPerQuestion, attemptType);
+      int score = handleAnswer(item, userTest, pointPerQuestion, attemptType, lang);
       totalScore += score;
     }
 
@@ -133,7 +135,11 @@ public class AnswerService {
   }
 
   private int handleAnswer(
-      AnswerRequest item, UserTest userTest, int pointPerQuestion, AttemptType attemptType) {
+      AnswerRequest item,
+      UserTest userTest,
+      int pointPerQuestion,
+      AttemptType attemptType,
+      String lang) {
     // 한 번만 조회
     Question question =
         questionMongoRepository
@@ -145,9 +151,13 @@ public class AnswerService {
     int score = 0;
 
     if (type == QuestionType.OBJECTIVE) {
-      isCorrect = checkCorrectAnswer(question.getAnswer(), item.getResponse());
+      QuestionDto questionDto = questionToDtoConverter.convert(question);
+      if (!"ko".equalsIgnoreCase(lang)) {
+        questionDto = questionTranslator.translateQuestionDto(questionDto, lang);
+      }
+      String translatedAnswer = questionDto.getAnswer();
+      isCorrect = checkCorrectAnswer(translatedAnswer, item.getResponse());
       score = Boolean.TRUE.equals(isCorrect) ? pointPerQuestion : 0;
-
     } else if (type == QuestionType.SUBJECTIVE) {
       List<GradingCriteriaDto> gradingCriteria = question.getGradingCriteria();
       SubjectiveScoringResponseDto response =

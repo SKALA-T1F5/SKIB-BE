@@ -9,5 +9,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RequestCreateAnswerDto {
+  private String lang; // 언어 코드 (예: "ko", "en")
   private List<AnswerRequest> answers;
 }
