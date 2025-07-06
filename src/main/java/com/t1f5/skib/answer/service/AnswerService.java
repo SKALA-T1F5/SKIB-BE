@@ -124,6 +124,12 @@ public class AnswerService {
     }
 
     userTest.setScore(totalScore);
+
+    Test test = userTest.getTest();
+    if (test != null && test.getPassScore() != null) {
+      boolean isPassed = totalScore >= test.getPassScore();
+      userTest.setIsPassed(isPassed);
+    }
   }
 
   private int handleAnswer(
