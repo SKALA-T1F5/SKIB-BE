@@ -152,8 +152,9 @@ public class AnswerService {
       List<GradingCriteriaDto> gradingCriteria = question.getGradingCriteria();
       SubjectiveScoringResponseDto response =
           scoreSubjectiveAnswer(item.getId(), gradingCriteria, item.getResponse());
-      score = response.getScore();
-      isCorrect = score >= 5;
+          int subjectiveRawScore = response.getScore(); // 0~5
+          score = (int) Math.round((subjectiveRawScore / 5.0) * pointPerQuestion);  // 비례 점수 환산
+          isCorrect = subjectiveRawScore >= 5; // raw 점수가 5 이상이면 정답으로 간주
     } else {
       throw new IllegalStateException("지원하지 않는 문제 유형입니다.");
     }
