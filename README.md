@@ -24,6 +24,8 @@ AI 기반 시스템 매뉴얼/아키텍처 문서로부터 문항을 생성하�
 ---
 
 ## 📁 프로젝트 구조
+
+```bash
 SKIB-BE/
 ├── .github/                   # GitHub Actions 워크플로우 (CI/CD: deploy.yaml)
 ├── .vscode/                  # 개발 환경 설정 (settings.json)
@@ -52,6 +54,7 @@ SKIB-BE/
 ├── build.gradle
 ├── settings.gradle
 └── README.md
+```
 
 ---
 
