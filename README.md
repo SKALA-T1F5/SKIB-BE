@@ -13,7 +13,6 @@ AI 기반 시스템 매뉴얼/아키텍처 문서로부터 문항을 생성하�
 | **API 문서화** | Swagger 3.0 (OpenAPI + JWT 인증 연동) |
 | **Database** | - **MariaDB**: Spring Data JPA 기반 관계형 DB<br>- **MongoDB**: Spring Data MongoDB를 통한 NoSQL 저장 |
 | **Query** | QueryDSL 5.0 |
-| **Reactive / Web** | Spring WebFlux, WebSocket 일부 활용 |
 | **환경 설정** | 다중 프로파일 (`application-local.yaml`, `application-prod.yaml` 등) |
 | **환경변수 관리** | `.env` 파일 기반 환경 변수 주입 (`java-dotenv`) |
 | **CI/CD** | - GitHub Actions (`.github/workflows/deploy.yaml`)<br>- Jenkins (`Jenkinsfile`)<br>- ArgoCD (`argocd/application.yaml`) |
